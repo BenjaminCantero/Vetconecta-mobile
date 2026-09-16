@@ -5,11 +5,13 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { colors } from '../theme/colors';
-import MyPetsScreen from '../../features/pets/presentation/screens/MyPetsScreen';
-import AppointmentsScreen from '../../features/appointments/presentation/screens/AppointmentsScreen';
-import NotificationsScreen from '../../features/notifications/presentation/screens/NotificationsScreen';
+import { HomeScreen } from '../../features/home';
+import { MyPetsScreen } from '../../features/pets';
+import { AppointmentsScreen } from '../../features/appointments';
+import { NotificationsScreen } from '../../features/notifications';
 
 export type TabParamList = {
+  Inicio: undefined;
   MisMascotas: undefined;
   Citas: undefined;
   Notificaciones: undefined;
@@ -26,6 +28,7 @@ export function TabNavigator() {
         tabBarInactiveTintColor: colors.textMuted,
       }}
     >
+      <Tab.Screen name="Inicio" component={HomeScreen} options={{ title: 'Inicio' }} />
       <Tab.Screen name="MisMascotas" component={MyPetsScreen} options={{ title: 'Mis mascotas' }} />
       <Tab.Screen name="Citas" component={AppointmentsScreen} options={{ title: 'Citas' }} />
       <Tab.Screen name="Notificaciones" component={NotificationsScreen} options={{ title: 'Notificaciones' }} />

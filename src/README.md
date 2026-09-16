@@ -44,3 +44,51 @@ La API externa solo expone lectura (GET). Por eso:
 4. **presentation** — `MyPetsScreen` renderiza la lista con `PetCard`, y al tocar una tarjeta navega a `PetDetailScreen` → `HealthCardScreen`, que repite el mismo flujo con `petsRepository.getHealthCard(petId)`.
 
 En ningún punto `MyPetsScreen` importa Axios o AsyncStorage: solo conoce `petsRepository` (una función) y las entidades del dominio.
+
+# Arquitectura por dominios (A2 - Nicolas)
+
+> Fusionar esta sección dentro de `src/README.md`.
+
+La app se divide primero por dominio (auth, pets, appointments, notifications) y,
+dentro de cada dominio, por capa (presentation / domain / data).
+
+## Estructura
+
+```
+src/
+  features/
+    auth/          { data, domain, presentation }   entidad User
+    pets/          { data, domain, presentation }   entidad Pet
+    appointments/  { data, domain, presentation }   entidad Appointment
+    notifications/ { data, domain, presentation }   entidad Notification
+    home/          transversal: solo LEE de otros dominios (no posee entidad)
+  core/            api (httpClient -> gateway), navigation, storage, theme, config
+  shared/          components, hooks, utils, context (mascota activa)
+```
+
+## Reglas de frontera
+
+1. Ningun dominio importa de otro dominio.
+2. Solo `home` puede leer de varios dominios, y solo por su superficie pública
+   (el barrel / hook), nunca por su carpeta `data/`. Dirección única: home -> dominios.
+3. El estado compartido (mascota activa) vive en `shared/context`, fuera de los dominios.
+4. Cada dominio expone su superficie pública en `features/<dominio>/index.ts`
+   (barrel). Todo lo no exportado ahí es interno.
+
+Estas reglas están blindadas con `eslint-plugin-boundaries` (ver `eslint.config.js`):
+violar una frontera es un error de lint, no un acuerdo verbal.
+
+## Decisiones de alcance
+
+- `clinical` (carnet + historial): se mantiene dentro de `pets` por ahora; costura
+  documentada para extraerlo a dominio propio si crece.
+- `feedback`: fuera del MVP (es POST; la API aún no lo expone).
+- checklist de tratamientos: plegado en `notifications` (notificaciones locales).
+
+## Definición de terminado
+
+- [ ] Ningún import cruza de un feature a otro (verificable con grep / lint).
+- [ ] Ninguna pantalla ni home importa desde `data/` de otro dominio.
+- [ ] Los 4 dominios nombrados existen, están aislados y exponen su barril.
+- [ ] home y la mascota activa están fuera de los dominios.
+- [ ] Las reglas de frontera están activas en ESLint.
