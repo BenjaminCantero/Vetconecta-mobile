@@ -10,10 +10,9 @@
 // httpClient ya envía el JWT en cada request. Si la API terminara exigiendo un
 // query param (por ejemplo ?id_dueno=), se agrega aquí y en `endpoints.ts`.
 
-import { isAxiosError } from 'axios';
-
 import { httpClient } from '../../../core/api/httpClient';
 import { ENDPOINTS } from '../../../core/api/endpoints';
+import { toHttpError } from '../../../core/api/httpError';
 import { ENV } from '../../../core/config/env';
 import type { Appointment, AppointmentStatus } from '../domain/Appointment';
 import type { AppointmentDto } from './appointmentsDto';
@@ -45,23 +44,10 @@ function toAppointment(dto: AppointmentDto): Appointment {
   };
 }
 
-// Traduce el error de Axios a un Error de dominio con un mensaje que la UI
-// puede mostrar tal cual, sin que presentation tenga que conocer Axios.
-function toAppointmentsError(error: unknown): Error {
-  if (isAxiosError(error)) {
-    if (!error.response) {
-      return new Error('No hay conexión con el servidor. Revisa tu red e inténtalo de nuevo.');
-    }
-
-    if (error.response.status === 401 || error.response.status === 403) {
-      return new Error('Tu sesión expiró. Vuelve a iniciar sesión para ver tus citas.');
-    }
-
-    return new Error('No se pudieron cargar tus citas. Inténtalo más tarde.');
-  }
-
-  return error instanceof Error ? error : new Error('No se pudieron cargar tus citas.');
-}
+const APPOINTMENTS_ERROR_MESSAGES = {
+  unauthorized: 'Tu sesión expiró. Vuelve a iniciar sesión para ver tus citas.',
+  fallback: 'No se pudieron cargar tus citas. Inténtalo más tarde.',
+};
 
 export const appointmentsRepository = {
   async getAppointments(): Promise<Appointment[]> {
@@ -75,7 +61,7 @@ export const appointmentsRepository = {
       // como "sin citas" en lugar de reventar al mapear.
       return Array.isArray(data) ? data.map(toAppointment) : [];
     } catch (error) {
-      throw toAppointmentsError(error);
+      throw toHttpError(error, APPOINTMENTS_ERROR_MESSAGES);
     }
   },
 };
