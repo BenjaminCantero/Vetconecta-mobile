@@ -7,16 +7,15 @@ import { ScrollView, Text, View, StyleSheet } from 'react-native';
 
 import { useMemo, useState } from 'react';
 import { useAuth, authRepository } from '../../../auth';
-import { petsRepository } from '../../../pets';
+import { usePets, petsRepository } from '../../../pets';
 import { useAppointments, appointmentsRepository } from '../../../appointments';
-import { useFetch } from '../../../../shared/hooks/useFetch';
 import { formatDate } from '../../../../shared/utils/formatDate';
 import { Loader } from '../../../../shared/components/Loader';
 import { colors } from '../../../../core/theme/colors';
 
 export default function HomeScreen() {
   const { user } = useAuth(authRepository);
-  const { data: pets, isLoading: petsLoading } = useFetch(() => petsRepository.getMyPets(), []);
+  const { pets, isLoading: petsLoading } = usePets(petsRepository);
   const { appointments, isLoading: apptsLoading } = useAppointments(appointmentsRepository);
 
 
@@ -36,7 +35,7 @@ export default function HomeScreen() {
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Mis mascotas</Text>
-        <Text style={styles.cardValue}>{pets?.length ?? 0}</Text>
+        <Text style={styles.cardValue}>{pets.length}</Text>
       </View>
 
       <View style={styles.card}>
