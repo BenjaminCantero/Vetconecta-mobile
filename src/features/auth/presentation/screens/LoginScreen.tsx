@@ -5,22 +5,27 @@
 import { useState } from 'react';
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '../../../../core/theme/colors';
+import { fonts } from '../../../../core/theme/typography';
 import { authRepository } from '../../data/authRepository';
 import { useAuth } from '../../domain/useAuth';
-import { AuthButton, AuthInput } from '../components';
+import { AuthButton, AuthHeader, AuthInput } from '../components';
 
 export default function LoginScreen() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   const { login, isLoading } = useAuth(authRepository);
 
@@ -30,10 +35,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert(
-        'Datos incompletos',
-        'Ingresa tu correo electrónico y contraseña.',
-      );
+      Alert.alert('Datos incompletos', 'Ingresa tu correo electrónico y contraseña.');
       return;
     }
 
@@ -43,154 +45,114 @@ export default function LoginScreen() {
         password,
       });
     } catch {
-      Alert.alert(
-        'Error',
-        'No se pudo iniciar sesión.',
-      );
+      Alert.alert('Error', 'No se pudo iniciar sesión.');
     }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <ScrollView
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
         keyboardShouldPersistTaps="handled"
+        bounces={false}
       >
-        <View style={styles.header}>
-          <Pressable
-            onPress={() => navigation.navigate('Welcome' as never)}
-            style={styles.backButton}
-          >
-            <Text style={styles.backText}>‹ Volver</Text>
-          </Pressable>
-        </View>
+        <AuthHeader height={190} onBack={() => navigation.navigate('Welcome' as never)} />
 
-        <View style={styles.content}>
+        <View style={styles.card}>
           <Text style={styles.title}>Iniciar Sesión</Text>
+          <Text style={styles.subtitle}>Rellena los campos para ingresar.</Text>
 
-          <Text style={styles.subtitle}>
-            Ingresa tus datos para continuar
-          </Text>
+          <AuthInput
+            label="RUT o Correo Electrónico"
+            placeholder="ejemplo@correo.com o 12.345.678-k"
+            icon="mail-outline"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoCorrect={false}
+          />
 
-          <View style={styles.form}>
-            <AuthInput
-              label="RUT o Correo Electrónico"
-              placeholder="Ingresa tu RUT o correo"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoCorrect={false}
-            />
+          <AuthInput
+            label="Contraseña"
+            placeholder="••••••••••••"
+            icon="key-outline"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoCapitalize="none"
+          />
 
-            <AuthInput
-              label="Contraseña"
-              placeholder="Ingresa tu contraseña"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-            />
+          <View style={styles.optionsRow}>
+            <Pressable
+              onPress={() => setRemember(!remember)}
+              style={styles.rememberContainer}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: remember }}
+            >
+              <View style={[styles.checkbox, remember && styles.checkboxSelected]}>
+                {remember && <Ionicons name="checkmark" size={16} color={colors.textLight} />}
+              </View>
 
-            <View style={styles.optionsRow}>
-              <Pressable
-                onPress={() => setRemember(!remember)}
-                style={styles.rememberContainer}
-              >
-                <View
-                  style={[
-                    styles.checkbox,
-                    remember && styles.checkboxSelected,
-                  ]}
-                >
-                  {remember && (
-                    <Text style={styles.checkmark}>✓</Text>
-                  )}
-                </View>
+              <Text style={styles.rememberText}>Recordar</Text>
+            </Pressable>
 
-                <Text style={styles.rememberText}>
-                  Recordar
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() =>
-                  navigation.navigate('ForgotPassword' as never)
-                }
-              >
-                <Text style={styles.forgotText}>
-                  ¿Olvidaste tu contraseña?
-                </Text>
-              </Pressable>
-            </View>
-
-            <AuthButton
-              label="Ingresar"
-              onPress={handleLogin}
-              loading={isLoading}
-              disabled={isLoading}
-            />
+            <Pressable onPress={() => navigation.navigate('ForgotPassword' as never)}>
+              <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
+            </Pressable>
           </View>
+
+          <AuthButton
+            label="Ingresar"
+            onPress={handleLogin}
+            loading={isLoading}
+            disabled={isLoading}
+          />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  screen: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.authBackground,
   },
 
-  container: {
+  scroll: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 32,
   },
 
-  header: {
-    height: 40,
-    justifyContent: 'center',
-  },
-
-  backButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: 8,
-  },
-
-  backText: {
-    color: colors.primary,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-
-  content: {
+  // La tarjeta sube sobre el encabezado para dejar ver el degradado detrás de
+  // sus esquinas superiores redondeadas, como en el maqueteado.
+  card: {
     flex: 1,
-    justifyContent: 'center',
-    width: '100%',
-    maxWidth: 500,
-    alignSelf: 'center',
+    marginTop: -44,
+    paddingTop: 36,
+    paddingHorizontal: 26,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    backgroundColor: colors.authBackground,
   },
 
   title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: colors.text,
+    fontFamily: fonts.extrabold,
+    fontSize: 28,
+    color: colors.authTitle,
     textAlign: 'center',
-    marginBottom: 8,
   },
 
   subtitle: {
+    marginTop: 8,
+    marginBottom: 28,
+    fontFamily: fonts.regular,
     fontSize: 15,
-    color: colors.textMuted,
+    color: colors.authMuted,
     textAlign: 'center',
-    marginBottom: 32,
-  },
-
-  form: {
-    width: '100%',
   },
 
   optionsRow: {
@@ -206,35 +168,30 @@ const styles = StyleSheet.create({
   },
 
   checkbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 4,
+    width: 24,
+    height: 24,
+    borderWidth: 1.5,
+    borderColor: colors.authCheckboxBorder,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
+    marginRight: 10,
   },
 
   checkboxSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-
-  checkmark: {
-    color: colors.textLight,
-    fontSize: 14,
-    fontWeight: '700',
+    backgroundColor: colors.authButton,
+    borderColor: colors.authButton,
   },
 
   rememberText: {
+    fontFamily: fonts.semibold,
     fontSize: 14,
-    color: colors.text,
+    color: colors.authTitle,
   },
 
   forgotText: {
+    fontFamily: fonts.bold,
     fontSize: 14,
-    color: colors.primary,
-    fontWeight: '600',
+    color: colors.authLink,
   },
 });

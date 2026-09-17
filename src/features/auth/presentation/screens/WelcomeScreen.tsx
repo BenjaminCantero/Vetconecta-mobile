@@ -1,73 +1,50 @@
-import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-  Pressable,
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '../../../../core/theme/colors';
+import { fonts } from '../../../../core/theme/typography';
+import { AppLogo, AuthButton, AuthGradient } from '../components';
 
 export default function WelcomeScreen() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.content}>
-          <Text style={styles.logo}>
-            VetConecta
-          </Text>
+    <AuthGradient
+      wavesTop={insets.top + 24}
+      style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom + 32 }]}
+    >
+      <View style={styles.content}>
+        <AppLogo size={76} />
 
-          <Text style={styles.title}>
-            Cuidado y bienestar{'\n'}para tus mascotas.
-          </Text>
+        <Text style={styles.title}>VetConecta</Text>
+        <Text style={styles.subtitle}>Cuidado y bienestar para tus mascotas.</Text>
 
-          <View style={styles.illustration}>
-            <Text style={styles.illustrationText}>
-              🐶 🐱
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.buttons}>
-          <Pressable
-            style={styles.primaryButton}
-            onPress={() => {}}
-          >
-            <Text style={styles.primaryButtonText}>
-              Crear Cuenta
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={styles.secondaryButton}
-            onPress={() =>
-              navigation.navigate('Login' as never)
-            }
-          >
-            <Text style={styles.secondaryButtonText}>
-              Iniciar Sesión
-            </Text>
-          </Pressable>
+        {/* Espacio reservado para la ilustración 3D: reemplazar por <Image> cuando llegue el asset. */}
+        <View style={styles.illustration}>
+          <Ionicons name="image-outline" size={28} color="rgba(60,30,90,0.55)" />
+          <Text style={styles.illustrationText}>Ilustración 3D de bienvenida</Text>
         </View>
       </View>
-    </SafeAreaView>
+
+      <View style={styles.buttons}>
+        <AuthButton label="Crear Cuenta" variant="light" onPress={() => {}} />
+        <AuthButton
+          label="Iniciar Sesión"
+          variant="outline"
+          onPress={() => navigation.navigate('Login' as never)}
+        />
+      </View>
+    </AuthGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-
   container: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-    justifyContent: 'space-between',
+    paddingHorizontal: 26,
   },
 
   content: {
@@ -76,67 +53,45 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  logo: {
-    fontSize: 34,
-    fontWeight: '800',
-    color: colors.primary,
-    marginBottom: 12,
+  title: {
+    marginTop: 18,
+    fontFamily: fonts.extrabold,
+    fontSize: 28,
+    color: colors.textLight,
   },
 
-  title: {
-    fontSize: 22,
-    lineHeight: 30,
-    fontWeight: '600',
-    color: colors.text,
+  subtitle: {
+    marginTop: 4,
+    fontFamily: fonts.semibold,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.92)',
     textAlign: 'center',
   },
 
   illustration: {
-    width: '100%',
-    height: 260,
-    marginTop: 32,
-    borderRadius: 24,
-    backgroundColor: colors.surface,
+    width: 190,
+    height: 250,
+    marginTop: 24,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(80,40,110,0.45)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 24,
   },
 
   illustrationText: {
-    fontSize: 70,
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: 'rgba(40,20,60,0.7)',
+    textAlign: 'center',
   },
 
   buttons: {
     width: '100%',
-    gap: 12,
-  },
-
-  primaryButton: {
-    height: 52,
-    borderRadius: 10,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  primaryButtonText: {
-    color: colors.textLight,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-
-  secondaryButton: {
-    height: 52,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  secondaryButtonText: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: '700',
+    gap: 14,
   },
 });

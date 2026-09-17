@@ -1,30 +1,29 @@
-import {
-  StyleSheet,
-  Text,
-  TextInput,
-  TextInputProps,
-  View,
-} from 'react-native';
+import type { ComponentProps } from 'react';
+import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { colors } from '../../../../core/theme/colors';
+import { fonts } from '../../../../core/theme/typography';
 
 interface AuthInputProps extends TextInputProps {
   label: string;
+  icon?: ComponentProps<typeof Ionicons>['name'];
 }
 
-export function AuthInput({
-  label,
-  ...textInputProps
-}: AuthInputProps) {
+export function AuthInput({ label, icon, ...textInputProps }: AuthInputProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
 
-      <TextInput
-        {...textInputProps}
-        style={styles.input}
-        placeholderTextColor={colors.textMuted}
-      />
+      <View style={styles.field}>
+        {icon && <Ionicons name={icon} size={18} color={colors.authMuted} />}
+
+        <TextInput
+          {...textInputProps}
+          style={styles.input}
+          placeholderTextColor={colors.authMuted}
+        />
+      </View>
     </View>
   );
 }
@@ -32,25 +31,31 @@ export function AuthInput({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    marginBottom: 16,
+    marginBottom: 20,
   },
 
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: colors.authLabel,
+    marginBottom: 10,
+  },
+
+  field: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: colors.authInput,
+    paddingHorizontal: 16,
   },
 
   input: {
-    width: '100%',
-    height: 52,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    backgroundColor: colors.background,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: colors.text,
+    flex: 1,
+    height: '100%',
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.authTitle,
   },
 });

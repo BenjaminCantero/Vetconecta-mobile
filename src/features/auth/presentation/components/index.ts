@@ -1,4 +1,7 @@
 // Responsabilidad: barrel de componentes de presentation de auth (capa PRESENTATION).
-// Aún sin componentes propios; los formularios reutilizan shared/components.
+export { AppLogo } from './AppLogo';
 export { AuthButton } from './AuthButton';
+export { AuthGradient } from './AuthGradient';
+export { AuthHeader } from './AuthHeader';
 export { AuthInput } from './AuthInput';
+export { InfoNotice } from './InfoNotice';

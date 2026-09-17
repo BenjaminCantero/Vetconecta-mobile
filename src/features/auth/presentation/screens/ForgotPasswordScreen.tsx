@@ -1,145 +1,105 @@
 import {
   Alert,
-  Pressable,
-  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '../../../../core/theme/colors';
-import {
-  AuthButton,
-  AuthInput,
-} from '../components';
+import { fonts } from '../../../../core/theme/typography';
+import { AuthButton, AuthHeader, AuthInput, InfoNotice } from '../components';
 
 export default function ForgotPasswordScreen() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   const handleSend = () => {
     Alert.alert(
       'Código enviado',
-      'Si el correo está registrado, recibirás un código para recuperar tu acceso.',
+      'Si el correo está registrado, recibirás un código para recuperar tu acceso.'
     );
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <ScrollView
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
         keyboardShouldPersistTaps="handled"
+        bounces={false}
       >
-        <Pressable
-          onPress={() =>
-            navigation.navigate('Login' as never)
-          }
-          style={styles.backButton}
-        >
-          <Text style={styles.backText}>
-            ‹ Volver
-          </Text>
-        </Pressable>
+        <AuthHeader
+          height={210}
+          roundedBottom
+          onBack={() => navigation.navigate('Login' as never)}
+        />
 
         <View style={styles.content}>
-          <Text style={styles.title}>
-            Recuperar Acceso
-          </Text>
-
+          <Text style={styles.title}>Recuperar Acceso</Text>
           <Text style={styles.description}>
-            Te enviaremos un código para que puedas
-            recuperar el acceso a tu cuenta.
+            Te enviaremos el código de acceso a tu correo electrónico.
           </Text>
 
           <AuthInput
             label="Correo Electrónico"
-            placeholder="Ingresa tu correo"
+            placeholder="ejemplo@correo.com"
+            icon="mail-outline"
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
           />
 
-          <AuthButton
-            label="Enviar"
-            onPress={handleSend}
-          />
+          <AuthButton label="Enviar" onPress={handleSend} />
 
-          <Text style={styles.helpText}>
-            ¿No llegó el código tras 5 minutos?
-          </Text>
-
-          <Pressable>
-            <Text style={styles.contactText}>
-              Reenvíalo o contáctanos
-            </Text>
-          </Pressable>
+          <View style={styles.notice}>
+            <InfoNotice message="¿No llegó el código tras 5 min? Reenvíalo o contáctanos" />
+          </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  screen: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.authBackground,
   },
 
-  container: {
+  scroll: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 32,
-  },
-
-  backButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: 8,
-  },
-
-  backText: {
-    color: colors.primary,
-    fontSize: 15,
-    fontWeight: '600',
   },
 
   content: {
-    flex: 1,
-    justifyContent: 'center',
-    width: '100%',
-    maxWidth: 500,
-    alignSelf: 'center',
+    paddingTop: 20,
+    paddingHorizontal: 26,
   },
 
   title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: colors.text,
+    fontFamily: fonts.extrabold,
+    fontSize: 28,
+    color: colors.authTitle,
     textAlign: 'center',
-    marginBottom: 12,
   },
 
   description: {
+    marginTop: 10,
+    marginBottom: 28,
+    fontFamily: fonts.regular,
     fontSize: 15,
     lineHeight: 22,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-
-  helpText: {
-    marginTop: 28,
-    fontSize: 14,
-    color: colors.textMuted,
+    color: colors.authMuted,
     textAlign: 'center',
   },
 
-  contactText: {
-    marginTop: 6,
-    fontSize: 14,
-    color: colors.primary,
-    fontWeight: '600',
-    textAlign: 'center',
+  notice: {
+    marginTop: 20,
   },
 });
