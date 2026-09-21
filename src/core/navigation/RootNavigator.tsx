@@ -2,51 +2,124 @@
 // Decide entre el flujo de auth (no autenticado) y el flujo de la app
 // (tabs + pantallas de detalle) según la sesión activa.
 
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import {
+  createNativeStackNavigator,
+} from '@react-navigation/native-stack';
 
 import { colors } from '../theme/colors';
+
 import {
-  authRepository,
-  useAuth,
+  useAuthSession,
   WelcomeScreen,
   LoginScreen,
+  RegisterScreen,
   ForgotPasswordScreen,
 } from '../../features/auth';
-import { PetDetailScreen, HealthCardScreen } from '../../features/pets';
 
-import { TabNavigator } from './TabNavigator';
+import {
+  PetDetailScreen,
+  HealthCardScreen,
+} from '../../features/pets';
+
+import {
+  TabNavigator,
+} from './TabNavigator';
 
 export type RootStackParamList = {
   Welcome: undefined;
   Login: undefined;
+  Register: undefined;
   ForgotPassword: undefined;
+
   AppTabs: undefined;
-  PetDetail: { petId: string };
-  HealthCard: { petId: string };
+
+  PetDetail: {
+    petId: string;
+  };
+
+  HealthCard: {
+    petId: string;
+  };
 };
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Stack =
+  createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
-  const { isAuthenticated, isLoading } = useAuth(authRepository);
+  const {
+    isAuthenticated,
+    isLoading,
+  } = useAuthSession();
 
   if (isLoading) {
     return null;
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerTintColor: colors.primary }}>
+    <Stack.Navigator
+      screenOptions={{
+        headerTintColor: colors.primary,
+      }}
+    >
       {isAuthenticated ? (
         <>
-          <Stack.Screen name="AppTabs" component={TabNavigator} options={{ headerShown: false }} />
-          <Stack.Screen name="PetDetail" component={PetDetailScreen} options={{ title: 'Detalle de mascota' }} />
-          <Stack.Screen name="HealthCard" component={HealthCardScreen} options={{ title: 'Carnet de salud' }} />
+          <Stack.Screen
+            name="AppTabs"
+            component={TabNavigator}
+            options={{
+              headerShown: false,
+            }}
+          />
+
+          <Stack.Screen
+            name="PetDetail"
+            component={PetDetailScreen}
+            options={{
+              title: 'Detalle de mascota',
+            }}
+          />
+
+          <Stack.Screen
+            name="HealthCard"
+            component={HealthCardScreen}
+            options={{
+              title: 'Carnet de salud',
+            }}
+          />
         </>
       ) : (
         <>
-          <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ headerShown: false }} />
+          <Stack.Screen
+            name="Welcome"
+            component={WelcomeScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+
+          <Stack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+
+          <Stack.Screen
+            name="Register"
+            component={RegisterScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+
+          <Stack.Screen
+            name="ForgotPassword"
+            component={ForgotPasswordScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
         </>
       )}
     </Stack.Navigator>

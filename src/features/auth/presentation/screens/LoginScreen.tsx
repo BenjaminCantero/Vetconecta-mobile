@@ -1,6 +1,6 @@
 // Responsabilidad: pantalla de login (capa PRESENTATION de auth).
-// Solo llama al caso de uso useAuth del dominio; no conoce Axios ni
-// AsyncStorage directamente (eso vive en authRepository, capa data).
+// Consume la sesión global mediante useAuthSession.
+// No conoce Axios ni AsyncStorage directamente.
 
 import { useState } from 'react';
 import {
@@ -13,21 +13,30 @@ import {
   Text,
   View,
 } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '../../../../core/theme/colors';
 import { fonts } from '../../../../core/theme/typography';
-import { authRepository } from '../../data/authRepository';
-import { useAuth } from '../../domain/useAuth';
-import { AuthButton, AuthHeader, AuthInput } from '../components';
+
+import { useAuthSession } from '../context/AuthContext';
+
+import {
+  AuthButton,
+  AuthHeader,
+  AuthInput,
+} from '../components';
 
 export default function LoginScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
 
-  const { login, isLoading } = useAuth(authRepository);
+  const {
+    login,
+    isLoading,
+  } = useAuthSession();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,7 +44,11 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Datos incompletos', 'Ingresa tu correo electrónico y contraseña.');
+      Alert.alert(
+        'Datos incompletos',
+        'Ingresa tu correo electrónico y contraseña.'
+      );
+
       return;
     }
 
@@ -44,30 +57,59 @@ export default function LoginScreen() {
         email: email.trim(),
         password,
       });
+
+      // No navegamos manualmente.
+      // RootNavigator detectará isAuthenticated = true
+      // y mostrará automáticamente AppTabs.
     } catch {
-      Alert.alert('Error', 'No se pudo iniciar sesión.');
+      Alert.alert(
+        'Error',
+        'No se pudo iniciar sesión.'
+      );
     }
   };
 
   return (
     <KeyboardAvoidingView
       style={styles.screen}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={
+        Platform.OS === 'ios'
+          ? 'padding'
+          : undefined
+      }
     >
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
+        contentContainerStyle={[
+          styles.scroll,
+          {
+            paddingBottom:
+              insets.bottom + 32,
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
         bounces={false}
       >
-        <AuthHeader height={190} onBack={() => navigation.navigate('Welcome' as never)} />
+        <AuthHeader
+          height={190}
+          onBack={() =>
+            navigation.navigate(
+              'Welcome' as never
+            )
+          }
+        />
 
         <View style={styles.card}>
-          <Text style={styles.title}>Iniciar Sesión</Text>
-          <Text style={styles.subtitle}>Rellena los campos para ingresar.</Text>
+          <Text style={styles.title}>
+            Iniciar Sesión
+          </Text>
+
+          <Text style={styles.subtitle}>
+            Rellena los campos para ingresar.
+          </Text>
 
           <AuthInput
-            label="RUT o Correo Electrónico"
-            placeholder="ejemplo@correo.com o 12.345.678-k"
+            label="Correo Electrónico"
+            placeholder="ejemplo@correo.com"
             icon="mail-outline"
             value={email}
             onChangeText={setEmail}
@@ -88,20 +130,54 @@ export default function LoginScreen() {
 
           <View style={styles.optionsRow}>
             <Pressable
-              onPress={() => setRemember(!remember)}
-              style={styles.rememberContainer}
+              onPress={() =>
+                setRemember(!remember)
+              }
+              style={
+                styles.rememberContainer
+              }
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: remember }}
+              accessibilityState={{
+                checked: remember,
+              }}
             >
-              <View style={[styles.checkbox, remember && styles.checkboxSelected]}>
-                {remember && <Ionicons name="checkmark" size={16} color={colors.textLight} />}
+              <View
+                style={[
+                  styles.checkbox,
+                  remember &&
+                    styles.checkboxSelected,
+                ]}
+              >
+                {remember && (
+                  <Ionicons
+                    name="checkmark"
+                    size={16}
+                    color={
+                      colors.textLight
+                    }
+                  />
+                )}
               </View>
 
-              <Text style={styles.rememberText}>Recordar</Text>
+              <Text
+                style={
+                  styles.rememberText
+                }
+              >
+                Recordar
+              </Text>
             </Pressable>
 
-            <Pressable onPress={() => navigation.navigate('ForgotPassword' as never)}>
-              <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
+            <Pressable
+              onPress={() =>
+                navigation.navigate(
+                  'ForgotPassword' as never
+                )
+              }
+            >
+              <Text style={styles.forgotText}>
+                ¿Olvidaste tu contraseña?
+              </Text>
             </Pressable>
           </View>
 
@@ -120,23 +196,25 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.authBackground,
+    backgroundColor:
+      colors.authBackground,
   },
 
   scroll: {
     flexGrow: 1,
   },
 
-  // La tarjeta sube sobre el encabezado para dejar ver el degradado detrás de
-  // sus esquinas superiores redondeadas, como en el maqueteado.
   card: {
     flex: 1,
     marginTop: -44,
     paddingTop: 36,
     paddingHorizontal: 26,
+
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
-    backgroundColor: colors.authBackground,
+
+    backgroundColor:
+      colors.authBackground,
   },
 
   title: {
@@ -149,8 +227,10 @@ const styles = StyleSheet.create({
   subtitle: {
     marginTop: 8,
     marginBottom: 28,
+
     fontFamily: fonts.regular,
     fontSize: 15,
+
     color: colors.authMuted,
     textAlign: 'center',
   },
@@ -158,7 +238,9 @@ const styles = StyleSheet.create({
   optionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent:
+      'space-between',
+
     marginBottom: 24,
   },
 
@@ -170,17 +252,25 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 24,
     height: 24,
+
     borderWidth: 1.5,
-    borderColor: colors.authCheckboxBorder,
+    borderColor:
+      colors.authCheckboxBorder,
+
     borderRadius: 6,
+
     alignItems: 'center',
     justifyContent: 'center',
+
     marginRight: 10,
   },
 
   checkboxSelected: {
-    backgroundColor: colors.authButton,
-    borderColor: colors.authButton,
+    backgroundColor:
+      colors.authButton,
+
+    borderColor:
+      colors.authButton,
   },
 
   rememberText: {
