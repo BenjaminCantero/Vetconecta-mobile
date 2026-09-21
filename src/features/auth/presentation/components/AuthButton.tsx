@@ -28,12 +28,8 @@ export function AuthButton({
       onPress={onPress}
       disabled={disabled || loading}
       accessibilityRole="button"
-      style={({ pressed }) => [
-        styles.button,
-        styles[variant],
-        pressed && styles.buttonPressed,
-        (disabled || loading) && styles.buttonDisabled,
-      ]}
+      android_ripple={{ color: 'rgba(0,0,0,0.08)' }}
+      style={[styles.button, styles[variant], (disabled || loading) && styles.buttonDisabled]}
     >
       {loading ? (
         <ActivityIndicator color={textColor} />
@@ -64,10 +60,6 @@ const styles = StyleSheet.create({
   outline: {
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.85)',
-  },
-
-  buttonPressed: {
-    opacity: 0.85,
   },
 
   buttonDisabled: {

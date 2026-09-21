@@ -2,9 +2,7 @@
 // Decide entre el flujo de auth (no autenticado) y el flujo de la app
 // (tabs + pantallas de detalle) según la sesión activa.
 
-import {
-  createNativeStackNavigator,
-} from '@react-navigation/native-stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { colors } from '../theme/colors';
 
@@ -16,14 +14,9 @@ import {
   ForgotPasswordScreen,
 } from '../../features/auth';
 
-import {
-  PetDetailScreen,
-  HealthCardScreen,
-} from '../../features/pets';
+import { PetDetailScreen, HealthCardScreen } from '../../features/pets';
 
-import {
-  TabNavigator,
-} from './TabNavigator';
+import { TabNavigator } from './TabNavigator';
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -42,14 +35,10 @@ export type RootStackParamList = {
   };
 };
 
-const Stack =
-  createNativeStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
-  const {
-    isAuthenticated,
-    isLoading,
-  } = useAuthSession();
+  const { isAuthenticated, isLoading } = useAuthSession();
 
   if (isLoading) {
     return null;
@@ -83,7 +72,8 @@ export function RootNavigator() {
             name="HealthCard"
             component={HealthCardScreen}
             options={{
-              title: 'Carnet de salud',
+              // El carnet dibuja su propio encabezado con el nombre de la mascota.
+              headerShown: false,
             }}
           />
         </>

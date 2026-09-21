@@ -8,6 +8,14 @@ export interface PetDto {
   raza: string;
   fecha_nacimiento: string;
   id_dueno: string;
+  // Campos de la ficha clínica. Pendientes de confirmar con el equipo de
+  // backend: se declaran opcionales para que la app no falle si no llegan.
+  sexo?: string;
+  esterilizado?: boolean;
+  microchip?: string | null;
+  peso_kg?: number | null;
+  proximo_control?: string | null;
+  foto_url?: string | null;
 }
 
 export interface ClinicalEventDto {

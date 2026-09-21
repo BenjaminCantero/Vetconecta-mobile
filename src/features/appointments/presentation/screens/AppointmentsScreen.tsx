@@ -2,53 +2,157 @@
 // Solo llama al caso de uso useAppointments del dominio; no conoce Axios
 // directamente (eso vive en appointmentsRepository, capa data).
 
-import { FlatList, Text, View, StyleSheet } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import type { CompositeScreenProps } from '@react-navigation/native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { EmergencyCard } from '../../../../shared/components/EmergencyCard';
 import { Loader } from '../../../../shared/components/Loader';
-import { formatDate } from '../../../../shared/utils/formatDate';
+import { ScreenHeader } from '../../../../shared/components/ScreenHeader';
+import { SegmentedTabs } from '../../../../shared/components/SegmentedTabs';
 import { colors } from '../../../../core/theme/colors';
+import { fonts } from '../../../../core/theme/typography';
+import type { RootStackParamList } from '../../../../core/navigation/RootNavigator';
+import type { TabParamList } from '../../../../core/navigation/TabNavigator';
 import { appointmentsRepository } from '../../data/appointmentsRepository';
 import { useAppointments } from '../../domain/useAppointments';
+import { AppointmentCard } from '../components';
 
-export default function AppointmentsScreen() {
-  const { appointments, isLoading, error } = useAppointments(appointmentsRepository);
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<TabParamList, 'Citas'>,
+  NativeStackScreenProps<RootStackParamList>
+>;
+
+type Section = 'upcoming' | 'past';
+
+// Reprogramar y cancelar necesitan escritura (PUT/DELETE), que el backend aún
+// no expone: por ahora la app solo lee. Se avisa en vez de simular la acción.
+function notifyPendingBackend(action: string) {
+  Alert.alert(
+    'Todavía no disponible',
+    `${action} estará habilitado cuando el backend publique los endpoints de escritura.`
+  );
+}
+
+export default function AppointmentsScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
+
+  const { appointments, isLoading, error, refetch } = useAppointments(appointmentsRepository);
+
+  const [section, setSection] = useState<Section>('upcoming');
+  const [now] = useState(() => Date.now());
+
+  const { upcoming, past } = useMemo(() => {
+    const sorted = [...appointments].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    return {
+      upcoming: sorted.filter((appointment) => new Date(appointment.date).getTime() >= now),
+      // El historial se lee de la más reciente hacia atrás.
+      past: sorted.filter((appointment) => new Date(appointment.date).getTime() < now).reverse(),
+    };
+  }, [appointments, now]);
 
   if (isLoading) return <Loader />;
 
-  if (error) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.error}>No se pudieron cargar tus citas.</Text>
-      </View>
-    );
-  }
+  const visible = section === 'upcoming' ? upcoming : past;
 
   return (
-    <FlatList
+    <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.list}
-      data={appointments}
-      keyExtractor={(appointment) => appointment.id}
-      renderItem={({ item }) => (
-        <View style={styles.card}>
-          <Text style={styles.reason}>{item.reason}</Text>
-          <Text style={styles.meta}>{formatDate(item.date)} · {item.veterinarian}</Text>
-          <Text style={styles.status}>{item.status}</Text>
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24 },
+      ]}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={false} onRefresh={refetch} tintColor={colors.appHeading} />
+      }
+    >
+      <ScreenHeader
+        title="Mis Citas"
+        hasUnread
+        onBellPress={() => navigation.navigate('Notificaciones')}
+      />
+
+      <SegmentedTabs
+        options={[
+          { value: 'upcoming', label: 'Próximas' },
+          { value: 'past', label: 'Pasadas' },
+        ]}
+        value={section}
+        onChange={setSection}
+      />
+
+      {error && <Text style={styles.error}>{error.message}</Text>}
+
+      {visible.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyTitle}>
+            {section === 'upcoming' ? 'No tienes citas agendadas' : 'Sin citas anteriores'}
+          </Text>
+          <Text style={styles.emptyText}>
+            {section === 'upcoming'
+              ? 'Cuando reserves una hora, aparecerá aquí con su veterinario y su estado.'
+              : 'Aquí quedará el registro de las citas que ya pasaron.'}
+          </Text>
         </View>
+      ) : (
+        visible.map((appointment) => (
+          <AppointmentCard
+            key={appointment.id}
+            appointment={appointment}
+            onReschedule={
+              section === 'upcoming' ? () => notifyPendingBackend('Reprogramar') : undefined
+            }
+            onCancel={section === 'upcoming' ? () => notifyPendingBackend('Cancelar') : undefined}
+          />
+        ))
       )}
-      ListEmptyComponent={<Text style={styles.empty}>No tienes citas agendadas.</Text>}
-    />
+
+      <EmergencyCard variant="compact" />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  list: { padding: 16 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  error: { color: colors.danger },
-  empty: { textAlign: 'center', color: colors.textMuted, marginTop: 40 },
-  card: { backgroundColor: colors.surface, borderRadius: 12, padding: 16, marginBottom: 12 },
-  reason: { fontSize: 16, fontWeight: '700', color: colors.text },
-  meta: { fontSize: 13, color: colors.textMuted, marginTop: 4 },
-  status: { fontSize: 12, color: colors.primary, marginTop: 6, textTransform: 'uppercase' },
+  container: {
+    flex: 1,
+    backgroundColor: colors.appBackground,
+  },
+
+  content: {
+    paddingHorizontal: 20,
+    gap: 16,
+  },
+
+  error: {
+    fontFamily: fonts.semibold,
+    fontSize: 14,
+    color: colors.danger,
+  },
+
+  emptyCard: {
+    borderRadius: 22,
+    padding: 20,
+    backgroundColor: colors.appSurface,
+  },
+
+  emptyTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    color: colors.appTitle,
+  },
+
+  emptyText: {
+    marginTop: 6,
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.appMuted,
+  },
 });

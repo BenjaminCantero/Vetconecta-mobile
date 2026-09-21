@@ -15,6 +15,12 @@ export const petsMock: PetDto[] = [
     raza: 'Labrador retriever',
     fecha_nacimiento: '2021-03-12',
     id_dueno: 'mock-id',
+    sexo: 'macho',
+    esterilizado: true,
+    microchip: '941000028491023',
+    peso_kg: 31,
+    proximo_control: '2026-10-15',
+    foto_url: null,
   },
   {
     id: 'mascota-002',
@@ -23,6 +29,12 @@ export const petsMock: PetDto[] = [
     raza: 'Siamés',
     fecha_nacimiento: '2024-11-02',
     id_dueno: 'mock-id',
+    sexo: 'hembra',
+    esterilizado: true,
+    microchip: '941000028491024',
+    peso_kg: 6,
+    proximo_control: '2026-09-28',
+    foto_url: null,
   },
 ];
 

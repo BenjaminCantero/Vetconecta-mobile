@@ -14,12 +14,14 @@ import { httpClient } from '../../../core/api/httpClient';
 import { ENDPOINTS } from '../../../core/api/endpoints';
 import { toHttpError } from '../../../core/api/httpError';
 import { ENV } from '../../../core/config/env';
-import type { Pet, PetSpecies } from '../domain/Pet';
+import type { Pet, PetSex, PetSpecies } from '../domain/Pet';
 import type { ClinicalEvent, ClinicalEventType } from '../domain/ClinicalEvent';
 import type { ClinicalEventDto, PetDto } from './petsDto';
 import { clinicalEventsMock, petsMock } from './petsMock';
 
 const PET_SPECIES: PetSpecies[] = ['perro', 'gato', 'otro'];
+
+const PET_SEXES: PetSex[] = ['macho', 'hembra', 'desconocido'];
 
 const CLINICAL_EVENT_TYPES: ClinicalEventType[] = ['vacuna', 'control', 'tratamiento', 'cirugia'];
 
@@ -41,6 +43,11 @@ function toPetSpecies(especie: string): PetSpecies {
   return PET_SPECIES.includes(species) ? species : 'otro';
 }
 
+function toPetSex(sexo: string | undefined): PetSex {
+  const sex = sexo?.toLowerCase() as PetSex;
+  return PET_SEXES.includes(sex) ? sex : 'desconocido';
+}
+
 function toClinicalEventType(tipo: string): ClinicalEventType {
   const type = tipo?.toLowerCase() as ClinicalEventType;
   return CLINICAL_EVENT_TYPES.includes(type) ? type : 'control';
@@ -54,6 +61,12 @@ function toPet(dto: PetDto): Pet {
     breed: dto.raza,
     birthDate: dto.fecha_nacimiento,
     ownerId: dto.id_dueno,
+    sex: toPetSex(dto.sexo),
+    sterilized: dto.esterilizado ?? false,
+    microchip: dto.microchip ?? null,
+    weightKg: typeof dto.peso_kg === 'number' ? dto.peso_kg : null,
+    nextControlDate: dto.proximo_control ?? null,
+    photoUrl: dto.foto_url ?? null,
   };
 }
 

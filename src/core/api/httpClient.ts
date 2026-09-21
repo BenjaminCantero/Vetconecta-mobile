@@ -13,7 +13,7 @@ export const httpClient = axios.create({
 });
 
 httpClient.interceptors.request.use(async (config) => {
-  const token = await asyncStorage.getItem<string>(StorageKeys.AUTH_TOKEN);
+  const token = await asyncStorage.getItem<string>(StorageKeys.AUTH_ACCESS_TOKEN);
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

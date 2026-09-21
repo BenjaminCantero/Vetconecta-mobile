@@ -9,4 +9,6 @@ export const ENV = {
   // tanto los repositorios de lectura se sirven de datos mock. Cuando la API
   // esté publicada, basta con definir EXPO_PUBLIC_USE_MOCKS=false.
   USE_MOCKS: process.env.EXPO_PUBLIC_USE_MOCKS !== 'false',
+  // Teléfono de urgencias que abre la tarjeta de emergencia del inicio.
+  EMERGENCY_PHONE: process.env.EXPO_PUBLIC_EMERGENCY_PHONE ?? '+56912345678',
 };
