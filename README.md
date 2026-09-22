@@ -88,3 +88,64 @@ Solo funciona si la versión de Expo Go instalada en el teléfono soporta el SDK
 - **`Cannot find module 'babel-preset-expo'`** o módulos faltantes tras `npm install`: algunas versiones de npm no instalan todas las dependencias transitivas. Borrar `node_modules` y `package-lock.json` y volver a correr `npm install`, o instalar el paquete faltante con `npx expo install <paquete>`.
 - **`npm run lint` falla con `Cannot find module 'eslint-plugin-boundaries'`**: faltan dependencias de desarrollo. Correr `npm install`.
 - **Cambios que no se reflejan** (variables de entorno, configuración de Babel o NativeWind): `npx expo start --clear`.
+
+## Convención Git
+
+### Evolución del flujo
+
+**Modalidad inicial:** cada integrante trabajaba en su propia rama personal y se traían los cambios entre ramas directamente (rama ↔ rama), sin una rama de integración común.
+
+**Modalidad vigente:** se incorpora una rama `develop` como punto único de integración. `main` queda reservado para el producto final.
+
+### Ramas
+
+- **main** — Producto final. Intocable durante el desarrollo. Solo recibe código estable al cierre del sprint. Nunca se trabaja directo sobre ella.
+- **develop** — Rama de integración. Punto de encuentro del trabajo de todos; es la fuente de verdad del estado actual del equipo.
+- **Ramas personales** (`NicoArriagada`, `BenjaCantero`, `RicardoGarces`) — Cada integrante trabaja en la suya y resuelve ahí sus tareas asignadas.
+
+### Ciclo de trabajo
+
+**Antes de empezar / retomar** — traer lo último integrado a tu rama:
+
+    git fetch origin
+    git merge origin/develop
+
+**Al terminar una tarea** — commitearla (un commit por tarea) y llevarla a `develop`:
+
+    git add <archivos de la tarea>     # selectivo: solo lo de esa tarea
+    git commit -m "feat(B5): ..."
+    git checkout develop
+    git pull
+    git merge <tu-rama-personal>
+    git push origin develop
+    git checkout <tu-rama-personal>
+
+Luego **avisar al equipo** que `develop` se actualizó, para que los demás la integren a sus ramas.
+
+**Regla de oro:** sincronizar seguido. Mientras más tiempo pasa sin subir a `develop` ni bajar de ella, más grande y difícil es el merge posterior.
+
+### Convención de commits
+
+**Un commit por tarea específica.** Aunque una sesión abarque varias tareas, cada una se commitea por separado usando `git add` selectivo. Así el historial deja claro qué commit resolvió qué.
+
+Formato (Conventional Commits):
+
+    <tipo>(<código-tarea>): <descripción breve, en minúscula, sin punto final>
+
+Tipos: `feat` (funcionalidad), `fix` (corrección), `docs` (documentación), `refactor`, `chore`, `test`.
+
+Ejemplos:
+
+    feat(B2): agregar caso de uso usePets sobre el servicio GET de mascotas
+    feat(B3): agregar servicio de lectura del carnet y eventos clínicos
+    feat(B5): manejo de estados de carga, error y respuesta vacía en GET
+    fix(C1): ajustar pantallas de bienvenida, login y recuperar acceso
+    docs(A3): documentar flujo de ramas y convenciones del equipo
+
+### Cierre de sprint
+
+Al final del sprint, `develop` se fusiona a `main`, que queda con el producto integrado y estable, listo para entregar.
+
+### Mejora identificada (próximo sprint)
+
+Migrar de ramas personales a **ramas por tarea** (`feat/B5-...`) que entren a `develop` de forma aislada y revisable.
