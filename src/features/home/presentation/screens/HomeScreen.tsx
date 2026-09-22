@@ -4,20 +4,24 @@
 // Regla de oro (A2): home depende de los dominios; ningún dominio depende de home.
 
 import { ScrollView, Text, View, StyleSheet } from 'react-native';
-
 import { useMemo, useState } from 'react';
+
 import { useAuth, authRepository } from '../../../auth';
 import { usePets, petsRepository } from '../../../pets';
 import { useAppointments, appointmentsRepository } from '../../../appointments';
+import { QueryState } from '../../../../shared/components/QueryState';
 import { formatDate } from '../../../../shared/utils/formatDate';
-import { Loader } from '../../../../shared/components/Loader';
 import { colors } from '../../../../core/theme/colors';
 
 export default function HomeScreen() {
   const { user } = useAuth(authRepository);
-  const { pets, isLoading: petsLoading } = usePets(petsRepository);
-  const { appointments, isLoading: apptsLoading } = useAppointments(appointmentsRepository);
-
+  const { pets, isLoading: petsLoading, error: petsError, refetch: refetchPets } = usePets(petsRepository);
+  const {
+    appointments,
+    isLoading: apptsLoading,
+    error: apptsError,
+    refetch: refetchAppts,
+  } = useAppointments(appointmentsRepository);
 
   const [now] = useState(() => Date.now());
 
@@ -27,31 +31,40 @@ export default function HomeScreen() {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
   }, [appointments, now]);
 
-  if (petsLoading || apptsLoading) return <Loader />;
+  // Estado combinado de las dos fuentes: carga si cualquiera carga, error el
+  // primero que falle, reintentar recarga ambas.
+  const isLoading = petsLoading || apptsLoading;
+  const error = petsError ?? apptsError;
+  const retry = () => {
+    refetchPets();
+    refetchAppts();
+  };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.greeting}>Hola{user ? `, ${user.name}` : ''}</Text>
+    <QueryState isLoading={isLoading} error={error} onRetry={retry}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <Text style={styles.greeting}>Hola{user ? `, ${user.name}` : ''}</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Mis mascotas</Text>
-        <Text style={styles.cardValue}>{pets.length}</Text>
-      </View>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Mis mascotas</Text>
+          <Text style={styles.cardValue}>{pets.length}</Text>
+        </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Próxima cita</Text>
-        {nextAppointment ? (
-          <>
-            <Text style={styles.cardValue}>{formatDate(nextAppointment.date)}</Text>
-            <Text style={styles.cardMeta}>
-              {nextAppointment.reason} · {nextAppointment.veterinarian}
-            </Text>
-          </>
-        ) : (
-          <Text style={styles.cardMeta}>No tienes citas agendadas.</Text>
-        )}
-      </View>
-    </ScrollView>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Próxima cita</Text>
+          {nextAppointment ? (
+            <>
+              <Text style={styles.cardValue}>{formatDate(nextAppointment.date)}</Text>
+              <Text style={styles.cardMeta}>
+                {nextAppointment.reason} · {nextAppointment.veterinarian}
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.cardMeta}>No tienes citas agendadas.</Text>
+          )}
+        </View>
+      </ScrollView>
+    </QueryState>
   );
 }
 
