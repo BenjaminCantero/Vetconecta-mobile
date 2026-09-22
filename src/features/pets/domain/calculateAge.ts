@@ -10,7 +10,11 @@ export function calculateAge(birthDate: string, referenceDate: Date = new Date()
 
   if (days < 0) {
     months -= 1;
-    const daysInPrevMonth = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 0).getDate();
+    const daysInPrevMonth = new Date(
+      referenceDate.getFullYear(),
+      referenceDate.getMonth(),
+      0,
+    ).getDate();
     days += daysInPrevMonth;
   }
 

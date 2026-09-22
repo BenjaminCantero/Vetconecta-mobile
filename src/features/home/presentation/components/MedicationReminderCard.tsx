@@ -15,7 +15,7 @@ interface MedicationReminderCardProps {
 export function MedicationReminderCard({ reminder }: MedicationReminderCardProps) {
   const progress = Math.min(
     100,
-    Math.round((reminder.dosesTaken / Math.max(1, reminder.dosesTotal)) * 100)
+    Math.round((reminder.dosesTaken / Math.max(1, reminder.dosesTotal)) * 100),
   );
 
   return (

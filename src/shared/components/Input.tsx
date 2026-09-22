@@ -5,13 +5,7 @@ import { TextInput, StyleSheet, type TextInputProps } from 'react-native';
 import { colors } from '../../core/theme/colors';
 
 export function Input(props: TextInputProps) {
-  return (
-    <TextInput
-      style={styles.input}
-      placeholderTextColor={colors.textMuted}
-      {...props}
-    />
-  );
+  return <TextInput style={styles.input} placeholderTextColor={colors.textMuted} {...props} />;
 }
 
 const styles = StyleSheet.create({

@@ -10,7 +10,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmergencyCard } from '../../../../shared/components/EmergencyCard';
-import { Loader } from '../../../../shared/components/Loader';
+import { QueryState } from '../../../../shared/components/QueryState';
 import { ScreenHeader } from '../../../../shared/components/ScreenHeader';
 import { SegmentedTabs } from '../../../../shared/components/SegmentedTabs';
 import { colors } from '../../../../core/theme/colors';
@@ -33,7 +33,7 @@ type Section = 'upcoming' | 'past';
 function notifyPendingBackend(action: string) {
   Alert.alert(
     'Todavía no disponible',
-    `${action} estará habilitado cuando el backend publique los endpoints de escritura.`
+    `${action} estará habilitado cuando el backend publique los endpoints de escritura.`,
   );
 }
 
@@ -47,7 +47,7 @@ export default function AppointmentsScreen({ navigation }: Props) {
 
   const { upcoming, past } = useMemo(() => {
     const sorted = [...appointments].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
 
     return {
@@ -57,83 +57,95 @@ export default function AppointmentsScreen({ navigation }: Props) {
     };
   }, [appointments, now]);
 
-  if (isLoading) return <Loader />;
-
   const visible = section === 'upcoming' ? upcoming : past;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24 },
-      ]}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={false} onRefresh={refetch} tintColor={colors.appHeading} />
-      }
-    >
-      <ScreenHeader
-        title="Mis Citas"
-        hasUnread
-        onBellPress={() => navigation.navigate('Notificaciones')}
-      />
+    <View style={styles.screen}>
+      <View style={[styles.headerArea, { paddingTop: insets.top + 12 }]}>
+        <ScreenHeader
+          title="Mis Citas"
+          hasUnread
+          onBellPress={() => navigation.navigate('Notificaciones')}
+        />
 
-      <SegmentedTabs
-        options={[
-          { value: 'upcoming', label: 'Próximas' },
-          { value: 'past', label: 'Pasadas' },
-        ]}
-        value={section}
-        onChange={setSection}
-      />
+        <SegmentedTabs
+          options={[
+            { value: 'upcoming', label: 'Próximas' },
+            { value: 'past', label: 'Pasadas' },
+          ]}
+          value={section}
+          onChange={setSection}
+        />
+      </View>
 
-      {error && <Text style={styles.error}>{error.message}</Text>}
+      <QueryState
+        isLoading={isLoading}
+        error={error}
+        isEmpty={appointments.length === 0}
+        emptyMessage="Todavía no tienes citas. Cuando reserves una hora, aparecerá aquí con su veterinario y su estado."
+        onRetry={refetch}
+      >
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={false} onRefresh={refetch} tintColor={colors.appHeading} />
+          }
+        >
+          {/* Vacío de la sección elegida: la lista completa sí tiene citas. */}
+          {visible.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyTitle}>
+                {section === 'upcoming' ? 'No tienes citas agendadas' : 'Sin citas anteriores'}
+              </Text>
+              <Text style={styles.emptyText}>
+                {section === 'upcoming'
+                  ? 'Cuando reserves una hora, aparecerá aquí con su veterinario y su estado.'
+                  : 'Aquí quedará el registro de las citas que ya pasaron.'}
+              </Text>
+            </View>
+          ) : (
+            visible.map((appointment) => (
+              <AppointmentCard
+                key={appointment.id}
+                appointment={appointment}
+                onReschedule={
+                  section === 'upcoming' ? () => notifyPendingBackend('Reprogramar') : undefined
+                }
+                onCancel={
+                  section === 'upcoming' ? () => notifyPendingBackend('Cancelar') : undefined
+                }
+              />
+            ))
+          )}
 
-      {visible.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>
-            {section === 'upcoming' ? 'No tienes citas agendadas' : 'Sin citas anteriores'}
-          </Text>
-          <Text style={styles.emptyText}>
-            {section === 'upcoming'
-              ? 'Cuando reserves una hora, aparecerá aquí con su veterinario y su estado.'
-              : 'Aquí quedará el registro de las citas que ya pasaron.'}
-          </Text>
-        </View>
-      ) : (
-        visible.map((appointment) => (
-          <AppointmentCard
-            key={appointment.id}
-            appointment={appointment}
-            onReschedule={
-              section === 'upcoming' ? () => notifyPendingBackend('Reprogramar') : undefined
-            }
-            onCancel={section === 'upcoming' ? () => notifyPendingBackend('Cancelar') : undefined}
-          />
-        ))
-      )}
-
-      <EmergencyCard variant="compact" />
-    </ScrollView>
+          <EmergencyCard variant="compact" />
+        </ScrollView>
+      </QueryState>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.appBackground,
+  },
+
+  headerArea: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    gap: 16,
+  },
+
+  container: {
+    flex: 1,
   },
 
   content: {
     paddingHorizontal: 20,
     gap: 16,
-  },
-
-  error: {
-    fontFamily: fonts.semibold,
-    fontSize: 14,
-    color: colors.danger,
   },
 
   emptyCard: {

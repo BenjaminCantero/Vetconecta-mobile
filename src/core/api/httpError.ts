@@ -14,7 +14,8 @@ export interface HttpErrorMessages {
   notFound?: string;
 }
 
-const DEFAULT_NETWORK_MESSAGE = 'No hay conexión con el servidor. Revisa tu red e inténtalo de nuevo.';
+const DEFAULT_NETWORK_MESSAGE =
+  'No hay conexión con el servidor. Revisa tu red e inténtalo de nuevo.';
 const DEFAULT_UNAUTHORIZED_MESSAGE = 'Tu sesión expiró. Vuelve a iniciar sesión.';
 
 export function toHttpError(error: unknown, messages: HttpErrorMessages): Error {

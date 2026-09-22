@@ -15,7 +15,7 @@ import { usePets, petsRepository } from '../../../pets';
 import { useAppointments, appointmentsRepository } from '../../../appointments';
 import { ActionCard } from '../../../../shared/components/ActionCard';
 import { EmergencyCard } from '../../../../shared/components/EmergencyCard';
-import { Loader } from '../../../../shared/components/Loader';
+import { QueryState } from '../../../../shared/components/QueryState';
 import { ScreenHeader } from '../../../../shared/components/ScreenHeader';
 import { formatRelativeDateTime } from '../../../../shared/utils/formatDate';
 import { colors } from '../../../../core/theme/colors';
@@ -49,8 +49,19 @@ export default function HomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
 
   const { user } = useAuthSession();
-  const { pets, isLoading: petsLoading } = usePets(petsRepository);
-  const { appointments, isLoading: appointmentsLoading } = useAppointments(appointmentsRepository);
+  const {
+    pets,
+    isLoading: petsLoading,
+    error: petsError,
+    refetch: refetchPets,
+  } = usePets(petsRepository);
+
+  const {
+    appointments,
+    isLoading: appointmentsLoading,
+    error: appointmentsError,
+    refetch: refetchAppointments,
+  } = useAppointments(appointmentsRepository);
 
   const [now] = useState(() => Date.now());
 
@@ -59,14 +70,19 @@ export default function HomeScreen({ navigation }: Props) {
       [...appointments]
         .filter((appointment) => new Date(appointment.date).getTime() >= now)
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0],
-    [appointments, now]
+    [appointments, now],
   );
 
   const nextAppointmentPet = pets.find((pet) => pet.id === nextAppointment?.petId);
   const reminder = medicationRemindersMock[0];
   const featuredPetId = pets[0]?.id;
 
-  if (petsLoading || appointmentsLoading) return <Loader />;
+  // Estado combinado de las dos lecturas: carga si cualquiera carga, error el
+  // primero que falle, y reintentar recarga ambas.
+  const retry = () => {
+    refetchPets();
+    refetchAppointments();
+  };
 
   const openHealthCard = () => {
     if (featuredPetId) {
@@ -78,76 +94,92 @@ export default function HomeScreen({ navigation }: Props) {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24 },
-      ]}
-      showsVerticalScrollIndicator={false}
-    >
-      <ScreenHeader
-        eyebrow="Bienvenida."
-        title={displayName(user?.email)}
-        hasUnread
-        onBellPress={() => navigation.navigate('Notificaciones')}
-      />
+    <View style={styles.screen}>
+      <View style={[styles.headerArea, { paddingTop: insets.top + 12 }]}>
+        <ScreenHeader
+          eyebrow="Bienvenida."
+          title={displayName(user?.email)}
+          hasUnread
+          onBellPress={() => navigation.navigate('Notificaciones')}
+        />
+      </View>
 
-      <View style={styles.section}>
-        {nextAppointment ? (
-          <HeroAppointmentCard
-            message={`${nextAppointmentPet?.name ?? 'Tu mascota'} tiene una cita ${formatRelativeDateTime(nextAppointment.date)}.`}
-            detail={`${nextAppointment.reason} · ${nextAppointment.veterinarian}`}
-            actionLabel="Ver Cita"
-            onPress={() => navigation.navigate('Citas')}
-          />
-        ) : (
-          <View style={styles.emptyHero}>
-            <Text style={styles.emptyTitle}>No tienes citas agendadas</Text>
-            <Text style={styles.emptyText}>
-              Agenda una hora para el próximo control de tus mascotas.
-            </Text>
+      <QueryState
+        isLoading={petsLoading || appointmentsLoading}
+        error={petsError ?? appointmentsError}
+        onRetry={retry}
+      >
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.section}>
+            {nextAppointment ? (
+              <HeroAppointmentCard
+                message={`${nextAppointmentPet?.name ?? 'Tu mascota'} tiene una cita ${formatRelativeDateTime(nextAppointment.date)}.`}
+                detail={`${nextAppointment.reason} · ${nextAppointment.veterinarian}`}
+                actionLabel="Ver Cita"
+                onPress={() => navigation.navigate('Citas')}
+              />
+            ) : (
+              <View style={styles.emptyHero}>
+                <Text style={styles.emptyTitle}>No tienes citas agendadas</Text>
+                <Text style={styles.emptyText}>
+                  Agenda una hora para el próximo control de tus mascotas.
+                </Text>
+              </View>
+            )}
           </View>
-        )}
-      </View>
 
-      <View style={styles.row}>
-        <ActionCard
-          title="Agendar Cita"
-          subtitle="Consultas y controles"
-          actionLabel="Agendar"
-          color={colors.cardOrange}
-          icon="calendar-outline"
-          onPress={() => navigation.navigate('Citas')}
-        />
+          <View style={styles.row}>
+            <ActionCard
+              title="Agendar Cita"
+              subtitle="Consultas y controles"
+              actionLabel="Agendar"
+              color={colors.cardOrange}
+              icon="calendar-outline"
+              onPress={() => navigation.navigate('Citas')}
+            />
 
-        <ActionCard
-          title="Carnet Digital"
-          subtitle="Vacunas, peso y controles"
-          actionLabel="Ver Carnet"
-          color={colors.cardPurple}
-          icon="document-text-outline"
-          onPress={openHealthCard}
-        />
-      </View>
+            <ActionCard
+              title="Carnet Digital"
+              subtitle="Vacunas, peso y controles"
+              actionLabel="Ver Carnet"
+              color={colors.cardPurple}
+              icon="document-text-outline"
+              onPress={openHealthCard}
+            />
+          </View>
 
-      <View style={styles.section}>
-        <EmergencyCard />
-      </View>
+          <View style={styles.section}>
+            <EmergencyCard />
+          </View>
 
-      {reminder && (
-        <View style={styles.section}>
-          <MedicationReminderCard reminder={reminder} />
-        </View>
-      )}
-    </ScrollView>
+          {reminder && (
+            <View style={styles.section}>
+              <MedicationReminderCard reminder={reminder} />
+            </View>
+          )}
+        </ScrollView>
+      </QueryState>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.appBackground,
+  },
+
+  headerArea: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+  },
+
+  container: {
+    flex: 1,
   },
 
   content: {

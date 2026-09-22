@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Loader } from '../../../../shared/components/Loader';
+import { QueryState } from '../../../../shared/components/QueryState';
 import { useFetch } from '../../../../shared/hooks/useFetch';
 import { colors } from '../../../../core/theme/colors';
 import { fonts } from '../../../../core/theme/typography';
@@ -31,6 +31,7 @@ export default function HealthCardScreen({ route, navigation }: Props) {
     data: events,
     isLoading,
     error,
+    refetch,
   } = useFetch(() => petsRepository.getHealthCard(petId), [petId]);
 
   const [now] = useState(() => Date.now());
@@ -39,7 +40,7 @@ export default function HealthCardScreen({ route, navigation }: Props) {
 
   // Los más recientes (o los próximos) primero.
   const ordered = [...(events ?? [])].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
 
   return (
@@ -66,25 +67,17 @@ export default function HealthCardScreen({ route, navigation }: Props) {
         </View>
       </View>
 
-      {isLoading ? (
-        <Loader />
-      ) : (
+      <QueryState
+        isLoading={isLoading}
+        error={error}
+        isEmpty={ordered.length === 0}
+        emptyMessage={`Todavía no hay vacunas, controles ni tratamientos registrados para ${pet?.name ?? 'tu mascota'}.`}
+        onRetry={refetch}
+      >
         <ScrollView
           contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 24 }]}
           showsVerticalScrollIndicator={false}
         >
-          {error && <Text style={styles.error}>{error.message}</Text>}
-
-          {ordered.length === 0 && !error && (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>Sin eventos clínicos registrados</Text>
-              <Text style={styles.emptyText}>
-                Aquí aparecerán las vacunas, controles y tratamientos de {pet?.name ?? 'tu mascota'}
-                .
-              </Text>
-            </View>
-          )}
-
           {ordered.map((event) => (
             <ClinicalEventCard
               key={event.id}
@@ -93,7 +86,7 @@ export default function HealthCardScreen({ route, navigation }: Props) {
             />
           ))}
         </ScrollView>
-      )}
+      </QueryState>
     </View>
   );
 }
@@ -139,31 +132,5 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: 20,
     gap: 12,
-  },
-
-  error: {
-    fontFamily: fonts.semibold,
-    fontSize: 14,
-    color: colors.danger,
-  },
-
-  emptyCard: {
-    borderRadius: 22,
-    padding: 20,
-    backgroundColor: colors.appSurface,
-  },
-
-  emptyTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    color: colors.appTitle,
-  },
-
-  emptyText: {
-    marginTop: 6,
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.appMuted,
   },
 });

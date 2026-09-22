@@ -3,19 +3,18 @@
 // repositorio a través de useFetch. No conoce Axios: eso vive en la capa data.
 // Actúa como composition root: inyecta la implementación concreta.
 
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActionCard } from '../../../../shared/components/ActionCard';
-import { Loader } from '../../../../shared/components/Loader';
+import { QueryState } from '../../../../shared/components/QueryState';
 import { ScreenHeader } from '../../../../shared/components/ScreenHeader';
 import { useActivePet } from '../../../../shared/context/ActivePetContext';
 import { useFetch } from '../../../../shared/hooks/useFetch';
 import { colors } from '../../../../core/theme/colors';
-import { fonts } from '../../../../core/theme/typography';
 import type { RootStackParamList } from '../../../../core/navigation/RootNavigator';
 import type { TabParamList } from '../../../../core/navigation/TabNavigator';
 import { petsRepository } from '../../data/petsRepository';
@@ -32,7 +31,7 @@ type Props = CompositeScreenProps<
 export default function MyPetsScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
 
-  const { pets, isLoading, error } = usePets(petsRepository);
+  const { pets, isLoading, error, refetch } = usePets(petsRepository);
   const { activePetId, setActivePetId } = useActivePet();
 
   // Si todavía no hay mascota elegida (o la elegida ya no está en la lista),
@@ -41,39 +40,33 @@ export default function MyPetsScreen({ navigation }: Props) {
 
   const { data: events } = useFetch(
     () => (selectedPet ? petsRepository.getHealthCard(selectedPet.id) : Promise.resolve([])),
-    [selectedPet?.id]
+    [selectedPet?.id],
   );
 
   const summary = summarizeHealthCard(events ?? []);
 
-  if (isLoading) return <Loader />;
-
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24 },
-      ]}
-      showsVerticalScrollIndicator={false}
-    >
-      <ScreenHeader
-        title="Mis Mascotas"
-        hasUnread
-        onBellPress={() => navigation.navigate('Notificaciones')}
-      />
+    <View style={styles.screen}>
+      <View style={[styles.headerArea, { paddingTop: insets.top + 12 }]}>
+        <ScreenHeader
+          title="Mis Mascotas"
+          hasUnread
+          onBellPress={() => navigation.navigate('Notificaciones')}
+        />
+      </View>
 
-      {error && <Text style={styles.error}>{error.message}</Text>}
-
-      {pets.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>Todavía no tienes mascotas registradas</Text>
-          <Text style={styles.emptyText}>
-            Cuando registres una, aquí verás su ficha, su carnet y sus controles.
-          </Text>
-        </View>
-      ) : (
-        <>
+      <QueryState
+        isLoading={isLoading}
+        error={error}
+        isEmpty={pets.length === 0}
+        emptyMessage="Todavía no tienes mascotas registradas. Cuando registres una, aquí verás su ficha, su carnet y sus controles."
+        onRetry={refetch}
+      >
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
+          showsVerticalScrollIndicator={false}
+        >
           <PetSelector
             pets={pets}
             selectedPetId={selectedPet?.id ?? null}
@@ -105,16 +98,25 @@ export default function MyPetsScreen({ navigation }: Props) {
               </View>
             </>
           )}
-        </>
-      )}
-    </ScrollView>
+        </ScrollView>
+      </QueryState>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.appBackground,
+  },
+
+  headerArea: {
+    paddingHorizontal: 20,
+    paddingBottom: 18,
+  },
+
+  container: {
+    flex: 1,
   },
 
   content: {
@@ -125,31 +127,5 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: 14,
-  },
-
-  error: {
-    fontFamily: fonts.semibold,
-    fontSize: 14,
-    color: colors.danger,
-  },
-
-  emptyCard: {
-    borderRadius: 24,
-    padding: 20,
-    backgroundColor: colors.appSurface,
-  },
-
-  emptyTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    color: colors.appTitle,
-  },
-
-  emptyText: {
-    marginTop: 6,
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.appMuted,
   },
 });

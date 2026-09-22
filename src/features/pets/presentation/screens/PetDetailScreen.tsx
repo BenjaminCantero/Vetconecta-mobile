@@ -15,7 +15,10 @@ export default function PetDetailScreen({ route, navigation }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Mascota {petId}</Text>
-      <Button label="Ver carnet de salud" onPress={() => navigation.navigate('HealthCard', { petId })} />
+      <Button
+        label="Ver carnet de salud"
+        onPress={() => navigation.navigate('HealthCard', { petId })}
+      />
     </View>
   );
 }

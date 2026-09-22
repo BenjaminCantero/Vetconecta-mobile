@@ -16,7 +16,7 @@ export interface PetsRepository {
 export function usePets(petsRepository: PetsRepository) {
   const { data, isLoading, error, refetch } = useFetch(
     () => petsRepository.getMyPets(),
-    [petsRepository]
+    [petsRepository],
   );
 
   // La UI siempre recibe una lista: mientras carga o si falla, es vacía.

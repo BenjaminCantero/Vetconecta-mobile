@@ -18,26 +18,18 @@ export const StorageKeys = {
   AUTH_USER: '@vetconecta/auth_user',
 } as const;
 
-export type StorageKey =
-  (typeof StorageKeys)[keyof typeof StorageKeys];
+export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys];
 
 /**
  * Obtiene un valor desde AsyncStorage y lo deserializa.
  */
-async function getItem<T>(
-  key: StorageKey
-): Promise<T | null> {
+async function getItem<T>(key: StorageKey): Promise<T | null> {
   try {
     const raw = await AsyncStorage.getItem(key);
 
-    return raw
-      ? (JSON.parse(raw) as T)
-      : null;
+    return raw ? (JSON.parse(raw) as T) : null;
   } catch (error) {
-    console.error(
-      `[asyncStorage] error leyendo "${key}":`,
-      error
-    );
+    console.error(`[asyncStorage] error leyendo "${key}":`, error);
 
     return null;
   }
@@ -46,22 +38,13 @@ async function getItem<T>(
 /**
  * Serializa y guarda un valor en AsyncStorage.
  */
-async function setItem<T>(
-  key: StorageKey,
-  value: T
-): Promise<boolean> {
+async function setItem<T>(key: StorageKey, value: T): Promise<boolean> {
   try {
-    await AsyncStorage.setItem(
-      key,
-      JSON.stringify(value)
-    );
+    await AsyncStorage.setItem(key, JSON.stringify(value));
 
     return true;
   } catch (error) {
-    console.error(
-      `[asyncStorage] error guardando "${key}":`,
-      error
-    );
+    console.error(`[asyncStorage] error guardando "${key}":`, error);
 
     return false;
   }
@@ -70,18 +53,13 @@ async function setItem<T>(
 /**
  * Elimina un valor específico de AsyncStorage.
  */
-async function removeItem(
-  key: StorageKey
-): Promise<boolean> {
+async function removeItem(key: StorageKey): Promise<boolean> {
   try {
     await AsyncStorage.removeItem(key);
 
     return true;
   } catch (error) {
-    console.error(
-      `[asyncStorage] error eliminando "${key}":`,
-      error
-    );
+    console.error(`[asyncStorage] error eliminando "${key}":`, error);
 
     return false;
   }
