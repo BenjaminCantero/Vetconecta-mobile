@@ -9,11 +9,7 @@
 // pertenecen al dominio de clientes/perfil (clients-pets),
 // no al dominio de autenticación.
 
-export type UserRole =
-  | 'owner'
-  | 'vet'
-  | 'reception'
-  | 'admin';
+export type UserRole = 'owner' | 'vet' | 'reception' | 'admin';
 
 export interface User {
   id: string;

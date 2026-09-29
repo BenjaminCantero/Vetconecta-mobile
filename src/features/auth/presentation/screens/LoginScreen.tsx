@@ -23,20 +23,13 @@ import { fonts } from '../../../../core/theme/typography';
 
 import { useAuthSession } from '../context/AuthContext';
 
-import {
-  AuthButton,
-  AuthHeader,
-  AuthInput,
-} from '../components';
+import { AuthButton, AuthHeader, AuthInput } from '../components';
 
 export default function LoginScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
 
-  const {
-    login,
-    isLoading,
-  } = useAuthSession();
+  const { login, isLoading } = useAuthSession();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,10 +37,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert(
-        'Datos incompletos',
-        'Ingresa tu correo electrónico y contraseña.'
-      );
+      Alert.alert('Datos incompletos', 'Ingresa tu correo electrónico y contraseña.');
 
       return;
     }
@@ -62,50 +52,31 @@ export default function LoginScreen() {
       // RootNavigator detectará isAuthenticated = true
       // y mostrará automáticamente AppTabs.
     } catch {
-      Alert.alert(
-        'Error',
-        'No se pudo iniciar sesión.'
-      );
+      Alert.alert('Error', 'No se pudo iniciar sesión.');
     }
   };
 
   return (
     <KeyboardAvoidingView
       style={styles.screen}
-      behavior={
-        Platform.OS === 'ios'
-          ? 'padding'
-          : undefined
-      }
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
           {
-            paddingBottom:
-              insets.bottom + 32,
+            paddingBottom: insets.bottom + 32,
           },
         ]}
         keyboardShouldPersistTaps="handled"
         bounces={false}
       >
-        <AuthHeader
-          height={190}
-          onBack={() =>
-            navigation.navigate(
-              'Welcome' as never
-            )
-          }
-        />
+        <AuthHeader height={190} onBack={() => navigation.navigate('Welcome' as never)} />
 
         <View style={styles.card}>
-          <Text style={styles.title}>
-            Iniciar Sesión
-          </Text>
+          <Text style={styles.title}>Iniciar Sesión</Text>
 
-          <Text style={styles.subtitle}>
-            Rellena los campos para ingresar.
-          </Text>
+          <Text style={styles.subtitle}>Rellena los campos para ingresar.</Text>
 
           <AuthInput
             label="Correo Electrónico"
@@ -130,54 +101,22 @@ export default function LoginScreen() {
 
           <View style={styles.optionsRow}>
             <Pressable
-              onPress={() =>
-                setRemember(!remember)
-              }
-              style={
-                styles.rememberContainer
-              }
+              onPress={() => setRemember(!remember)}
+              style={styles.rememberContainer}
               accessibilityRole="checkbox"
               accessibilityState={{
                 checked: remember,
               }}
             >
-              <View
-                style={[
-                  styles.checkbox,
-                  remember &&
-                    styles.checkboxSelected,
-                ]}
-              >
-                {remember && (
-                  <Ionicons
-                    name="checkmark"
-                    size={16}
-                    color={
-                      colors.textLight
-                    }
-                  />
-                )}
+              <View style={[styles.checkbox, remember && styles.checkboxSelected]}>
+                {remember && <Ionicons name="checkmark" size={16} color={colors.textLight} />}
               </View>
 
-              <Text
-                style={
-                  styles.rememberText
-                }
-              >
-                Recordar
-              </Text>
+              <Text style={styles.rememberText}>Recordar</Text>
             </Pressable>
 
-            <Pressable
-              onPress={() =>
-                navigation.navigate(
-                  'ForgotPassword' as never
-                )
-              }
-            >
-              <Text style={styles.forgotText}>
-                ¿Olvidaste tu contraseña?
-              </Text>
+            <Pressable onPress={() => navigation.navigate('ForgotPassword' as never)}>
+              <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
             </Pressable>
           </View>
 
@@ -196,8 +135,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor:
-      colors.authBackground,
+    backgroundColor: colors.authBackground,
   },
 
   scroll: {
@@ -213,8 +151,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
 
-    backgroundColor:
-      colors.authBackground,
+    backgroundColor: colors.authBackground,
   },
 
   title: {
@@ -238,8 +175,7 @@ const styles = StyleSheet.create({
   optionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent:
-      'space-between',
+    justifyContent: 'space-between',
 
     marginBottom: 24,
   },
@@ -254,8 +190,7 @@ const styles = StyleSheet.create({
     height: 24,
 
     borderWidth: 1.5,
-    borderColor:
-      colors.authCheckboxBorder,
+    borderColor: colors.authCheckboxBorder,
 
     borderRadius: 6,
 
@@ -266,11 +201,9 @@ const styles = StyleSheet.create({
   },
 
   checkboxSelected: {
-    backgroundColor:
-      colors.authButton,
+    backgroundColor: colors.authButton,
 
-    borderColor:
-      colors.authButton,
+    borderColor: colors.authButton,
   },
 
   rememberText: {

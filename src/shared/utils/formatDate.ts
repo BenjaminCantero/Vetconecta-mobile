@@ -12,7 +12,7 @@ export function formatDate(isoDate: string, locale: string = 'es-CL'): string {
 export function formatRelativeDateTime(
   isoDate: string,
   now: Date = new Date(),
-  locale: string = 'es-CL'
+  locale: string = 'es-CL',
 ): string {
   const date = new Date(isoDate);
 

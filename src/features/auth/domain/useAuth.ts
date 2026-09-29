@@ -11,11 +11,7 @@
 //
 // No conoce Axios, fetch, endpoints ni AsyncStorage.
 
-import {
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import type { User } from './User';
 
@@ -54,21 +50,15 @@ export interface PasswordResetData {
 // -----------------------------------------------------------------------------
 
 export interface AuthRepository {
-  login: (
-    credentials: Credentials
-  ) => Promise<{
+  login: (credentials: Credentials) => Promise<{
     user: User;
     accessToken: string;
     refreshToken: string;
   }>;
 
-  register: (
-    data: RegisterData
-  ) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
 
-  requestPasswordReset: (
-    data: PasswordResetData
-  ) => Promise<void>;
+  requestPasswordReset: (data: PasswordResetData) => Promise<void>;
 
   getStoredUser: () => Promise<User | null>;
 
@@ -79,14 +69,10 @@ export interface AuthRepository {
 // CASOS DE USO
 // -----------------------------------------------------------------------------
 
-export function useAuth(
-  authRepository: AuthRepository
-) {
-  const [user, setUser] =
-    useState<User | null>(null);
+export function useAuth(authRepository: AuthRepository) {
+  const [user, setUser] = useState<User | null>(null);
 
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   // ---------------------------------------------------------------------------
   // RECUPERAR SESIÓN GUARDADA
@@ -118,18 +104,11 @@ export function useAuth(
   // ---------------------------------------------------------------------------
 
   const login = useCallback(
-    async (
-      credentials: Credentials
-    ) => {
+    async (credentials: Credentials) => {
       setIsLoading(true);
 
       try {
-        const {
-          user: loggedUser,
-        } =
-          await authRepository.login(
-            credentials
-          );
+        const { user: loggedUser } = await authRepository.login(credentials);
 
         setUser(loggedUser);
 
@@ -138,7 +117,7 @@ export function useAuth(
         setIsLoading(false);
       }
     },
-    [authRepository]
+    [authRepository],
   );
 
   // ---------------------------------------------------------------------------
@@ -146,60 +125,50 @@ export function useAuth(
   // ---------------------------------------------------------------------------
 
   const register = useCallback(
-    async (
-      data: RegisterData
-    ) => {
+    async (data: RegisterData) => {
       setIsLoading(true);
 
       try {
-        await authRepository.register(
-          data
-        );
+        await authRepository.register(data);
       } finally {
         setIsLoading(false);
       }
     },
-    [authRepository]
+    [authRepository],
   );
 
   // ---------------------------------------------------------------------------
   // RECUPERAR CONTRASEÑA
   // ---------------------------------------------------------------------------
 
-  const requestPasswordReset =
-    useCallback(
-      async (
-        data: PasswordResetData
-      ) => {
-        setIsLoading(true);
+  const requestPasswordReset = useCallback(
+    async (data: PasswordResetData) => {
+      setIsLoading(true);
 
-        try {
-          await authRepository.requestPasswordReset(
-            data
-          );
-        } finally {
-          setIsLoading(false);
-        }
-      },
-      [authRepository]
-    );
+      try {
+        await authRepository.requestPasswordReset(data);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [authRepository],
+  );
 
   // ---------------------------------------------------------------------------
   // LOGOUT
   // ---------------------------------------------------------------------------
 
-  const logout =
-    useCallback(async () => {
-      setIsLoading(true);
+  const logout = useCallback(async () => {
+    setIsLoading(true);
 
-      try {
-        await authRepository.clearSession();
+    try {
+      await authRepository.clearSession();
 
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    }, [authRepository]);
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [authRepository]);
 
   return {
     user,

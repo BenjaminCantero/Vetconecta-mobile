@@ -11,31 +11,18 @@ import {
 
 import { StatusBar } from 'expo-status-bar';
 
-import {
-  NavigationContainer,
-} from '@react-navigation/native';
+import { NavigationContainer } from '@react-navigation/native';
 
-import {
-  SafeAreaProvider,
-} from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import {
-  RootNavigator,
-} from './src/core/navigation/RootNavigator';
+import { RootNavigator } from './src/core/navigation/RootNavigator';
 
-import {
-  ActivePetProvider,
-} from './src/shared/context/ActivePetContext';
+import { ActivePetProvider } from './src/shared/context/ActivePetContext';
 
-import {
-  AuthProvider,
-} from './src/features/auth';
+import { AuthProvider } from './src/features/auth';
 
 export default function App() {
-  const [
-    fontsLoaded,
-    fontError,
-  ] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
     PlusJakartaSans_600SemiBold,

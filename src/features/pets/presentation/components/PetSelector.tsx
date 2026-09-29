@@ -5,13 +5,7 @@
 // acción onAdd. De esta manera no mostramos botones que todavía no tienen
 // funcionalidad implementada.
 
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -27,12 +21,7 @@ interface PetSelectorProps {
   onAdd?: () => void;
 }
 
-export function PetSelector({
-  pets,
-  selectedPetId,
-  onSelect,
-  onAdd,
-}: PetSelectorProps) {
+export function PetSelector({ pets, selectedPetId, onSelect, onAdd }: PetSelectorProps) {
   return (
     <ScrollView
       horizontal
@@ -40,8 +29,7 @@ export function PetSelector({
       contentContainerStyle={styles.list}
     >
       {pets.map((pet) => {
-        const selected =
-          pet.id === selectedPetId;
+        const selected = pet.id === selectedPetId;
 
         return (
           <Pressable
@@ -52,10 +40,7 @@ export function PetSelector({
             accessibilityState={{
               selected,
             }}
-            style={({ pressed }) => [
-              styles.item,
-              pressed && styles.itemPressed,
-            ]}
+            style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
           >
             <PetAvatar
               name={pet.name}
@@ -64,14 +49,7 @@ export function PetSelector({
               selected={selected}
             />
 
-            <Text
-              style={[
-                styles.name,
-                selected &&
-                  styles.nameSelected,
-              ]}
-              numberOfLines={1}
-            >
+            <Text style={[styles.name, selected && styles.nameSelected]} numberOfLines={1}>
               {pet.name}
             </Text>
           </Pressable>
@@ -84,22 +62,13 @@ export function PetSelector({
           onPress={onAdd}
           accessibilityRole="button"
           accessibilityLabel="Agregar mascota"
-          style={({ pressed }) => [
-            styles.item,
-            pressed && styles.itemPressed,
-          ]}
+          style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
         >
           <View style={styles.addCircle}>
-            <Ionicons
-              name="add"
-              size={26}
-              color={colors.appMuted}
-            />
+            <Ionicons name="add" size={26} color={colors.appMuted} />
           </View>
 
-          <Text style={styles.name}>
-            Agregar
-          </Text>
+          <Text style={styles.name}>Agregar</Text>
         </Pressable>
       )}
     </ScrollView>

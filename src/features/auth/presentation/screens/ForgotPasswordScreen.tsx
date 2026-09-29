@@ -16,122 +16,75 @@ import {
   View,
 } from 'react-native';
 
-import {
-  useNavigation,
-} from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 
-import {
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  colors,
-} from '../../../../core/theme/colors';
+import { colors } from '../../../../core/theme/colors';
 
-import {
-  fonts,
-} from '../../../../core/theme/typography';
+import { fonts } from '../../../../core/theme/typography';
 
-import {
-  useAuthSession,
-} from '../context/AuthContext';
+import { useAuthSession } from '../context/AuthContext';
 
-import {
-  AuthButton,
-  AuthHeader,
-  AuthInput,
-  InfoNotice,
-} from '../components';
+import { AuthButton, AuthHeader, AuthInput, InfoNotice } from '../components';
 
 export default function ForgotPasswordScreen() {
-  const navigation =
-    useNavigation();
+  const navigation = useNavigation();
 
-  const insets =
-    useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
 
-  const {
-    requestPasswordReset,
-    isLoading,
-  } = useAuthSession();
+  const { requestPasswordReset, isLoading } = useAuthSession();
 
-  const [email, setEmail] =
-    useState('');
+  const [email, setEmail] = useState('');
 
-  const handleSend =
-    async () => {
-      if (!email.trim()) {
-        Alert.alert(
-          'Correo requerido',
-          'Ingresa tu correo electrónico.'
-        );
+  const handleSend = async () => {
+    if (!email.trim()) {
+      Alert.alert('Correo requerido', 'Ingresa tu correo electrónico.');
 
-        return;
-      }
+      return;
+    }
 
-      try {
-        await requestPasswordReset({
-          email: email.trim(),
-        });
+    try {
+      await requestPasswordReset({
+        email: email.trim(),
+      });
 
-        Alert.alert(
-          'Solicitud enviada',
-          'Si el correo está registrado, recibirás instrucciones para recuperar tu acceso.'
-        );
-      } catch {
-        Alert.alert(
-          'Error',
-          'No se pudo procesar la solicitud de recuperación.'
-        );
-      }
-    };
+      Alert.alert(
+        'Solicitud enviada',
+        'Si el correo está registrado, recibirás instrucciones para recuperar tu acceso.',
+      );
+    } catch {
+      Alert.alert('Error', 'No se pudo procesar la solicitud de recuperación.');
+    }
+  };
 
   return (
     <KeyboardAvoidingView
       style={styles.screen}
-      behavior={
-        Platform.OS === 'ios'
-          ? 'padding'
-          : undefined
-      }
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
           {
-            paddingBottom:
-              insets.bottom + 32,
+            paddingBottom: insets.bottom + 32,
           },
         ]}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={
-          false
-        }
+        showsVerticalScrollIndicator={false}
         bounces={false}
       >
         <AuthHeader
           height={210}
           roundedBottom
-          onBack={() =>
-            navigation.navigate(
-              'Login' as never
-            )
-          }
+          onBack={() => navigation.navigate('Login' as never)}
         />
 
         <View style={styles.content}>
-          <Text style={styles.title}>
-            Recuperar Acceso
-          </Text>
+          <Text style={styles.title}>Recuperar Acceso</Text>
 
-          <Text
-            style={
-              styles.description
-            }
-          >
-            Te enviaremos las instrucciones
-            de recuperación a tu correo
-            electrónico.
+          <Text style={styles.description}>
+            Te enviaremos las instrucciones de recuperación a tu correo electrónico.
           </Text>
 
           <AuthInput
@@ -153,9 +106,7 @@ export default function ForgotPasswordScreen() {
           />
 
           <View style={styles.notice}>
-            <InfoNotice
-              message="¿No llegó el correo tras 5 min? Inténtalo nuevamente o contáctanos."
-            />
+            <InfoNotice message="¿No llegó el correo tras 5 min? Inténtalo nuevamente o contáctanos." />
           </View>
         </View>
       </ScrollView>
@@ -163,53 +114,47 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const styles =
-  StyleSheet.create({
-    screen: {
-      flex: 1,
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
 
-      backgroundColor:
-        colors.authBackground,
-    },
+    backgroundColor: colors.authBackground,
+  },
 
-    scroll: {
-      flexGrow: 1,
-    },
+  scroll: {
+    flexGrow: 1,
+  },
 
-    content: {
-      paddingTop: 20,
-      paddingHorizontal: 26,
-    },
+  content: {
+    paddingTop: 20,
+    paddingHorizontal: 26,
+  },
 
-    title: {
-      fontFamily:
-        fonts.extrabold,
+  title: {
+    fontFamily: fonts.extrabold,
 
-      fontSize: 28,
+    fontSize: 28,
 
-      color:
-        colors.authTitle,
+    color: colors.authTitle,
 
-      textAlign: 'center',
-    },
+    textAlign: 'center',
+  },
 
-    description: {
-      marginTop: 10,
-      marginBottom: 28,
+  description: {
+    marginTop: 10,
+    marginBottom: 28,
 
-      fontFamily:
-        fonts.regular,
+    fontFamily: fonts.regular,
 
-      fontSize: 15,
-      lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 22,
 
-      color:
-        colors.authMuted,
+    color: colors.authMuted,
 
-      textAlign: 'center',
-    },
+    textAlign: 'center',
+  },
 
-    notice: {
-      marginTop: 20,
-    },
-  });
+  notice: {
+    marginTop: 20,
+  },
+});

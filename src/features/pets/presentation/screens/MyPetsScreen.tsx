@@ -44,21 +44,13 @@ export default function MyPetsScreen({ navigation }: Props) {
   // MASCOTAS
   // ---------------------------------------------------------------------------
 
-  const {
-    pets,
-    isLoading,
-    error,
-    refetch,
-  } = usePets(petsRepository);
+  const { pets, isLoading, error, refetch } = usePets(petsRepository);
 
   // ---------------------------------------------------------------------------
   // MASCOTA ACTIVA
   // ---------------------------------------------------------------------------
 
-  const {
-    activePetId,
-    setActivePetId,
-  } = useActivePet();
+  const { activePetId, setActivePetId } = useActivePet();
 
   /*
    * Cuando termina la carga:
@@ -79,9 +71,7 @@ export default function MyPetsScreen({ navigation }: Props) {
       return;
     }
 
-    const activePetExists = pets.some(
-      (pet) => pet.id === activePetId,
-    );
+    const activePetExists = pets.some((pet) => pet.id === activePetId);
 
     if (!activePetExists) {
       setActivePetId(pets[0].id);
@@ -92,21 +82,14 @@ export default function MyPetsScreen({ navigation }: Props) {
    * Mientras el useEffect sincroniza el contexto, usamos la primera mascota
    * como fallback para evitar un render vacío innecesario.
    */
-  const selectedPet =
-    pets.find((pet) => pet.id === activePetId) ??
-    pets[0];
+  const selectedPet = pets.find((pet) => pet.id === activePetId) ?? pets[0];
 
   // ---------------------------------------------------------------------------
   // CARNET / EVENTOS DE LA MASCOTA SELECCIONADA
   // ---------------------------------------------------------------------------
 
-  const {
-    data: events,
-  } = useFetch(
-    () =>
-      selectedPet
-        ? petsRepository.getHealthCard(selectedPet.id)
-        : Promise.resolve([]),
+  const { data: events } = useFetch(
+    () => (selectedPet ? petsRepository.getHealthCard(selectedPet.id) : Promise.resolve([])),
     [selectedPet?.id],
   );
 
@@ -118,18 +101,11 @@ export default function MyPetsScreen({ navigation }: Props) {
 
   return (
     <View style={styles.screen}>
-      <View
-        style={[
-          styles.headerArea,
-          { paddingTop: insets.top + 12 },
-        ]}
-      >
+      <View style={[styles.headerArea, { paddingTop: insets.top + 12 }]}>
         <ScreenHeader
           title="Mis Mascotas"
           hasUnread
-          onBellPress={() =>
-            navigation.navigate('Notificaciones')
-          }
+          onBellPress={() => navigation.navigate('Notificaciones')}
         />
       </View>
 
@@ -170,12 +146,9 @@ export default function MyPetsScreen({ navigation }: Props) {
                   color={colors.cardBlue}
                   icon="pulse-outline"
                   onPress={() =>
-                    navigation.navigate(
-                      'HealthCard',
-                      {
-                        petId: selectedPet.id,
-                      },
-                    )
+                    navigation.navigate('HealthCard', {
+                      petId: selectedPet.id,
+                    })
                   }
                 />
 
@@ -186,12 +159,9 @@ export default function MyPetsScreen({ navigation }: Props) {
                   color={colors.cardPurple}
                   icon="shield-checkmark-outline"
                   onPress={() =>
-                    navigation.navigate(
-                      'HealthCard',
-                      {
-                        petId: selectedPet.id,
-                      },
-                    )
+                    navigation.navigate('HealthCard', {
+                      petId: selectedPet.id,
+                    })
                   }
                 />
               </View>

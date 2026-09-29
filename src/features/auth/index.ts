@@ -11,17 +11,11 @@ export type {
   PasswordResetData,
 } from './domain/useAuth';
 
-export type {
-  User,
-  UserRole,
-} from './domain/User';
+export type { User, UserRole } from './domain/User';
 
 export { authRepository } from './data/authRepository';
 
-export {
-  AuthProvider,
-  useAuthSession,
-} from './presentation/context/AuthContext';
+export { AuthProvider, useAuthSession } from './presentation/context/AuthContext';
 
 export { default as LoginScreen } from './presentation/screens/LoginScreen';
 

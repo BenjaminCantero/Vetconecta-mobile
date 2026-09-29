@@ -14,10 +14,7 @@
 // POST /v1/auth/logout
 // POST /v1/auth/refresh
 
-import {
-  StorageKeys,
-  asyncStorage,
-} from '../../../core/storage/asyncStorage';
+import { StorageKeys, asyncStorage } from '../../../core/storage/asyncStorage';
 
 import type {
   AuthRepository,
@@ -26,23 +23,15 @@ import type {
   PasswordResetData,
 } from '../domain/useAuth';
 
-import type {
-  User,
-} from '../domain/User';
+import type { User } from '../domain/User';
 
-import type {
-  LoginResponseDto,
-  RegisterRequestDto,
-  PasswordResetRequestDto,
-} from './authDto';
+import type { LoginResponseDto, RegisterRequestDto, PasswordResetRequestDto } from './authDto';
 
 // -----------------------------------------------------------------------------
 // MAPPERS
 // -----------------------------------------------------------------------------
 
-function toUser(
-  dto: LoginResponseDto['user']
-): User {
+function toUser(dto: LoginResponseDto['user']): User {
   return {
     id: dto.id,
     email: dto.email,
@@ -60,9 +49,7 @@ export const authRepository: AuthRepository = {
   // LOGIN
   // ---------------------------------------------------------------------------
 
-  async login(
-    credentials: Credentials
-  ) {
+  async login(credentials: Credentials) {
     // MOCK TEMPORAL
     //
     // En producción:
@@ -74,54 +61,36 @@ export const authRepository: AuthRepository = {
     //   password
     // }
 
-    const mockResponse:
-      LoginResponseDto = {
-      accessToken:
-        'mock-access-token',
+    const mockResponse: LoginResponseDto = {
+      accessToken: 'mock-access-token',
 
-      refreshToken:
-        'mock-refresh-token',
+      refreshToken: 'mock-refresh-token',
 
       user: {
         id: 'mock-user-id',
 
-        email:
-          credentials.email,
+        email: credentials.email,
 
         role: 'owner',
 
-        clientId:
-          'mock-client-id',
+        clientId: 'mock-client-id',
       },
     };
 
-    const user = toUser(
-      mockResponse.user
-    );
+    const user = toUser(mockResponse.user);
 
-    await asyncStorage.setItem(
-      StorageKeys.AUTH_ACCESS_TOKEN,
-      mockResponse.accessToken
-    );
+    await asyncStorage.setItem(StorageKeys.AUTH_ACCESS_TOKEN, mockResponse.accessToken);
 
-    await asyncStorage.setItem(
-      StorageKeys.AUTH_REFRESH_TOKEN,
-      mockResponse.refreshToken
-    );
+    await asyncStorage.setItem(StorageKeys.AUTH_REFRESH_TOKEN, mockResponse.refreshToken);
 
-    await asyncStorage.setItem(
-      StorageKeys.AUTH_USER,
-      user
-    );
+    await asyncStorage.setItem(StorageKeys.AUTH_USER, user);
 
     return {
       user,
 
-      accessToken:
-        mockResponse.accessToken,
+      accessToken: mockResponse.accessToken,
 
-      refreshToken:
-        mockResponse.refreshToken,
+      refreshToken: mockResponse.refreshToken,
     };
   },
 
@@ -129,25 +98,19 @@ export const authRepository: AuthRepository = {
   // REGISTRO
   // ---------------------------------------------------------------------------
 
-  async register(
-    data: RegisterData
-  ) {
-    const request:
-      RegisterRequestDto = {
+  async register(data: RegisterData) {
+    const request: RegisterRequestDto = {
       nombres: data.nombres,
 
-      apellidos:
-        data.apellidos,
+      apellidos: data.apellidos,
 
       rut: data.rut,
 
       email: data.email,
 
-      telefono:
-        data.telefono,
+      telefono: data.telefono,
 
-      password:
-        data.password,
+      password: data.password,
     };
 
     // MOCK TEMPORAL
@@ -160,29 +123,17 @@ export const authRepository: AuthRepository = {
     // y coordinará internamente la creación del
     // perfil con clients-pets-service.
 
-    console.log(
-      'Registro simulado:',
-      request
-    );
+    console.log('Registro simulado:', request);
 
-    await new Promise<void>(
-      (resolve) =>
-        setTimeout(
-          resolve,
-          800
-        )
-    );
+    await new Promise<void>((resolve) => setTimeout(resolve, 800));
   },
 
   // ---------------------------------------------------------------------------
   // RECUPERACIÓN DE CONTRASEÑA
   // ---------------------------------------------------------------------------
 
-  async requestPasswordReset(
-    data: PasswordResetData
-  ) {
-    const request:
-      PasswordResetRequestDto = {
+  async requestPasswordReset(data: PasswordResetData) {
+    const request: PasswordResetRequestDto = {
       email: data.email,
     };
 
@@ -198,18 +149,9 @@ export const authRepository: AuthRepository = {
     // notifications-service será responsable
     // del envío del correo.
 
-    console.log(
-      'Recuperación de contraseña simulada:',
-      request
-    );
+    console.log('Recuperación de contraseña simulada:', request);
 
-    await new Promise<void>(
-      (resolve) =>
-        setTimeout(
-          resolve,
-          800
-        )
-    );
+    await new Promise<void>((resolve) => setTimeout(resolve, 800));
   },
 
   // ---------------------------------------------------------------------------
@@ -217,9 +159,7 @@ export const authRepository: AuthRepository = {
   // ---------------------------------------------------------------------------
 
   async getStoredUser() {
-    return asyncStorage.getItem<User>(
-      StorageKeys.AUTH_USER
-    );
+    return asyncStorage.getItem<User>(StorageKeys.AUTH_USER);
   },
 
   // ---------------------------------------------------------------------------
@@ -227,16 +167,10 @@ export const authRepository: AuthRepository = {
   // ---------------------------------------------------------------------------
 
   async clearSession() {
-    await asyncStorage.removeItem(
-      StorageKeys.AUTH_ACCESS_TOKEN
-    );
+    await asyncStorage.removeItem(StorageKeys.AUTH_ACCESS_TOKEN);
 
-    await asyncStorage.removeItem(
-      StorageKeys.AUTH_REFRESH_TOKEN
-    );
+    await asyncStorage.removeItem(StorageKeys.AUTH_REFRESH_TOKEN);
 
-    await asyncStorage.removeItem(
-      StorageKeys.AUTH_USER
-    );
+    await asyncStorage.removeItem(StorageKeys.AUTH_USER);
   },
 };
