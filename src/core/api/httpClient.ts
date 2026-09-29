@@ -5,17 +5,19 @@
 // Interceptores JWT (B1):
 //  - request:  adjunta el access token en cada llamada saliente.
 //  - response: ante un 401 (token inválido o expirado) limpia la sesión local,
-//              para que la app no siga mandando un token muerto.
+//              para que la app no siga mandando un token muerto, y avisa vía
+//              sessionEvents para que auth vuelva al flujo de login.
 //
 // Diferido (bloqueado por backend): la renovación silenciosa con refresh token
 // requiere POST /auth/refresh (aun no se expone)
 
-import axios from 'axios';
+import { create } from 'axios';
 
 import { ENV } from '../config/env';
 import { StorageKeys, asyncStorage } from '../storage/asyncStorage';
+import { notifySessionExpired } from './sessionEvents';
 
-export const httpClient = axios.create({
+export const httpClient = create({
   baseURL: ENV.API_BASE_URL,
   timeout: ENV.API_TIMEOUT_MS,
 });
@@ -41,6 +43,7 @@ httpClient.interceptors.response.use(
       await asyncStorage.removeItem(StorageKeys.AUTH_ACCESS_TOKEN);
       await asyncStorage.removeItem(StorageKeys.AUTH_REFRESH_TOKEN);
       await asyncStorage.removeItem(StorageKeys.AUTH_USER);
+      notifySessionExpired();
     }
 
     return Promise.reject(error);

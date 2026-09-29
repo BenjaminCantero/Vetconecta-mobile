@@ -14,6 +14,7 @@
 // POST /v1/auth/logout
 // POST /v1/auth/refresh
 
+import { onSessionExpired } from '../../../core/api/sessionEvents';
 import { StorageKeys, asyncStorage } from '../../../core/storage/asyncStorage';
 
 import type {
@@ -172,5 +173,16 @@ export const authRepository: AuthRepository = {
     await asyncStorage.removeItem(StorageKeys.AUTH_REFRESH_TOKEN);
 
     await asyncStorage.removeItem(StorageKeys.AUTH_USER);
+  },
+
+  // ---------------------------------------------------------------------------
+  // SESIÓN EXPIRADA
+  // ---------------------------------------------------------------------------
+  //
+  // httpClient ya borró los tokens al recibir un 401; aquí solo se reenvía el
+  // aviso para que el dominio cierre la sesión en memoria.
+
+  onSessionExpired(listener: () => void) {
+    return onSessionExpired(listener);
   },
 };

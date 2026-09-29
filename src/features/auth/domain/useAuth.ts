@@ -63,6 +63,10 @@ export interface AuthRepository {
   getStoredUser: () => Promise<User | null>;
 
   clearSession: () => Promise<void>;
+
+  // Suscribe un listener que se dispara cuando la API rechaza el token (401).
+  // Devuelve la función para desuscribirse.
+  onSessionExpired: (listener: () => void) => () => void;
 }
 
 // -----------------------------------------------------------------------------
@@ -98,6 +102,15 @@ export function useAuth(authRepository: AuthRepository) {
       cancelled = true;
     };
   }, [authRepository]);
+
+  // ---------------------------------------------------------------------------
+  // SESIÓN EXPIRADA (401)
+  // ---------------------------------------------------------------------------
+  //
+  // Los tokens ya se borraron en la capa data; al limpiar el usuario,
+  // RootNavigator vuelve al flujo de login.
+
+  useEffect(() => authRepository.onSessionExpired(() => setUser(null)), [authRepository]);
 
   // ---------------------------------------------------------------------------
   // LOGIN
