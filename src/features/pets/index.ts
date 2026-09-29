@@ -4,7 +4,8 @@ export type { PetsRepository } from './domain/usePets';
 export { petsRepository } from './data/petsRepository';
 export type { Pet, PetSpecies } from './domain/Pet';
 export type { ClinicalEvent, ClinicalEventType } from './domain/ClinicalEvent';
-export { calculateAge } from './domain/calculateAge';
+export { calculateAge, calculateAgeParts } from './domain/calculateAge';
+export type { Age } from './domain/calculateAge';
 export {
   formatCompactAge,
   formatSexAndSterilization,

@@ -1,13 +1,21 @@
 // Responsabilidad: reglas de presentación del perfil de una mascota
 // (capa DOMAIN de pets). Son funciones puras: no conocen React ni la API.
 
-import { calculateAge } from './calculateAge';
+import { parseDate } from '../../../shared/utils/formatDate';
+import { calculateAgeParts } from './calculateAge';
 import type { Pet } from './Pet';
 
-// Versión compacta de la edad para las fichas: "2 años 4 m", "8 meses".
+// Versión compacta de la edad para las fichas: "2 años 4 m", "8 meses", "12 días".
 export function formatCompactAge(birthDate: string, referenceDate: Date = new Date()): string {
-  const detailed = calculateAge(birthDate, referenceDate);
-  const [years, months] = detailed.match(/\d+/g)?.map(Number) ?? [0, 0];
+  const age = calculateAgeParts(birthDate, referenceDate);
+
+  if (!age) return 'Sin dato';
+
+  const { years, months, days } = age;
+
+  if (years === 0 && months === 0) {
+    return days === 1 ? '1 día' : `${days} días`;
+  }
 
   if (years === 0) {
     return months === 1 ? '1 mes' : `${months} meses`;
@@ -26,7 +34,7 @@ export function formatWeight(weightKg: number | null): string {
 export function formatShortDate(isoDate: string | null, locale: string = 'es-CL'): string {
   if (!isoDate) return 'Sin agendar';
 
-  return new Date(isoDate).toLocaleDateString(locale, {
+  return parseDate(isoDate).toLocaleDateString(locale, {
     day: '2-digit',
     month: 'short',
   });

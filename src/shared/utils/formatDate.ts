@@ -1,7 +1,23 @@
 // Responsabilidad: utilidad de formateo de fechas (capa SHARED).
 
+const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+// `new Date('2021-03-12')` interpreta la fecha como medianoche UTC, que en
+// Chile (UTC-3/-4) cae el día anterior. Las fechas sin hora (nacimiento,
+// próximo control) se construyen en hora local para no correrse un día.
+export function parseDate(isoDate: string): Date {
+  const match = DATE_ONLY.exec(isoDate);
+
+  if (match) {
+    const [, year, month, day] = match;
+    return new Date(Number(year), Number(month) - 1, Number(day));
+  }
+
+  return new Date(isoDate);
+}
+
 export function formatDate(isoDate: string, locale: string = 'es-CL'): string {
-  return new Date(isoDate).toLocaleDateString(locale, {
+  return parseDate(isoDate).toLocaleDateString(locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
