@@ -64,7 +64,8 @@ export function RootNavigator() {
             name="PetDetail"
             component={PetDetailScreen}
             options={{
-              title: 'Detalle de mascota',
+              // La ficha dibuja su propio encabezado con el nombre de la mascota.
+              headerShown: false,
             }}
           />
 

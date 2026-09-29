@@ -1,6 +1,7 @@
 // Responsabilidad: ficha resumida de la mascota activa (capa PRESENTATION de pets).
 
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { Chip } from '../../../../shared/components/Chip';
 import { PetAvatar } from '../../../../shared/components/PetAvatar';
@@ -23,11 +24,19 @@ const SPECIES_LABEL: Record<Pet['species'], string> = {
 
 interface PetSummaryCardProps {
   pet: Pet;
+  // Si se pasa, la ficha es tocable y muestra el acceso al detalle.
+  onPress?: () => void;
 }
 
-export function PetSummaryCard({ pet }: PetSummaryCardProps) {
+export function PetSummaryCard({ pet, onPress }: PetSummaryCardProps) {
   return (
-    <View style={styles.card}>
+    <Pressable
+      style={styles.card}
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={onPress ? `Ver ficha de ${pet.name}` : undefined}
+    >
       <View style={styles.header}>
         <PetAvatar name={pet.name} photoUrl={pet.photoUrl} size={74} />
 
@@ -54,7 +63,14 @@ export function PetSummaryCard({ pet }: PetSummaryCardProps) {
           { label: 'Próx. Control', value: formatShortDate(pet.nextControlDate) },
         ]}
       />
-    </View>
+
+      {onPress && (
+        <View style={styles.link}>
+          <Text style={styles.linkText}>Ver ficha completa</Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.appHeading} />
+        </View>
+      )}
+    </Pressable>
   );
 }
 
@@ -107,5 +123,19 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 12,
     color: colors.appMuted,
+  },
+
+  link: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 2,
+    marginTop: -6,
+  },
+
+  linkText: {
+    fontFamily: fonts.bold,
+    fontSize: 13,
+    color: colors.appHeading,
   },
 });

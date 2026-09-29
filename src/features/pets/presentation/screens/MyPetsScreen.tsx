@@ -136,7 +136,10 @@ export default function MyPetsScreen({ navigation }: Props) {
           {/* Información de la mascota actualmente seleccionada */}
           {selectedPet && (
             <>
-              <PetSummaryCard pet={selectedPet} />
+              <PetSummaryCard
+                pet={selectedPet}
+                onPress={() => navigation.navigate('PetDetail', { petId: selectedPet.id })}
+              />
 
               <View style={styles.row}>
                 <ActionCard
