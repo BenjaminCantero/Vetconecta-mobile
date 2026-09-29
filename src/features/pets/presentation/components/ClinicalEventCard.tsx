@@ -11,7 +11,7 @@ import type { ClinicalEvent, ClinicalEventType } from '../../domain/ClinicalEven
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
-const EVENT_STYLE: Record<ClinicalEventType, { icon: IconName; color: string }> = {
+export const CLINICAL_EVENT_STYLE: Record<ClinicalEventType, { icon: IconName; color: string }> = {
   vacuna: { icon: 'medical-outline', color: colors.cardPurple },
   control: { icon: 'pulse-outline', color: colors.cardBlue },
   tratamiento: { icon: 'bandage-outline', color: colors.cardOrange },
@@ -25,7 +25,7 @@ interface ClinicalEventCardProps {
 }
 
 export function ClinicalEventCard({ event, isUpcoming }: ClinicalEventCardProps) {
-  const { icon, color } = EVENT_STYLE[event.type];
+  const { icon, color } = CLINICAL_EVENT_STYLE[event.type];
 
   return (
     <View style={styles.card}>

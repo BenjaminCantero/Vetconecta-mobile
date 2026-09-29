@@ -6,6 +6,8 @@ export type { Pet, PetSpecies } from './domain/Pet';
 export type { ClinicalEvent, ClinicalEventType } from './domain/ClinicalEvent';
 export { calculateAge, calculateAgeParts } from './domain/calculateAge';
 export type { Age } from './domain/calculateAge';
+export { buildTimeline } from './domain/buildTimeline';
+export type { TimelineSection } from './domain/buildTimeline';
 export {
   formatCompactAge,
   formatSexAndSterilization,

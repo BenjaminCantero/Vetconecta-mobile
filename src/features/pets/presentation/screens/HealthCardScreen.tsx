@@ -1,6 +1,7 @@
-// Responsabilidad: pantalla de carnet de salud (capa PRESENTATION de pets).
+// Responsabilidad: pantalla de carnet digital (capa PRESENTATION de pets).
 // Consume el caso de uso usePets para el nombre de la mascota y el repositorio
-// (vía useFetch) para sus eventos clínicos; no conoce Axios.
+// (vía useFetch) para sus eventos clínicos; no conoce Axios. Solo lectura:
+// muestra los eventos como línea de tiempo agrupada por año.
 
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -14,9 +15,10 @@ import { colors } from '../../../../core/theme/colors';
 import { fonts } from '../../../../core/theme/typography';
 import type { RootStackParamList } from '../../../../core/navigation/RootNavigator';
 import { petsRepository } from '../../data/petsRepository';
+import { buildTimeline } from '../../domain/buildTimeline';
 import { summarizeHealthCard } from '../../domain/summarizeHealthCard';
 import { usePets } from '../../domain/usePets';
-import { ClinicalEventCard } from '../components/ClinicalEventCard';
+import { ClinicalTimeline } from '../components/ClinicalTimeline';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HealthCard'>;
 
@@ -38,10 +40,8 @@ export default function HealthCardScreen({ route, navigation }: Props) {
 
   const summary = summarizeHealthCard(events ?? []);
 
-  // Los más recientes (o los próximos) primero.
-  const ordered = [...(events ?? [])].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-  );
+  // Los más recientes (o los próximos) primero, agrupados por año.
+  const timeline = buildTimeline(events ?? []);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
@@ -70,7 +70,7 @@ export default function HealthCardScreen({ route, navigation }: Props) {
       <QueryState
         isLoading={isLoading}
         error={error}
-        isEmpty={ordered.length === 0}
+        isEmpty={timeline.length === 0}
         emptyMessage={`Todavía no hay vacunas, controles ni tratamientos registrados para ${pet?.name ?? 'tu mascota'}.`}
         onRetry={refetch}
       >
@@ -78,13 +78,7 @@ export default function HealthCardScreen({ route, navigation }: Props) {
           contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 24 }]}
           showsVerticalScrollIndicator={false}
         >
-          {ordered.map((event) => (
-            <ClinicalEventCard
-              key={event.id}
-              event={event}
-              isUpcoming={new Date(event.date).getTime() >= now}
-            />
-          ))}
+          <ClinicalTimeline sections={timeline} now={now} />
         </ScrollView>
       </QueryState>
     </View>
@@ -131,6 +125,5 @@ const styles = StyleSheet.create({
 
   list: {
     paddingHorizontal: 20,
-    gap: 12,
   },
 });

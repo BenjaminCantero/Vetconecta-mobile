@@ -38,10 +38,10 @@ La API externa solo expone lectura (GET). Por eso:
 
 ## Ejemplo de flujo: "ver mis mascotas"
 
-1. **presentation** — `features/pets/presentation/screens/MyPetsScreen.tsx` monta y llama `useFetch(() => petsRepository.getMyPets())`.
+1. **presentation** — `features/pets/presentation/screens/MyPetsScreen.tsx` monta y llama al caso de uso `usePets(petsRepository)`.
 2. **data** — `petsRepository.getMyPets()` usa `core/api/httpClient` (Axios con interceptor JWT) para hacer `GET /mascotas` (`core/api/endpoints.ts`), y mapea cada `PetDto` a la entidad `Pet` del dominio.
-3. **domain** — `Pet` (entidad) y `calculateAge` (regla de negocio) se usan en la UI (`PetCard`) sin que esta conozca cómo se obtuvieron los datos.
-4. **presentation** — `MyPetsScreen` renderiza la lista con `PetCard`, y al tocar una tarjeta navega a `PetDetailScreen` → `HealthCardScreen`, que repite el mismo flujo con `petsRepository.getHealthCard(petId)`.
+3. **domain** — `Pet` (entidad) y `calculateAge` (regla de negocio) se usan en la UI (`PetSummaryCard`, `PetDetailScreen`) sin que esta conozca cómo se obtuvieron los datos.
+4. **presentation** — `MyPetsScreen` muestra el `PetSelector` y la ficha de la mascota activa; al tocar la ficha navega a `PetDetailScreen` → `HealthCardScreen`, que repite el mismo flujo con `petsRepository.getHealthCard(petId)` y lo dibuja como línea de tiempo (`buildTimeline`).
 
 En ningún punto `MyPetsScreen` importa Axios o AsyncStorage: solo conoce `petsRepository` (una función) y las entidades del dominio.
 
