@@ -38,7 +38,7 @@ export const colors = {
   authLabel: '#6E6880',
   authLink: '#3A96D2',
   authCheckboxBorder: '#CFC3E3',
-  brandHeart: '#E53935',
+  brandHeart: '#FF2B2B', // rojo del logo (assets/images/logo.png)
   infoBackground: '#E3F4E9',
   infoIcon: '#1E9E57',
   infoText: '#2E5A43',
