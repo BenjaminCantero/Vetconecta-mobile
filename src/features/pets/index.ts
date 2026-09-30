@@ -10,6 +10,7 @@ export { buildTimeline } from './domain/buildTimeline';
 export type { TimelineSection } from './domain/buildTimeline';
 export {
   formatCompactAge,
+  formatDecimalAge,
   formatSexAndSterilization,
   formatShortDate,
   formatWeight,

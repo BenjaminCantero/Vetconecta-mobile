@@ -1,9 +1,8 @@
 // Responsabilidad: selector horizontal de mascotas (capa PRESENTATION de pets).
 //
-// Permite cambiar la mascota activa.
+// Permite cambiar la mascota activa: la seleccionada se agranda y lleva un aro.
 // La opción "Agregar" solo se muestra cuando la pantalla proporciona una
-// acción onAdd. De esta manera no mostramos botones que todavía no tienen
-// funcionalidad implementada.
+// acción onAdd.
 
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -45,8 +44,8 @@ export function PetSelector({ pets, selectedPetId, onSelect, onAdd }: PetSelecto
             <PetAvatar
               name={pet.name}
               photoUrl={pet.photoUrl}
-              size={selected ? 76 : 64}
-              selected={selected}
+              size={selected ? SELECTED_SIZE : AVATAR_SIZE}
+              style={selected ? styles.ring : undefined}
             />
 
             <Text style={[styles.name, selected && styles.nameSelected]} numberOfLines={1}>
@@ -56,7 +55,6 @@ export function PetSelector({ pets, selectedPetId, onSelect, onAdd }: PetSelecto
         );
       })}
 
-      {/* Solo aparece cuando exista funcionalidad real para agregar mascotas */}
       {onAdd && (
         <Pressable
           onPress={onAdd}
@@ -65,7 +63,7 @@ export function PetSelector({ pets, selectedPetId, onSelect, onAdd }: PetSelecto
           style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
         >
           <View style={styles.addCircle}>
-            <Ionicons name="add" size={26} color={colors.appMuted} />
+            <Ionicons name="add" size={30} color={colors.appTitle} />
           </View>
 
           <Text style={styles.name}>Agregar</Text>
@@ -74,6 +72,9 @@ export function PetSelector({ pets, selectedPetId, onSelect, onAdd }: PetSelecto
     </ScrollView>
   );
 }
+
+const AVATAR_SIZE = 76;
+const SELECTED_SIZE = 94;
 
 const styles = StyleSheet.create({
   list: {
@@ -86,7 +87,12 @@ const styles = StyleSheet.create({
   item: {
     alignItems: 'center',
     gap: 8,
-    width: 80,
+    minWidth: AVATAR_SIZE,
+  },
+
+  ring: {
+    borderWidth: 4,
+    borderColor: colors.petSelectedRing,
   },
 
   itemPressed: {
@@ -94,24 +100,25 @@ const styles = StyleSheet.create({
   },
 
   addCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 1.5,
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    borderWidth: 2,
     borderStyle: 'dashed',
     borderColor: colors.appMuted,
+    backgroundColor: colors.addPetSurface,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   name: {
-    fontFamily: fonts.semibold,
-    fontSize: 13,
+    fontFamily: fonts.medium,
+    fontSize: 14,
     color: colors.appMuted,
   },
 
   nameSelected: {
-    fontFamily: fonts.bold,
+    fontFamily: fonts.semibold,
     color: colors.appTitle,
   },
 });

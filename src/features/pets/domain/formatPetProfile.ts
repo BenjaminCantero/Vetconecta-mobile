@@ -26,18 +26,50 @@ export function formatCompactAge(birthDate: string, referenceDate: Date = new Da
   return months === 0 ? yearsLabel : `${yearsLabel} ${months} m`;
 }
 
+// Edad en años con un decimal para la ficha de Mis Mascotas: "2.4 años".
+// Bajo el año cae a la versión compacta ("8 meses", "12 días").
+export function formatDecimalAge(birthDate: string, referenceDate: Date = new Date()): string {
+  const age = calculateAgeParts(birthDate, referenceDate);
+
+  if (!age) return 'Sin dato';
+
+  if (age.years === 0) return formatCompactAge(birthDate, referenceDate);
+
+  const years = Math.floor((age.years + age.months / 12) * 10) / 10;
+  const label = Number.isInteger(years) ? String(years) : years.toFixed(1);
+
+  return years === 1 ? '1 año' : `${label} años`;
+}
+
 export function formatWeight(weightKg: number | null): string {
   return weightKg === null ? 'Sin dato' : `${weightKg} kg`;
 }
 
-// "15 sep." en la ficha: día y mes abreviado, sin año.
-export function formatShortDate(isoDate: string | null, locale: string = 'es-CL'): string {
+const SHORT_MONTHS = [
+  'ene.',
+  'feb.',
+  'mar.',
+  'abr.',
+  'may.',
+  'jun.',
+  'jul.',
+  'ago.',
+  'sep.',
+  'oct.',
+  'nov.',
+  'dic.',
+];
+
+// "15 sep." en la ficha: día y mes abreviado, sin año. Se arma a mano porque
+// Intl en Android (Hermes) devuelve "15-sept" en lugar del formato de la maqueta.
+export function formatShortDate(isoDate: string | null): string {
   if (!isoDate) return 'Sin agendar';
 
-  return parseDate(isoDate).toLocaleDateString(locale, {
-    day: '2-digit',
-    month: 'short',
-  });
+  const date = parseDate(isoDate);
+
+  if (Number.isNaN(date.getTime())) return 'Sin dato';
+
+  return `${date.getDate()} ${SHORT_MONTHS[date.getMonth()]}`;
 }
 
 // "Hembra esterilizada", "Macho", "Sexo sin registrar".

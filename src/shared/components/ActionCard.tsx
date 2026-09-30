@@ -16,8 +16,11 @@ interface ActionCardProps {
   subtitle: string;
   actionLabel: string;
   color: string;
-  icon: ComponentProps<typeof Ionicons>['name'];
+  // Opcional: sin ícono, el título queda arriba (maqueta de Mis Mascotas).
+  icon?: ComponentProps<typeof Ionicons>['name'];
   onPress: () => void;
+  // Versión más baja y con título más chico, para grillas de dos columnas.
+  compact?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -28,6 +31,7 @@ export function ActionCard({
   color,
   icon,
   onPress,
+  compact = false,
   style,
 }: ActionCardProps) {
   return (
@@ -35,14 +39,16 @@ export function ActionCard({
       onPress={onPress}
       accessibilityRole="button"
       android_ripple={{ color: 'rgba(255,255,255,0.18)' }}
-      style={[styles.card, { backgroundColor: color }, style]}
+      style={[styles.card, compact && styles.cardCompact, { backgroundColor: color }, style]}
     >
-      <View style={styles.iconCircle}>
-        <Ionicons name={icon} size={18} color={colors.textLight} />
-      </View>
+      {icon && (
+        <View style={styles.iconCircle}>
+          <Ionicons name={icon} size={18} color={colors.textLight} />
+        </View>
+      )}
 
-      <View style={styles.texts}>
-        <Text style={styles.title}>{title}</Text>
+      <View style={icon ? styles.texts : undefined}>
+        <Text style={[styles.title, compact && styles.titleCompact]}>{title}</Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
       </View>
 
@@ -68,6 +74,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
+  cardCompact: {
+    minHeight: 124,
+    borderRadius: 18,
+    padding: 12,
+  },
+
   iconCircle: {
     width: 34,
     height: 34,
@@ -86,6 +98,11 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 22,
     color: colors.textLight,
+  },
+
+  titleCompact: {
+    fontSize: 15,
+    lineHeight: 20,
   },
 
   subtitle: {

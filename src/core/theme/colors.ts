@@ -61,6 +61,17 @@ export const colors = {
   cardGreen: '#2E9E63',
   cardBlue: '#2C7FB8',
 
+  // Mis mascotas (maqueta con hoja inferior y grilla de tarjetas)
+  petSelectedRing: '#F59AD6',
+  addPetSurface: '#F0EEF2',
+  sheetSurface: '#FBF7FD',
+  sheetHandle: '#6F7775',
+  statValueSurface: '#E4E4E6',
+  cardSky: '#5AAFD6',
+  cardViolet: '#A864E8',
+  cardLeaf: '#1DB95B',
+  cardCoral: '#EB8A57',
+
   // Estados de cita
   statusPending: '#D9823B',
   statusConfirmed: '#2E9E63',

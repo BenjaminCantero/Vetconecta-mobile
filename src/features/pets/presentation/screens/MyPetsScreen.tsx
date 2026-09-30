@@ -7,9 +7,12 @@
 //
 // La mascota seleccionada se comparte mediante ActivePetContext para que otras
 // partes de la aplicación puedan conocer qué mascota está activa.
+//
+// Las tarjetas de medicamentos y citas son solo accesos: sus datos viven en
+// otros dominios, que pets no puede importar (regla de A2).
 
 import { useEffect } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -30,7 +33,7 @@ import { summarizeHealthCard } from '../../domain/summarizeHealthCard';
 import { usePets } from '../../domain/usePets';
 
 import { PetSelector } from '../components/PetSelector';
-import { PetSummaryCard } from '../components/PetSummaryCard';
+import { PetProfileCard } from '../components/PetProfileCard';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<TabParamList, 'MisMascotas'>,
@@ -99,6 +102,15 @@ export default function MyPetsScreen({ navigation }: Props) {
   // RENDER
   // ---------------------------------------------------------------------------
 
+  const openHealthCard = () => {
+    if (selectedPet) navigation.navigate('HealthCard', { petId: selectedPet.id });
+  };
+
+  // La API solo expone lectura: registrar mascotas queda para otro sprint.
+  const handleAddPet = () => {
+    Alert.alert('Próximamente', 'Pronto podrás registrar una nueva mascota desde la app.');
+  };
+
   return (
     <View style={styles.screen}>
       <View style={[styles.headerArea, { paddingTop: insets.top + 12 }]}>
@@ -118,58 +130,81 @@ export default function MyPetsScreen({ navigation }: Props) {
       >
         <ScrollView
           style={styles.container}
-          contentContainerStyle={[
-            styles.content,
-            {
-              paddingBottom: insets.bottom + 24,
-            },
-          ]}
+          contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
-          {/* Selector horizontal de mascotas */}
-          <PetSelector
-            pets={pets}
-            selectedPetId={selectedPet?.id ?? null}
-            onSelect={setActivePetId}
-          />
+          <View style={styles.selector}>
+            <PetSelector
+              pets={pets}
+              selectedPetId={selectedPet?.id ?? null}
+              onSelect={setActivePetId}
+              onAdd={handleAddPet}
+            />
+          </View>
 
-          {/* Información de la mascota actualmente seleccionada */}
-          {selectedPet && (
-            <>
-              <PetSummaryCard
-                pet={selectedPet}
-                onPress={() => navigation.navigate('PetDetail', { petId: selectedPet.id })}
-              />
+          {/* Hoja inferior con la ficha de la mascota seleccionada */}
+          <View style={[styles.sheet, { paddingBottom: insets.bottom + 24 }]}>
+            <View style={styles.handle} />
 
-              <View style={styles.row}>
-                <ActionCard
-                  title="Historial de Consultas"
-                  subtitle={`${summary.visits} atenciones previas`}
-                  actionLabel="Ver Atenciones"
-                  color={colors.cardBlue}
-                  icon="pulse-outline"
-                  onPress={() =>
-                    navigation.navigate('HealthCard', {
-                      petId: selectedPet.id,
-                    })
-                  }
+            {selectedPet && (
+              <>
+                <PetProfileCard
+                  pet={selectedPet}
+                  onPress={() => navigation.navigate('PetDetail', { petId: selectedPet.id })}
                 />
 
-                <ActionCard
-                  title="Carnet de Vacunación"
-                  subtitle={`${summary.vaccines} vacunas registradas`}
-                  actionLabel="Ver Carnet"
-                  color={colors.cardPurple}
-                  icon="shield-checkmark-outline"
-                  onPress={() =>
-                    navigation.navigate('HealthCard', {
-                      petId: selectedPet.id,
-                    })
-                  }
-                />
-              </View>
-            </>
-          )}
+                <View style={styles.grid}>
+                  <View style={styles.row}>
+                    <ActionCard
+                      title="Historial de Consultas"
+                      subtitle={
+                        summary.visits === 1
+                          ? '1 atención previa'
+                          : `${summary.visits} atenciones previas`
+                      }
+                      actionLabel="Ver Atenciones"
+                      color={colors.cardSky}
+                      onPress={openHealthCard}
+                      compact
+                    />
+
+                    <ActionCard
+                      title="Carnet de Vacunación"
+                      subtitle={
+                        summary.vaccines === 1
+                          ? '1 vacuna registrada'
+                          : `${summary.vaccines} vacunas registradas`
+                      }
+                      actionLabel="Ver Carnet"
+                      color={colors.cardViolet}
+                      onPress={openHealthCard}
+                      compact
+                    />
+                  </View>
+
+                  <View style={styles.row}>
+                    <ActionCard
+                      title="Pauta de Medicamentos"
+                      subtitle="Tratamientos y dosis del día"
+                      actionLabel="Ver Pauta"
+                      color={colors.cardLeaf}
+                      onPress={() => navigation.navigate('Inicio')}
+                      compact
+                    />
+
+                    <ActionCard
+                      title="Próximas Citas"
+                      subtitle="Revisa tus horas agendadas"
+                      actionLabel="Ver Citas"
+                      color={colors.cardCoral}
+                      onPress={() => navigation.navigate('Citas')}
+                      compact
+                    />
+                  </View>
+                </View>
+              </>
+            )}
+          </View>
         </ScrollView>
       </QueryState>
     </View>
@@ -192,12 +227,44 @@ const styles = StyleSheet.create({
   },
 
   content: {
+    flexGrow: 1,
+  },
+
+  selector: {
     paddingHorizontal: 20,
-    gap: 18,
+    paddingBottom: 28,
+  },
+
+  sheet: {
+    flexGrow: 1,
+    gap: 28,
+    paddingTop: 12,
+    paddingHorizontal: 12,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    backgroundColor: colors.sheetSurface,
+    shadowColor: '#4B2A6B',
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 6,
+  },
+
+  handle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 8,
+    borderRadius: 4,
+    marginBottom: 20,
+    backgroundColor: colors.sheetHandle,
+  },
+
+  grid: {
+    gap: 10,
   },
 
   row: {
     flexDirection: 'row',
-    gap: 14,
+    gap: 10,
   },
 });
