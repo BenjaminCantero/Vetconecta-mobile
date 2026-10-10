@@ -11,5 +11,6 @@ export const ENDPOINTS = {
   },
   APPOINTMENTS: {
     LIST: '/citas',
+    AVAILABILITY: '/disponibilidad',
   },
 } as const;
