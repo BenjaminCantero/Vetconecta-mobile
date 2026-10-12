@@ -16,6 +16,9 @@ export const StorageKeys = {
 
   // Información básica del usuario autenticado.
   AUTH_USER: '@vetconecta/auth_user',
+
+  // Id de la última mascota activa (F1), para restaurarla al reabrir la app.
+  ACTIVE_PET_ID: '@vetconecta/active_pet_id',
 } as const;
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys];

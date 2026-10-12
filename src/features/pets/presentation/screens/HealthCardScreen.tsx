@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ActivePetSwitcher } from '../../../../shared/components/ActivePetSwitcher';
 import { QueryState } from '../../../../shared/components/QueryState';
 import { useFetch } from '../../../../shared/hooks/useFetch';
 import { colors } from '../../../../core/theme/colors';
@@ -67,6 +68,12 @@ export default function HealthCardScreen({ route, navigation }: Props) {
         </View>
       </View>
 
+      {/* Cambiar de mascota aquí recarga el carnet sin volver atrás (F1). */}
+      <ActivePetSwitcher
+        style={styles.switcher}
+        onChange={(id) => navigation.setParams({ petId: id })}
+      />
+
       <QueryState
         isLoading={isLoading}
         error={error}
@@ -97,6 +104,12 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 16,
     paddingBottom: 16,
+  },
+
+  switcher: {
+    flexGrow: 0,
+    paddingHorizontal: 20,
+    marginBottom: 12,
   },
 
   back: {

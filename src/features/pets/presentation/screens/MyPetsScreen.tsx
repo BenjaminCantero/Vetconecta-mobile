@@ -11,7 +11,6 @@
 // Las tarjetas de medicamentos y citas son solo accesos: sus datos viven en
 // otros dominios, que pets no puede importar (regla de A2).
 
-import { useEffect } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
@@ -53,38 +52,12 @@ export default function MyPetsScreen({ navigation }: Props) {
   // MASCOTA ACTIVA
   // ---------------------------------------------------------------------------
 
+  // ActivePetContext decide cuál queda activa (restaurada o la primera) y la
+  // valida contra las mascotas del dueño.
   const { activePetId, setActivePetId } = useActivePet();
 
-  /*
-   * Cuando termina la carga:
-   *
-   * 1. Si el usuario no tiene mascotas, limpiamos la selección.
-   * 2. Si todavía no existe una mascota activa, seleccionamos la primera.
-   * 3. Si la mascota seleccionada dejó de existir, seleccionamos la primera.
-   *
-   * De esta forma la selección visual y ActivePetContext siempre permanecen
-   * sincronizados.
-   */
-  useEffect(() => {
-    if (pets.length === 0) {
-      if (activePetId !== null) {
-        setActivePetId(null);
-      }
-
-      return;
-    }
-
-    const activePetExists = pets.some((pet) => pet.id === activePetId);
-
-    if (!activePetExists) {
-      setActivePetId(pets[0].id);
-    }
-  }, [pets, activePetId, setActivePetId]);
-
-  /*
-   * Mientras el useEffect sincroniza el contexto, usamos la primera mascota
-   * como fallback para evitar un render vacío innecesario.
-   */
+  // Mientras el contexto termina de restaurar la selección, se muestra la
+  // primera mascota para evitar un render vacío innecesario.
   const selectedPet = pets.find((pet) => pet.id === activePetId) ?? pets[0];
 
   // ---------------------------------------------------------------------------

@@ -21,3 +21,4 @@ export type { PetSex } from './domain/Pet';
 export { default as MyPetsScreen } from './presentation/screens/MyPetsScreen';
 export { default as PetDetailScreen } from './presentation/screens/PetDetailScreen';
 export { default as HealthCardScreen } from './presentation/screens/HealthCardScreen';
+export { ActivePetSync } from './presentation/components/ActivePetSync';

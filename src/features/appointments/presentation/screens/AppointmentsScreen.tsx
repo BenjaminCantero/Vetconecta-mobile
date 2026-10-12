@@ -9,10 +9,12 @@ import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ActivePetSwitcher } from '../../../../shared/components/ActivePetSwitcher';
 import { EmergencyCard } from '../../../../shared/components/EmergencyCard';
 import { QueryState } from '../../../../shared/components/QueryState';
 import { ScreenHeader } from '../../../../shared/components/ScreenHeader';
 import { SegmentedTabs } from '../../../../shared/components/SegmentedTabs';
+import { useActivePet } from '../../../../shared/context/ActivePetContext';
 import { colors } from '../../../../core/theme/colors';
 import { fonts } from '../../../../core/theme/typography';
 import type { RootStackParamList } from '../../../../core/navigation/RootNavigator';
@@ -42,20 +44,23 @@ export default function AppointmentsScreen({ navigation }: Props) {
 
   const { appointments, isLoading, error, refetch } = useAppointments(appointmentsRepository);
 
+  const { activePetId, activePet } = useActivePet();
+
   const [section, setSection] = useState<Section>('upcoming');
   const [now] = useState(() => Date.now());
 
   const { upcoming, past } = useMemo(() => {
-    const sorted = [...appointments].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-    );
+    // Solo las citas de la mascota activa (F1); sin mascota activa, todas.
+    const sorted = appointments
+      .filter((appointment) => !activePetId || appointment.petId === activePetId)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     return {
       upcoming: sorted.filter((appointment) => new Date(appointment.date).getTime() >= now),
       // El historial se lee de la más reciente hacia atrás.
       past: sorted.filter((appointment) => new Date(appointment.date).getTime() < now).reverse(),
     };
-  }, [appointments, now]);
+  }, [appointments, activePetId, now]);
 
   const visible = section === 'upcoming' ? upcoming : past;
 
@@ -67,6 +72,8 @@ export default function AppointmentsScreen({ navigation }: Props) {
           hasUnread
           onBellPress={() => navigation.navigate('Notificaciones')}
         />
+
+        <ActivePetSwitcher />
 
         <SegmentedTabs
           options={[
@@ -97,7 +104,9 @@ export default function AppointmentsScreen({ navigation }: Props) {
           {visible.length === 0 ? (
             <View style={styles.emptyCard}>
               <Text style={styles.emptyTitle}>
-                {section === 'upcoming' ? 'No tienes citas agendadas' : 'Sin citas anteriores'}
+                {section === 'upcoming'
+                  ? `${activePet?.name ?? 'Tu mascota'} no tiene citas agendadas`
+                  : 'Sin citas anteriores'}
               </Text>
               <Text style={styles.emptyText}>
                 {section === 'upcoming'

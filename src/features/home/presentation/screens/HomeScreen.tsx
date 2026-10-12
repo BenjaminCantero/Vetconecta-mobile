@@ -14,9 +14,11 @@ import { useAuthSession } from '../../../auth';
 import { usePets, petsRepository } from '../../../pets';
 import { useAppointments, appointmentsRepository } from '../../../appointments';
 import { ActionCard } from '../../../../shared/components/ActionCard';
+import { ActivePetSwitcher } from '../../../../shared/components/ActivePetSwitcher';
 import { EmergencyCard } from '../../../../shared/components/EmergencyCard';
 import { QueryState } from '../../../../shared/components/QueryState';
 import { ScreenHeader } from '../../../../shared/components/ScreenHeader';
+import { useActivePet } from '../../../../shared/context/ActivePetContext';
 import { formatRelativeDateTime } from '../../../../shared/utils/formatDate';
 import { colors } from '../../../../core/theme/colors';
 import { fonts } from '../../../../core/theme/typography';
@@ -63,19 +65,24 @@ export default function HomeScreen({ navigation }: Props) {
     refetch: refetchAppointments,
   } = useAppointments(appointmentsRepository);
 
+  const { activePetId } = useActivePet();
+
   const [now] = useState(() => Date.now());
 
+  // La próxima cita es la de la mascota activa (F1); sin mascota activa, la
+  // de cualquiera.
   const nextAppointment = useMemo(
     () =>
       [...appointments]
+        .filter((appointment) => !activePetId || appointment.petId === activePetId)
         .filter((appointment) => new Date(appointment.date).getTime() >= now)
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0],
-    [appointments, now],
+    [appointments, activePetId, now],
   );
 
   const nextAppointmentPet = pets.find((pet) => pet.id === nextAppointment?.petId);
   const reminder = medicationRemindersMock[0];
-  const featuredPetId = pets[0]?.id;
+  const featuredPetId = activePetId ?? pets[0]?.id;
 
   // Estado combinado de las dos lecturas: carga si cualquiera carga, error el
   // primero que falle, y reintentar recarga ambas.
@@ -102,6 +109,8 @@ export default function HomeScreen({ navigation }: Props) {
           hasUnread
           onBellPress={() => navigation.navigate('Notificaciones')}
         />
+
+        <ActivePetSwitcher />
       </View>
 
       <QueryState
@@ -176,6 +185,7 @@ const styles = StyleSheet.create({
   headerArea: {
     paddingHorizontal: 20,
     paddingBottom: 16,
+    gap: 14,
   },
 
   container: {

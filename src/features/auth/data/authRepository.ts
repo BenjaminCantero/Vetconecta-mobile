@@ -173,6 +173,8 @@ export const authRepository: AuthRepository = {
     await asyncStorage.removeItem(StorageKeys.AUTH_REFRESH_TOKEN);
 
     await asyncStorage.removeItem(StorageKeys.AUTH_USER);
+
+    await asyncStorage.removeItem(StorageKeys.ACTIVE_PET_ID);
   },
 
   // ---------------------------------------------------------------------------
