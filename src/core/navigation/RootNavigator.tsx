@@ -2,6 +2,7 @@
 // Decide entre el flujo de auth (no autenticado) y el flujo de la app
 // (tabs + pantallas de detalle) según la sesión activa.
 
+import { useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { colors } from '../theme/colors';
@@ -40,12 +41,21 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export function RootNavigator() {
   const { isAuthenticated, isLoading } = useAuthSession();
 
+  // Tras cerrar sesión (o si la sesión expira) se vuelve directo al login, no
+  // a la bienvenida: quien ya entró una vez no necesita la presentación.
+  const [hasSignedIn, setHasSignedIn] = useState(false);
+  if (isAuthenticated && !hasSignedIn) setHasSignedIn(true);
+
   if (isLoading) {
     return null;
   }
 
   return (
     <Stack.Navigator
+      // La key fuerza a montar el stack de nuevo al entrar o salir, para que
+      // initialRouteName se aplique.
+      key={isAuthenticated ? 'app' : 'auth'}
+      initialRouteName={isAuthenticated ? 'AppTabs' : hasSignedIn ? 'Login' : 'Welcome'}
       screenOptions={{
         headerTintColor: colors.primary,
       }}

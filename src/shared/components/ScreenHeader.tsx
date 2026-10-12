@@ -1,5 +1,7 @@
 // Responsabilidad: encabezado de pantalla con título y campana (capa SHARED).
+// Admite una acción extra a la izquierda de la campana (ej. cerrar sesión).
 
+import type { ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -11,6 +13,11 @@ interface ScreenHeaderProps {
   eyebrow?: string;
   onBellPress?: () => void;
   hasUnread?: boolean;
+  extraAction?: {
+    icon: ComponentProps<typeof Ionicons>['name'];
+    label: string;
+    onPress: () => void;
+  };
 }
 
 export function ScreenHeader({
@@ -18,6 +25,7 @@ export function ScreenHeader({
   eyebrow,
   onBellPress,
   hasUnread = false,
+  extraAction,
 }: ScreenHeaderProps) {
   return (
     <View style={styles.container}>
@@ -25,6 +33,19 @@ export function ScreenHeader({
         {eyebrow && <Text style={styles.eyebrow}>{eyebrow}</Text>}
         <Text style={styles.title}>{title}</Text>
       </View>
+
+      {extraAction && (
+        <Pressable
+          onPress={extraAction.onPress}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={extraAction.label}
+          android_ripple={{ color: colors.appDivider, borderless: true }}
+          style={styles.bell}
+        >
+          <Ionicons name={extraAction.icon} size={20} color={colors.appHeading} />
+        </Pressable>
+      )}
 
       <Pressable
         onPress={onBellPress}
@@ -46,7 +67,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 16,
+    gap: 10,
   },
 
   titles: {
