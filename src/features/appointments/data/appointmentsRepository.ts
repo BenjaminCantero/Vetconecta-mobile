@@ -19,6 +19,7 @@ import type { AppointmentDto } from './appointmentsDto';
 import { appointmentsMock } from './appointmentsMock';
 
 const APPOINTMENT_STATUSES: AppointmentStatus[] = [
+  'reservada',
   'pendiente',
   'confirmada',
   'cancelada',
@@ -33,7 +34,7 @@ function toAppointmentStatus(estado: string): AppointmentStatus {
   return APPOINTMENT_STATUSES.includes(status) ? status : 'pendiente';
 }
 
-function toAppointment(dto: AppointmentDto): Appointment {
+export function toAppointment(dto: AppointmentDto): Appointment {
   return {
     id: dto.id,
     petId: dto.id_mascota,

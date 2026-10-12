@@ -8,6 +8,7 @@ import { fonts } from '../../../../core/theme/typography';
 import type { Appointment, AppointmentStatus } from '../../domain/Appointment';
 
 const STATUS_STYLE: Record<AppointmentStatus, { color: string; label: string }> = {
+  reservada: { color: colors.statusPending, label: 'Reservada' },
   confirmada: { color: colors.statusConfirmed, label: 'Confirmada' },
   pendiente: { color: colors.statusPending, label: 'Por confirmar' },
   cancelada: { color: colors.statusCancelled, label: 'Cancelada' },

@@ -1,6 +1,7 @@
 // Responsabilidad: entidad de negocio Appointment (capa DOMAIN de appointments).
 
-export type AppointmentStatus = 'pendiente' | 'confirmada' | 'cancelada' | 'completada';
+export type AppointmentStatus =
+  'reservada' | 'pendiente' | 'confirmada' | 'cancelada' | 'completada';
 
 export interface Appointment {
   id: string;

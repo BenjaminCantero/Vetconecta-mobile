@@ -12,5 +12,7 @@ export const ENDPOINTS = {
   APPOINTMENTS: {
     LIST: '/citas',
     AVAILABILITY: '/disponibilidad',
+    BOOK: '/citas',
+    CANCEL: (appointmentId: string) => `/citas/${appointmentId}/cancelar`,
   },
 } as const;
