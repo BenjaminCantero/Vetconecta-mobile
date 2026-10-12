@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" App.tsx",
+    "typecheck": "tsc --noEmit",
     "test": "jest"
   },
   "dependencies": {
