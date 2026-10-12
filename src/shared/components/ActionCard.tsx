@@ -1,4 +1,14 @@
-// Responsabilidad: tarjeta de acción de color con título, detalle y enlace (capa SHARED).
+// Responsabilidad: tarjeta de acción con ícono, título y detalle (capa SHARED).
+//
+// Tres tonos:
+//  - solid: fondo con el color de la maqueta.
+//  - soft:  fondo teñido con el color y el ícono en sólido (panel de Mis
+//           Mascotas): conserva el color de cada sección sin saturar.
+//  - quiet: superficie blanca con el color solo en el ícono, para accesos que
+//           no deben competir con el elemento principal de la pantalla.
+// `value` muestra un dato grande (ej. cantidad de vacunas) sobre el título.
+// La acción se anuncia como hint de accesibilidad; visualmente la tarjeta
+// entera es el botón y el chevron indica que navega.
 
 // Nota: el estilo de Pressable se pasa como arreglo, nunca como función. Con
 // el jsxImportSource de NativeWind, un `style` en forma de función se pierde y
@@ -14,13 +24,13 @@ import { fonts } from '../../core/theme/typography';
 interface ActionCardProps {
   title: string;
   subtitle: string;
+  // Qué pasa al tocar, para lectores de pantalla (ej. "Abre el carnet").
   actionLabel: string;
   color: string;
-  // Opcional: sin ícono, el título queda arriba (maqueta de Mis Mascotas).
-  icon?: ComponentProps<typeof Ionicons>['name'];
+  icon: ComponentProps<typeof Ionicons>['name'];
   onPress: () => void;
-  // Versión más baja y con título más chico, para grillas de dos columnas.
-  compact?: boolean;
+  tone?: 'solid' | 'soft' | 'quiet';
+  value?: string;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -31,98 +41,130 @@ export function ActionCard({
   color,
   icon,
   onPress,
-  compact = false,
+  tone = 'solid',
+  value,
   style,
 }: ActionCardProps) {
+  const solid = tone === 'solid';
+  const palette = TONES[tone](color);
+
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      android_ripple={{ color: 'rgba(255,255,255,0.18)' }}
-      style={[styles.card, compact && styles.cardCompact, { backgroundColor: color }, style]}
+      accessibilityLabel={title}
+      accessibilityHint={actionLabel}
+      android_ripple={{ color: solid ? 'rgba(255,255,255,0.18)' : `${color}33` }}
+      style={[
+        styles.card,
+        { backgroundColor: palette.background },
+        solid && styles.cardSolid,
+        style,
+      ]}
     >
-      {icon && (
-        <View style={styles.iconCircle}>
-          <Ionicons name={icon} size={18} color={colors.textLight} />
+      <View style={styles.topRow}>
+        <View style={[styles.iconCircle, { backgroundColor: palette.iconBackground }]}>
+          <Ionicons name={icon} size={19} color={palette.icon} />
         </View>
-      )}
 
-      <View style={icon ? styles.texts : undefined}>
-        <Text style={[styles.title, compact && styles.titleCompact]}>{title}</Text>
-        <Text style={styles.subtitle}>{subtitle}</Text>
+        <Ionicons name="chevron-forward" size={18} color={palette.secondary} />
       </View>
 
-      <View style={styles.action}>
-        <Text style={styles.actionLabel}>{actionLabel}</Text>
-        <Ionicons name="arrow-forward" size={14} color={colors.textLight} />
+      <View>
+        {value !== undefined && (
+          <Text style={[styles.value, { color: palette.primary }]}>{value}</Text>
+        )}
+        <Text style={[styles.title, { color: palette.primary }]}>{title}</Text>
+        <Text style={[styles.subtitle, { color: palette.secondary }]}>{subtitle}</Text>
       </View>
     </Pressable>
   );
 }
 
+interface TonePalette {
+  background: string;
+  iconBackground: string;
+  icon: string;
+  primary: string;
+  secondary: string;
+}
+
+// El texto sobre fondos claros va en tinta: los colores de la maqueta no
+// alcanzan contraste suficiente para texto chico sobre su propio tinte.
+const TONES: Record<NonNullable<ActionCardProps['tone']>, (color: string) => TonePalette> = {
+  solid: (color) => ({
+    background: color,
+    iconBackground: 'rgba(255,255,255,0.24)',
+    icon: colors.textLight,
+    primary: colors.textLight,
+    secondary: 'rgba(255,255,255,0.9)',
+  }),
+  soft: (color) => ({
+    background: `${color}24`,
+    iconBackground: color,
+    icon: colors.textLight,
+    primary: colors.appTitle,
+    secondary: colors.appMuted,
+  }),
+  quiet: (color) => ({
+    background: colors.appSurface,
+    iconBackground: `${color}1F`,
+    icon: color,
+    primary: colors.appTitle,
+    secondary: colors.appMuted,
+  }),
+};
+
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    minHeight: 168,
+    minHeight: 128,
     borderRadius: 22,
-    padding: 16,
+    padding: 14,
+    gap: 14,
     justifyContent: 'space-between',
+    overflow: 'hidden',
+  },
+
+  cardSolid: {
     shadowColor: '#3B1E57',
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
     elevation: 3,
   },
 
-  cardCompact: {
-    minHeight: 124,
-    borderRadius: 18,
-    padding: 12,
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
 
   iconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255,255,255,0.22)',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  texts: {
-    marginTop: 12,
+  value: {
+    marginBottom: 2,
+    fontFamily: fonts.extrabold,
+    fontSize: 30,
+    lineHeight: 36,
   },
 
   title: {
     fontFamily: fonts.bold,
-    fontSize: 17,
-    lineHeight: 22,
-    color: colors.textLight,
-  },
-
-  titleCompact: {
     fontSize: 15,
     lineHeight: 20,
   },
 
   subtitle: {
-    marginTop: 4,
+    marginTop: 3,
     fontFamily: fonts.medium,
     fontSize: 12,
     lineHeight: 16,
-    color: 'rgba(255,255,255,0.88)',
-  },
-
-  action: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 14,
-  },
-
-  actionLabel: {
-    fontFamily: fonts.bold,
-    fontSize: 13,
-    color: colors.textLight,
   },
 });

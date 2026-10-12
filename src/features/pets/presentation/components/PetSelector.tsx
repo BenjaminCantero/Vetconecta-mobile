@@ -39,7 +39,8 @@ export function PetSelector({ pets, selectedPetId, onSelect, onAdd }: PetSelecto
             accessibilityState={{
               selected,
             }}
-            style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
+            android_ripple={{ color: colors.appDivider, borderless: true }}
+            style={styles.item}
           >
             <PetAvatar
               name={pet.name}
@@ -60,7 +61,8 @@ export function PetSelector({ pets, selectedPetId, onSelect, onAdd }: PetSelecto
           onPress={onAdd}
           accessibilityRole="button"
           accessibilityLabel="Agregar mascota"
-          style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
+          android_ripple={{ color: colors.appDivider, borderless: true }}
+          style={styles.item}
         >
           <View style={styles.addCircle}>
             <Ionicons name="add" size={30} color={colors.appTitle} />
@@ -93,10 +95,6 @@ const styles = StyleSheet.create({
   ring: {
     borderWidth: 4,
     borderColor: colors.petSelectedRing,
-  },
-
-  itemPressed: {
-    opacity: 0.7,
   },
 
   addCircle: {

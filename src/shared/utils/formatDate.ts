@@ -50,3 +50,41 @@ export function formatRelativeDateTime(
 
   return `el ${day} a las ${time}`;
 }
+
+export interface DateLeafParts {
+  day: string; // "18"
+  month: string; // "nov"
+  weekday: string; // "mié"
+  time: string; // "08:45"
+}
+
+// Partes de una fecha para dibujarla como hoja de calendario.
+export function dateLeafParts(isoDate: string, locale: string = 'es-CL'): DateLeafParts {
+  const date = parseDate(isoDate);
+  const clean = (value: string) => value.replace('.', '').toLowerCase();
+
+  return {
+    day: String(date.getDate()),
+    month: clean(date.toLocaleDateString(locale, { month: 'short' })),
+    weekday: clean(date.toLocaleDateString(locale, { weekday: 'short' })),
+    time: date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false }),
+  };
+}
+
+// "en 37 días", "mañana", "hoy". Solo para fechas futuras o de hoy.
+export function formatDaysUntil(isoDate: string, now: Date = new Date()): string {
+  const date = parseDate(isoDate);
+  const startOfDay = (value: Date) =>
+    new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+  const days = Math.round((startOfDay(date) - startOfDay(now)) / 86_400_000);
+
+  if (days <= 0) return 'hoy';
+  if (days === 1) return 'mañana';
+  return `en ${days} días`;
+}
+
+// "noviembre de 2026", para agrupar listas por mes.
+export function formatMonthYear(isoDate: string, locale: string = 'es-CL'): string {
+  const label = parseDate(isoDate).toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}

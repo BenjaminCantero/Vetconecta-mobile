@@ -1,53 +1,61 @@
 // Responsabilidad: tarjeta de un evento del carnet (capa PRESENTATION de pets).
+// La fecha va como hoja de calendario teñida con el color del tipo de evento,
+// igual que las citas, para que el carnet se lea como un historial de fechas.
 
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Chip } from '../../../../shared/components/Chip';
-import { formatDate } from '../../../../shared/utils/formatDate';
+import { DateLeaf } from '../../../../shared/components/DateLeaf';
 import { colors } from '../../../../core/theme/colors';
 import { fonts } from '../../../../core/theme/typography';
 import type { ClinicalEvent, ClinicalEventType } from '../../domain/ClinicalEvent';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
-export const CLINICAL_EVENT_STYLE: Record<ClinicalEventType, { icon: IconName; color: string }> = {
-  vacuna: { icon: 'medical-outline', color: colors.cardPurple },
-  control: { icon: 'pulse-outline', color: colors.cardBlue },
-  tratamiento: { icon: 'bandage-outline', color: colors.cardOrange },
-  cirugia: { icon: 'cut-outline', color: colors.cardRed },
+export const CLINICAL_EVENT_STYLE: Record<
+  ClinicalEventType,
+  { icon: IconName; color: string; label: string }
+> = {
+  vacuna: { icon: 'shield-checkmark', color: colors.cardPurple, label: 'Vacuna' },
+  control: { icon: 'pulse', color: colors.cardBlue, label: 'Control' },
+  tratamiento: { icon: 'bandage', color: colors.cardOrange, label: 'Tratamiento' },
+  cirugia: { icon: 'cut', color: colors.cardRed, label: 'Cirugía' },
 };
 
 interface ClinicalEventCardProps {
   event: ClinicalEvent;
-  // Los eventos futuros se muestran como programados; los pasados, cumplidos.
+  // Los eventos futuros se marcan como programados; los pasados no llevan
+  // etiqueta, porque cumplido es el caso normal del carnet.
   isUpcoming: boolean;
 }
 
 export function ClinicalEventCard({ event, isUpcoming }: ClinicalEventCardProps) {
-  const { icon, color } = CLINICAL_EVENT_STYLE[event.type];
+  const { icon, color, label } = CLINICAL_EVENT_STYLE[event.type];
 
   return (
     <View style={styles.card}>
-      <View style={[styles.iconCircle, { backgroundColor: `${color}22` }]}>
-        <Ionicons name={icon} size={19} color={color} />
-      </View>
+      <DateLeaf isoDate={event.date} accent={color} surface={`${color}1A`} />
 
       <View style={styles.info}>
-        <Text style={styles.title} numberOfLines={2}>
+        <View style={styles.typeRow}>
+          <Ionicons name={icon} size={14} color={color} />
+          <Text style={[styles.type, { color }]}>{label}</Text>
+
+          {isUpcoming && (
+            <View style={styles.upcoming}>
+              <Text style={styles.upcomingLabel}>Programada</Text>
+            </View>
+          )}
+        </View>
+
+        <Text style={styles.title} numberOfLines={3}>
           {event.description}
         </Text>
 
         <Text style={styles.meta} numberOfLines={1}>
-          {formatDate(event.date)} · {event.veterinarian}
+          {event.veterinarian}
         </Text>
       </View>
-
-      <Chip
-        label={isUpcoming ? 'Programada' : 'Completa'}
-        color={isUpcoming ? colors.cardPurple : colors.cardGreen}
-        variant="soft"
-      />
     </View>
   );
 }
@@ -55,29 +63,42 @@ export function ClinicalEventCard({ event, isUpcoming }: ClinicalEventCardProps)
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 14,
-    padding: 16,
+    padding: 14,
     borderRadius: 20,
     backgroundColor: colors.appSurface,
-    shadowColor: '#4B2A6B',
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-  },
-
-  iconCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 
   info: {
     flex: 1,
     gap: 3,
+  },
+
+  typeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 2,
+  },
+
+  type: {
+    fontFamily: fonts.bold,
+    fontSize: 12,
+  },
+
+  upcoming: {
+    marginLeft: 'auto',
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: colors.tintPurple,
+  },
+
+  upcomingLabel: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    color: colors.appHeading,
   },
 
   title: {
@@ -88,8 +109,8 @@ const styles = StyleSheet.create({
   },
 
   meta: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
+    fontFamily: fonts.regular,
+    fontSize: 13,
     color: colors.appMuted,
   },
 });

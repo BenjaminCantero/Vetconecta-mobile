@@ -129,49 +129,47 @@ export default function MyPetsScreen({ navigation }: Props) {
                 <View style={styles.grid}>
                   <View style={styles.row}>
                     <ActionCard
-                      title="Historial de Consultas"
-                      subtitle={
-                        summary.visits === 1
-                          ? '1 atención previa'
-                          : `${summary.visits} atenciones previas`
-                      }
-                      actionLabel="Ver Atenciones"
+                      title="Consultas"
+                      value={String(summary.visits)}
+                      subtitle={summary.visits === 1 ? 'atención previa' : 'atenciones previas'}
+                      actionLabel="Abre el historial clínico"
                       color={colors.cardSky}
+                      icon="medkit-outline"
                       onPress={openHealthCard}
-                      compact
+                      tone="soft"
                     />
 
                     <ActionCard
-                      title="Carnet de Vacunación"
-                      subtitle={
-                        summary.vaccines === 1
-                          ? '1 vacuna registrada'
-                          : `${summary.vaccines} vacunas registradas`
-                      }
-                      actionLabel="Ver Carnet"
+                      title="Vacunas"
+                      value={String(summary.vaccines)}
+                      subtitle={summary.vaccines === 1 ? 'registrada' : 'registradas'}
+                      actionLabel="Abre el carnet de vacunas"
                       color={colors.cardViolet}
+                      icon="shield-checkmark-outline"
                       onPress={openHealthCard}
-                      compact
+                      tone="soft"
                     />
                   </View>
 
                   <View style={styles.row}>
                     <ActionCard
-                      title="Pauta de Medicamentos"
-                      subtitle="Tratamientos y dosis del día"
-                      actionLabel="Ver Pauta"
+                      title="Medicamentos"
+                      subtitle="Pauta y dosis del día"
+                      actionLabel="Abre la pauta en el inicio"
                       color={colors.cardLeaf}
+                      icon="medical-outline"
                       onPress={() => navigation.navigate('Inicio')}
-                      compact
+                      tone="soft"
                     />
 
                     <ActionCard
-                      title="Próximas Citas"
-                      subtitle="Revisa tus horas agendadas"
-                      actionLabel="Ver Citas"
+                      title="Citas"
+                      subtitle="Horas agendadas"
+                      actionLabel="Abre tus citas"
                       color={colors.cardCoral}
+                      icon="calendar-outline"
                       onPress={() => navigation.navigate('Citas')}
-                      compact
+                      tone="soft"
                     />
                   </View>
                 </View>
@@ -210,9 +208,9 @@ const styles = StyleSheet.create({
 
   sheet: {
     flexGrow: 1,
-    gap: 28,
+    gap: 20,
     paddingTop: 12,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     backgroundColor: colors.sheetSurface,

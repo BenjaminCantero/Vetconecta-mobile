@@ -49,11 +49,8 @@ export function ActivePetSwitcher({ onChange, style }: ActivePetSwitcherProps) {
             accessibilityRole="tab"
             accessibilityLabel={`Ver a ${pet.name}`}
             accessibilityState={{ selected }}
-            style={({ pressed }) => [
-              styles.chip,
-              selected && styles.chipSelected,
-              pressed && styles.chipPressed,
-            ]}
+            android_ripple={{ color: colors.appDivider }}
+            style={[styles.chip, selected && styles.chipSelected]}
           >
             <PetAvatar name={pet.name} photoUrl={pet.photoUrl} size={30} />
             <Text style={[styles.name, selected && styles.nameSelected]} numberOfLines={1}>
@@ -84,14 +81,12 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.appDivider,
     backgroundColor: colors.appSurface,
+    overflow: 'hidden',
   },
 
   chipSelected: {
     borderColor: colors.appHeading,
-  },
-
-  chipPressed: {
-    opacity: 0.7,
+    backgroundColor: colors.tintPurple,
   },
 
   name: {

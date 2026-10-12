@@ -1,9 +1,10 @@
 // Responsabilidad: ficha de la mascota activa en Mis Mascotas (capa PRESENTATION de pets).
-// Foto grande, identidad y tres datos destacados (edad, peso, próximo control),
-// cada uno en su propia tarjeta. Tocar la identidad abre el detalle.
+// Foto, identidad y tres datos destacados (edad, peso, próximo control) en
+// una sola franja. Tocar la identidad abre el detalle.
 
 import { Fragment } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { Chip } from '../../../../shared/components/Chip';
 import { PetAvatar } from '../../../../shared/components/PetAvatar';
@@ -31,8 +32,8 @@ interface PetProfileCardProps {
 export function PetProfileCard({ pet, onPress }: PetProfileCardProps) {
   const stats = [
     { label: 'Edad', value: formatDecimalAge(pet.birthDate) },
-    { label: 'Último Peso', value: formatWeight(pet.weightKg) },
-    { label: 'Próximo Control', value: formatShortDate(pet.nextControlDate) },
+    { label: 'Peso', value: formatWeight(pet.weightKg) },
+    { label: 'Próximo control', value: formatShortDate(pet.nextControlDate) },
   ];
 
   return (
@@ -42,24 +43,34 @@ export function PetProfileCard({ pet, onPress }: PetProfileCardProps) {
         disabled={!onPress}
         accessibilityRole={onPress ? 'button' : undefined}
         accessibilityLabel={onPress ? `Ver ficha de ${pet.name}` : undefined}
+        android_ripple={onPress ? { color: colors.tintPurple } : undefined}
         style={styles.header}
       >
-        <PetAvatar name={pet.name} photoUrl={pet.photoUrl} size={140} />
+        <PetAvatar name={pet.name} photoUrl={pet.photoUrl} size={104} />
 
         <View style={styles.identity}>
-          <View style={styles.nameRow}>
-            <Text style={styles.name} numberOfLines={1}>
-              {pet.name.toUpperCase()}
-            </Text>
+          <Text style={styles.name} numberOfLines={1}>
+            {pet.name}
+          </Text>
 
-            <Chip label={SPECIES_LABEL[pet.species]} />
+          <View style={styles.tags}>
+            <Chip label={SPECIES_LABEL[pet.species]} variant="soft" />
+            <Text style={styles.breed} numberOfLines={1}>
+              {pet.breed}
+            </Text>
           </View>
 
-          <Text style={styles.detail}>Raza {pet.breed}</Text>
           <Text style={styles.detail}>{formatSexAndSterilization(pet)}</Text>
 
-          {pet.microchip && <Text style={styles.chipCode}>Chip: {pet.microchip}</Text>}
+          {pet.microchip && (
+            <View style={styles.microchip}>
+              <Ionicons name="barcode-outline" size={14} color={colors.appMuted} />
+              <Text style={styles.detail}>{pet.microchip}</Text>
+            </View>
+          )}
         </View>
+
+        {onPress && <Ionicons name="chevron-forward" size={20} color={colors.appMuted} />}
       </Pressable>
 
       <View style={styles.stats}>
@@ -68,12 +79,9 @@ export function PetProfileCard({ pet, onPress }: PetProfileCardProps) {
             {index > 0 && <View style={styles.divider} />}
 
             <View style={styles.stat}>
-              <View style={styles.statLabelBox}>
-                <Text style={styles.statLabel} numberOfLines={1}>
-                  {stat.label}
-                </Text>
-              </View>
-
+              <Text style={styles.statLabel} numberOfLines={1}>
+                {stat.label}
+              </Text>
               <Text style={styles.statValue} numberOfLines={1}>
                 {stat.value}
               </Text>
@@ -87,7 +95,7 @@ export function PetProfileCard({ pet, onPress }: PetProfileCardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    gap: 40,
+    gap: 20,
   },
 
   header: {
@@ -98,21 +106,26 @@ const styles = StyleSheet.create({
 
   identity: {
     flex: 1,
-    gap: 2,
-  },
-
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 6,
+    gap: 4,
   },
 
   name: {
-    flexShrink: 1,
     fontFamily: fonts.extrabold,
-    fontSize: 22,
+    fontSize: 26,
+    color: colors.appTitle,
+  },
+
+  tags: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
+  },
+
+  breed: {
+    flexShrink: 1,
+    fontFamily: fonts.semibold,
+    fontSize: 13,
     color: colors.appTitle,
   },
 
@@ -122,53 +135,42 @@ const styles = StyleSheet.create({
     color: colors.appMuted,
   },
 
-  chipCode: {
-    marginTop: 6,
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.appMuted,
+  microchip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
 
   stats: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 20,
+    backgroundColor: colors.appSurface,
   },
 
   divider: {
     width: 1,
-    height: 28,
-    backgroundColor: colors.appMuted,
-    opacity: 0.4,
+    alignSelf: 'stretch',
+    backgroundColor: colors.appDivider,
   },
 
   stat: {
-    flexGrow: 1,
-    borderRadius: 14,
-    overflow: 'hidden',
-    backgroundColor: colors.statValueSurface,
-  },
-
-  statLabelBox: {
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderRadius: 14,
-    backgroundColor: colors.appSurface,
+    flex: 1,
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: 6,
   },
 
   statLabel: {
     fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.appTitle,
-    textAlign: 'center',
+    fontSize: 12,
+    color: colors.appMuted,
   },
 
   statValue: {
-    paddingVertical: 9,
-    paddingHorizontal: 10,
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.appMuted,
-    textAlign: 'center',
+    fontFamily: fonts.bold,
+    fontSize: 17,
+    color: colors.appTitle,
   },
 });

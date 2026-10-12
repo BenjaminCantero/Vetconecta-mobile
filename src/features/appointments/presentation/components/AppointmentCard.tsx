@@ -1,33 +1,23 @@
 // Responsabilidad: tarjeta de una cita (capa PRESENTATION de appointments).
-// El color de fondo comunica el estado, como en el maqueteado.
+// La fecha va como hoja de calendario teñida con el color del estado, para
+// que la lista se recorra por día y por estado sin leer cada tarjeta.
 
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
+import { DateLeaf } from '../../../../shared/components/DateLeaf';
+import { dateLeafParts } from '../../../../shared/utils/formatDate';
 import { colors } from '../../../../core/theme/colors';
 import { fonts } from '../../../../core/theme/typography';
 import type { Appointment, AppointmentStatus } from '../../domain/Appointment';
 
-const STATUS_STYLE: Record<AppointmentStatus, { color: string; label: string }> = {
-  reservada: { color: colors.statusPending, label: 'Reservada' },
-  confirmada: { color: colors.statusConfirmed, label: 'Confirmada' },
-  pendiente: { color: colors.statusPending, label: 'Por confirmar' },
-  cancelada: { color: colors.statusCancelled, label: 'Cancelada' },
-  completada: { color: colors.statusDone, label: 'Completada' },
+const STATUS_STYLE: Record<AppointmentStatus, { color: string; tint: string; label: string }> = {
+  reservada: { color: colors.statusPending, tint: colors.tintOrange, label: 'Reservada' },
+  pendiente: { color: colors.statusPending, tint: colors.tintOrange, label: 'Por confirmar' },
+  confirmada: { color: colors.statusConfirmed, tint: colors.tintGreen, label: 'Confirmada' },
+  cancelada: { color: colors.statusCancelled, tint: colors.tintRed, label: 'Cancelada' },
+  completada: { color: colors.statusDone, tint: colors.tintGray, label: 'Realizada' },
 };
-
-function formatHeadline(isoDate: string) {
-  const date = new Date(isoDate);
-
-  const day = date.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }).replace('.', '');
-
-  const time = date.toLocaleTimeString('es-CL', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-
-  return `${day} · ${time}`;
-}
 
 interface AppointmentCardProps {
   appointment: Appointment;
@@ -36,42 +26,61 @@ interface AppointmentCardProps {
 }
 
 export function AppointmentCard({ appointment, onReschedule, onCancel }: AppointmentCardProps) {
-  const { color, label } = STATUS_STYLE[appointment.status];
+  const { color, tint, label } = STATUS_STYLE[appointment.status];
+  const { time } = dateLeafParts(appointment.date);
   const showActions = Boolean(onReschedule || onCancel);
+  const muted = appointment.status === 'cancelada';
 
   return (
-    <View style={[styles.card, { backgroundColor: color }]}>
-      <View style={styles.topRow}>
-        <Text style={styles.headline}>{formatHeadline(appointment.date)}</Text>
+    <View style={styles.card}>
+      <View style={styles.body}>
+        <DateLeaf isoDate={appointment.date} accent={color} surface={tint} />
 
-        <View style={styles.statusPill}>
-          <Text style={[styles.statusLabel, { color }]}>{label}</Text>
+        <View style={styles.texts}>
+          <View style={[styles.statusPill, { backgroundColor: tint }]}>
+            <View style={[styles.statusDot, { backgroundColor: color }]} />
+            <Text style={[styles.statusLabel, { color }]}>{label}</Text>
+          </View>
+
+          <Text style={[styles.reason, muted && styles.reasonMuted]} numberOfLines={2}>
+            {appointment.reason}
+          </Text>
+          <Text style={styles.detail} numberOfLines={1}>
+            {appointment.veterinarian}
+          </Text>
+
+          <View style={styles.timeRow}>
+            <Ionicons name="time-outline" size={14} color={colors.appMuted} />
+            <Text style={styles.detail}>{time} h</Text>
+          </View>
         </View>
       </View>
 
-      <Text style={styles.detail} numberOfLines={2}>
-        {appointment.reason} · {appointment.veterinarian}
-      </Text>
-
       {showActions && (
         <View style={styles.actions}>
-          <Pressable
-            onPress={onReschedule}
-            accessibilityRole="button"
-            android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
-            style={styles.actionButton}
-          >
-            <Text style={styles.actionLabel}>Reprogramar</Text>
-          </Pressable>
+          {onReschedule && (
+            <Pressable
+              onPress={onReschedule}
+              accessibilityRole="button"
+              android_ripple={{ color: colors.tintPurple }}
+              style={styles.actionButton}
+            >
+              <Text style={[styles.actionLabel, { color: colors.appHeading }]}>Reprogramar</Text>
+            </Pressable>
+          )}
 
-          <Pressable
-            onPress={onCancel}
-            accessibilityRole="button"
-            android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
-            style={styles.actionButton}
-          >
-            <Text style={styles.actionLabel}>Cancelar</Text>
-          </Pressable>
+          {onReschedule && onCancel && <View style={styles.actionDivider} />}
+
+          {onCancel && (
+            <Pressable
+              onPress={onCancel}
+              accessibilityRole="button"
+              android_ripple={{ color: colors.tintRed }}
+              style={styles.actionButton}
+            >
+              <Text style={[styles.actionLabel, { color: colors.statusCancelled }]}>Cancelar</Text>
+            </Pressable>
+          )}
         </View>
       )}
     </View>
@@ -81,34 +90,37 @@ export function AppointmentCard({ appointment, onReschedule, onCancel }: Appoint
 const styles = StyleSheet.create({
   card: {
     borderRadius: 22,
-    padding: 18,
-    gap: 10,
-    shadowColor: '#3B1E57',
-    shadowOpacity: 0.16,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
+    backgroundColor: colors.appSurface,
+    overflow: 'hidden',
   },
 
-  topRow: {
+  body: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
+    alignItems: 'flex-start',
+    gap: 14,
+    padding: 14,
   },
 
-  headline: {
-    flexShrink: 1,
-    fontFamily: fonts.extrabold,
-    fontSize: 19,
-    color: colors.textLight,
+  texts: {
+    flex: 1,
+    gap: 2,
   },
 
   statusPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    marginBottom: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: colors.appSurface,
+  },
+
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
   },
 
   statusLabel: {
@@ -116,29 +128,53 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
+  reason: {
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    lineHeight: 21,
+    color: colors.appTitle,
+  },
+
+  reasonMuted: {
+    color: colors.appMuted,
+    textDecorationLine: 'line-through',
+  },
+
   detail: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.94)',
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.appMuted,
+  },
+
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
   },
 
   actions: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 4,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: colors.appDivider,
   },
 
   actionButton: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 12,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.22)',
+    justifyContent: 'center',
+    minHeight: 46,
+  },
+
+  actionDivider: {
+    width: 1,
+    height: 22,
+    backgroundColor: colors.appDivider,
   },
 
   actionLabel: {
     fontFamily: fonts.bold,
-    fontSize: 13,
-    color: colors.textLight,
+    fontSize: 14,
   },
 });

@@ -33,7 +33,10 @@ export function ClinicalTimeline({ sections, now }: ClinicalTimelineProps) {
                 <View style={styles.rail}>
                   <View style={[styles.lineTop, isFirst && styles.lineHidden]} />
                   <View
-                    style={[styles.dot, { borderColor: CLINICAL_EVENT_STYLE[event.type].color }]}
+                    style={[
+                      styles.dot,
+                      { backgroundColor: CLINICAL_EVENT_STYLE[event.type].color },
+                    ]}
                   />
                   <View style={[styles.lineBottom, isLast && styles.lineHidden]} />
                 </View>
@@ -53,20 +56,21 @@ export function ClinicalTimeline({ sections, now }: ClinicalTimelineProps) {
   );
 }
 
-const DOT_SIZE = 14;
-// Alinea el punto con el centro del ícono de la tarjeta (padding 16 + 42 / 2).
-const DOT_OFFSET = 37 - DOT_SIZE / 2;
+const DOT_SIZE = 10;
+// Alinea el punto con la franja del mes de la hoja de calendario
+// (padding 14 + mitad de la franja, ~11).
+const DOT_OFFSET = 25 - DOT_SIZE / 2;
 
 const styles = StyleSheet.create({
   timeline: {
-    gap: 8,
+    gap: 18,
   },
 
   year: {
     marginBottom: 10,
-    fontFamily: fonts.extrabold,
-    fontSize: 16,
-    color: colors.appHeading,
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    color: colors.appTitle,
   },
 
   row: {
@@ -74,7 +78,7 @@ const styles = StyleSheet.create({
   },
 
   rail: {
-    width: 22,
+    width: 14,
     alignItems: 'center',
   },
 
@@ -98,14 +102,12 @@ const styles = StyleSheet.create({
     width: DOT_SIZE,
     height: DOT_SIZE,
     borderRadius: DOT_SIZE / 2,
-    borderWidth: 3,
-    backgroundColor: colors.appSurface,
   },
 
   item: {
     flex: 1,
-    paddingLeft: 10,
-    paddingBottom: 12,
+    paddingLeft: 8,
+    paddingBottom: 10,
   },
 
   itemLast: {

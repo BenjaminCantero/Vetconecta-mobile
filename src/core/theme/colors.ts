@@ -72,6 +72,15 @@ export const colors = {
   cardLeaf: '#1DB95B',
   cardCoral: '#EB8A57',
 
+  // Tintes suaves de los colores de la maqueta: fondos de íconos, bloques de
+  // fecha y etiquetas sobre superficies blancas.
+  tintPink: '#FCE4EE',
+  tintOrange: '#FBEBDD',
+  tintPurple: '#EFE3FB',
+  tintGreen: '#E1F3E9',
+  tintRed: '#FBE4E1',
+  tintGray: '#EEEEF1',
+
   // Estados de cita
   statusPending: '#D9823B',
   statusConfirmed: '#2E9E63',

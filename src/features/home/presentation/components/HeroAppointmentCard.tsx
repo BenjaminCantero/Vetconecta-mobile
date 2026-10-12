@@ -1,25 +1,33 @@
 // Responsabilidad: tarjeta destacada de la próxima cita (feature home).
+// Es el elemento principal del inicio: la fecha se dibuja como hoja de
+// calendario para que se lea de un vistazo cuándo es la cita.
 
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import { DateLeaf } from '../../../../shared/components/DateLeaf';
+import { dateLeafParts, formatDaysUntil } from '../../../../shared/utils/formatDate';
 import { colors } from '../../../../core/theme/colors';
 import { fonts } from '../../../../core/theme/typography';
 
 interface HeroAppointmentCardProps {
-  message: string;
-  detail?: string;
-  actionLabel: string;
+  date: string; // ISO 8601
+  petName: string;
+  reason: string;
+  veterinarian: string;
   onPress: () => void;
 }
 
 export function HeroAppointmentCard({
-  message,
-  detail,
-  actionLabel,
+  date,
+  petName,
+  reason,
+  veterinarian,
   onPress,
 }: HeroAppointmentCardProps) {
+  const { time } = dateLeafParts(date);
+
   return (
     <LinearGradient
       colors={[colors.cardPinkStart, colors.cardPinkEnd]}
@@ -27,33 +35,52 @@ export function HeroAppointmentCard({
       end={{ x: 1, y: 1 }}
       style={styles.card}
     >
-      <View style={styles.texts}>
-        <Text style={styles.message}>{message}</Text>
-        {detail && <Text style={styles.detail}>{detail}</Text>}
+      {/* Marca de agua: queda recortada por el borde de la tarjeta. */}
+      <Ionicons
+        name="paw"
+        size={150}
+        color="rgba(255,255,255,0.18)"
+        style={styles.watermark}
+        importantForAccessibility="no"
+      />
 
-        <Pressable
-          onPress={onPress}
-          accessibilityRole="button"
-          android_ripple={{ color: 'rgba(238,135,174,0.2)' }}
-          style={styles.button}
-        >
-          <Text style={styles.buttonLabel}>{actionLabel}</Text>
-          <Ionicons name="arrow-forward" size={14} color={colors.cardPinkEnd} />
-        </Pressable>
+      <Text style={styles.eyebrow}>Próxima cita de {petName}</Text>
+
+      <View style={styles.body}>
+        <DateLeaf isoDate={date} accent={colors.cardPinkEnd} size="large" />
+
+        <View style={styles.texts}>
+          <Text style={styles.reason} numberOfLines={2}>
+            {reason}
+          </Text>
+          <Text style={styles.detail} numberOfLines={1}>
+            {veterinarian}
+          </Text>
+
+          <View style={styles.timeRow}>
+            <Ionicons name="time-outline" size={15} color={colors.textLight} />
+            <Text style={styles.time}>
+              {time} h, {formatDaysUntil(date)}
+            </Text>
+          </View>
+        </View>
       </View>
 
-      <View style={styles.decoration}>
-        <Ionicons name="paw" size={64} color="rgba(255,255,255,0.45)" />
-      </View>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        android_ripple={{ color: 'rgba(238,135,174,0.2)' }}
+        style={styles.button}
+      >
+        <Text style={styles.buttonLabel}>Ver cita</Text>
+      </Pressable>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 24,
+    borderRadius: 28,
     padding: 20,
     overflow: 'hidden',
     shadowColor: '#B04A76',
@@ -63,32 +90,63 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
 
-  texts: {
-    flex: 1,
+  watermark: {
+    position: 'absolute',
+    right: -28,
+    bottom: -34,
+    transform: [{ rotate: '-18deg' }],
   },
 
-  message: {
+  eyebrow: {
+    fontFamily: fonts.semibold,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.92)',
+  },
+
+  body: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 14,
+  },
+
+  texts: {
+    flex: 1,
+    gap: 2,
+  },
+
+  reason: {
     fontFamily: fonts.extrabold,
-    fontSize: 19,
-    lineHeight: 25,
+    fontSize: 21,
+    lineHeight: 26,
     color: colors.textLight,
   },
 
   detail: {
-    marginTop: 6,
     fontFamily: fonts.medium,
-    fontSize: 13,
+    fontSize: 14,
     color: 'rgba(255,255,255,0.92)',
   },
 
-  button: {
+  timeRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 5,
+    marginTop: 8,
+  },
+
+  time: {
+    fontFamily: fonts.bold,
+    fontSize: 14,
+    color: colors.textLight,
+  },
+
+  button: {
     alignSelf: 'flex-start',
-    gap: 6,
-    marginTop: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
+    marginTop: 18,
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 22,
     borderRadius: 999,
     backgroundColor: colors.appSurface,
   },
@@ -97,9 +155,5 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontSize: 14,
     color: colors.cardPinkEnd,
-  },
-
-  decoration: {
-    marginLeft: 8,
   },
 });

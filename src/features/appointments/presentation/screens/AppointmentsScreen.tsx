@@ -14,6 +14,7 @@ import { EmergencyCard } from '../../../../shared/components/EmergencyCard';
 import { QueryState } from '../../../../shared/components/QueryState';
 import { ScreenHeader } from '../../../../shared/components/ScreenHeader';
 import { SegmentedTabs } from '../../../../shared/components/SegmentedTabs';
+import { formatMonthYear } from '../../../../shared/utils/formatDate';
 import { useActivePet } from '../../../../shared/context/ActivePetContext';
 import { colors } from '../../../../core/theme/colors';
 import { fonts } from '../../../../core/theme/typography';
@@ -64,6 +65,18 @@ export default function AppointmentsScreen({ navigation }: Props) {
 
   const visible = section === 'upcoming' ? upcoming : past;
 
+  // Agrupadas por mes: la lista se recorre como un calendario.
+  const groups = useMemo(() => {
+    const byMonth = new Map<string, typeof visible>();
+
+    visible.forEach((appointment) => {
+      const month = formatMonthYear(appointment.date);
+      byMonth.set(month, [...(byMonth.get(month) ?? []), appointment]);
+    });
+
+    return [...byMonth.entries()];
+  }, [visible]);
+
   return (
     <View style={styles.screen}>
       <View style={[styles.headerArea, { paddingTop: insets.top + 12 }]}>
@@ -106,7 +119,7 @@ export default function AppointmentsScreen({ navigation }: Props) {
               <Text style={styles.emptyTitle}>
                 {section === 'upcoming'
                   ? `${activePet?.name ?? 'Tu mascota'} no tiene citas agendadas`
-                  : 'Sin citas anteriores'}
+                  : `${activePet?.name ?? 'Tu mascota'} no tiene citas anteriores`}
               </Text>
               <Text style={styles.emptyText}>
                 {section === 'upcoming'
@@ -115,21 +128,27 @@ export default function AppointmentsScreen({ navigation }: Props) {
               </Text>
             </View>
           ) : (
-            visible.map((appointment) => (
-              <AppointmentCard
-                key={appointment.id}
-                appointment={appointment}
-                onReschedule={
-                  section === 'upcoming' ? () => notifyPendingBackend('Reprogramar') : undefined
-                }
-                onCancel={
-                  section === 'upcoming' ? () => notifyPendingBackend('Cancelar') : undefined
-                }
-              />
+            groups.map(([month, items]) => (
+              <View key={month} style={styles.group}>
+                <Text style={styles.groupTitle}>{month}</Text>
+
+                {items.map((appointment) => (
+                  <AppointmentCard
+                    key={appointment.id}
+                    appointment={appointment}
+                    onReschedule={
+                      section === 'upcoming' ? () => notifyPendingBackend('Reprogramar') : undefined
+                    }
+                    onCancel={
+                      section === 'upcoming' ? () => notifyPendingBackend('Cancelar') : undefined
+                    }
+                  />
+                ))}
+              </View>
             ))
           )}
 
-          <EmergencyCard variant="compact" />
+          <EmergencyCard />
         </ScrollView>
       </QueryState>
     </View>
@@ -154,7 +173,17 @@ const styles = StyleSheet.create({
 
   content: {
     paddingHorizontal: 20,
-    gap: 16,
+    gap: 22,
+  },
+
+  group: {
+    gap: 10,
+  },
+
+  groupTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    color: colors.appTitle,
   },
 
   emptyCard: {

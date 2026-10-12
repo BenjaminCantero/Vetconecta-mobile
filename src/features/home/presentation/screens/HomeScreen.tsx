@@ -4,7 +4,7 @@
 // Regla de oro (A2): home depende de los dominios; ningún dominio depende de home.
 
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -19,7 +19,6 @@ import { EmergencyCard } from '../../../../shared/components/EmergencyCard';
 import { QueryState } from '../../../../shared/components/QueryState';
 import { ScreenHeader } from '../../../../shared/components/ScreenHeader';
 import { useActivePet } from '../../../../shared/context/ActivePetContext';
-import { formatRelativeDateTime } from '../../../../shared/utils/formatDate';
 import { colors } from '../../../../core/theme/colors';
 import { fonts } from '../../../../core/theme/typography';
 import type { RootStackParamList } from '../../../../core/navigation/RootNavigator';
@@ -65,7 +64,7 @@ export default function HomeScreen({ navigation }: Props) {
     refetch: refetchAppointments,
   } = useAppointments(appointmentsRepository);
 
-  const { activePetId } = useActivePet();
+  const { activePetId, activePet } = useActivePet();
 
   const [now] = useState(() => Date.now());
 
@@ -81,7 +80,11 @@ export default function HomeScreen({ navigation }: Props) {
   );
 
   const nextAppointmentPet = pets.find((pet) => pet.id === nextAppointment?.petId);
-  const reminder = medicationRemindersMock[0];
+  // Solo el recordatorio de la mascota activa; el mock aún se relaciona por
+  // nombre porque los tratamientos no tienen dominio propio.
+  const reminder = medicationRemindersMock.find(
+    (item) => !activePet || item.petName === activePet.name,
+  );
   const featuredPetId = activePetId ?? pets[0]?.id;
 
   // Estado combinado de las dos lecturas: carga si cualquiera carga, error el
@@ -104,7 +107,7 @@ export default function HomeScreen({ navigation }: Props) {
     <View style={styles.screen}>
       <View style={[styles.headerArea, { paddingTop: insets.top + 12 }]}>
         <ScreenHeader
-          eyebrow="Bienvenida."
+          eyebrow="Hola,"
           title={displayName(user?.email)}
           hasUnread
           onBellPress={() => navigation.navigate('Notificaciones')}
@@ -123,53 +126,65 @@ export default function HomeScreen({ navigation }: Props) {
           contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.section}>
-            {nextAppointment ? (
-              <HeroAppointmentCard
-                message={`${nextAppointmentPet?.name ?? 'Tu mascota'} tiene una cita ${formatRelativeDateTime(nextAppointment.date)}.`}
-                detail={`${nextAppointment.reason} · ${nextAppointment.veterinarian}`}
-                actionLabel="Ver Cita"
+          {nextAppointment ? (
+            <HeroAppointmentCard
+              date={nextAppointment.date}
+              petName={nextAppointmentPet?.name ?? 'tu mascota'}
+              reason={nextAppointment.reason}
+              veterinarian={nextAppointment.veterinarian}
+              onPress={() => navigation.navigate('Citas')}
+            />
+          ) : (
+            <View style={styles.emptyHero}>
+              <Text style={styles.emptyTitle}>
+                {activePet
+                  ? `${activePet.name} no tiene horas agendadas`
+                  : 'No tienes horas agendadas'}
+              </Text>
+              <Text style={styles.emptyText}>
+                Reserva una hora para su próximo control o vacuna.
+              </Text>
+              <Pressable
                 onPress={() => navigation.navigate('Citas')}
-              />
-            ) : (
-              <View style={styles.emptyHero}>
-                <Text style={styles.emptyTitle}>No tienes citas agendadas</Text>
-                <Text style={styles.emptyText}>
-                  Agenda una hora para el próximo control de tus mascotas.
-                </Text>
-              </View>
-            )}
-          </View>
+                accessibilityRole="button"
+                android_ripple={{ color: colors.tintPurple }}
+                style={styles.emptyButton}
+              >
+                <Text style={styles.emptyButtonLabel}>Agendar hora</Text>
+              </Pressable>
+            </View>
+          )}
+
+          {reminder && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Para hoy</Text>
+              <MedicationReminderCard reminder={reminder} />
+            </View>
+          )}
 
           <View style={styles.row}>
             <ActionCard
-              title="Agendar Cita"
+              title="Agendar hora"
               subtitle="Consultas y controles"
-              actionLabel="Agendar"
+              actionLabel="Abre tus citas para reservar una hora"
               color={colors.cardOrange}
               icon="calendar-outline"
+              tone="quiet"
               onPress={() => navigation.navigate('Citas')}
             />
 
             <ActionCard
-              title="Carnet Digital"
-              subtitle="Vacunas, peso y controles"
-              actionLabel="Ver Carnet"
+              title="Carnet digital"
+              subtitle="Vacunas y controles"
+              actionLabel="Abre el carnet de la mascota activa"
               color={colors.cardPurple}
               icon="document-text-outline"
+              tone="quiet"
               onPress={openHealthCard}
             />
           </View>
 
-          <View style={styles.section}>
-            <EmergencyCard />
-          </View>
-
-          {reminder && (
-            <View style={styles.section}>
-              <MedicationReminderCard reminder={reminder} />
-            </View>
-          )}
+          <EmergencyCard />
         </ScrollView>
       </QueryState>
     </View>
@@ -194,11 +209,17 @@ const styles = StyleSheet.create({
 
   content: {
     paddingHorizontal: 20,
-    gap: 16,
+    gap: 22,
   },
 
   section: {
-    width: '100%',
+    gap: 10,
+  },
+
+  sectionTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 17,
+    color: colors.appTitle,
   },
 
   row: {
@@ -207,21 +228,41 @@ const styles = StyleSheet.create({
   },
 
   emptyHero: {
-    borderRadius: 24,
+    borderRadius: 28,
     padding: 20,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: colors.cardPinkEnd,
     backgroundColor: colors.appSurface,
   },
 
-  emptyTitle: {
+  emptyButton: {
+    alignSelf: 'flex-start',
+    minHeight: 44,
+    justifyContent: 'center',
+    marginTop: 16,
+    paddingHorizontal: 22,
+    borderRadius: 999,
+    backgroundColor: colors.appHeading,
+  },
+
+  emptyButtonLabel: {
     fontFamily: fonts.bold,
-    fontSize: 16,
+    fontSize: 14,
+    color: colors.textLight,
+  },
+
+  emptyTitle: {
+    fontFamily: fonts.extrabold,
+    fontSize: 19,
     color: colors.appTitle,
   },
 
   emptyText: {
     marginTop: 6,
     fontFamily: fonts.regular,
-    fontSize: 13,
+    fontSize: 14,
+    lineHeight: 20,
     color: colors.appMuted,
   },
 });

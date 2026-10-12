@@ -1,5 +1,7 @@
 // Responsabilidad: tarjeta de recordatorio de medicamentos (feature home).
 // Dibuja los datos de ejemplo de `home/data`; no hay dominio de tratamientos.
+// Superficie blanca con el verde de la maqueta como acento: es información de
+// seguimiento, no una alerta, así que no compite con la próxima cita.
 
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,75 +23,98 @@ export function MedicationReminderCard({ reminder }: MedicationReminderCardProps
   return (
     <View style={styles.card}>
       <View style={styles.topRow}>
-        <View style={styles.timePill}>
-          <Text style={styles.timeLabel}>{reminder.timeLabel}</Text>
+        <View style={styles.icon}>
+          <Ionicons name="medical" size={18} color={colors.cardGreen} />
         </View>
 
-        {reminder.taken && (
+        <View style={styles.texts}>
+          <Text style={styles.medication}>{reminder.medication}</Text>
+          <Text style={styles.detail}>
+            {reminder.petName}, {reminder.dose}
+          </Text>
+        </View>
+
+        {reminder.taken ? (
           <View style={styles.takenPill}>
             <Ionicons name="checkmark" size={13} color={colors.cardGreen} />
             <Text style={styles.takenLabel}>Tomada</Text>
           </View>
+        ) : (
+          <Text style={styles.time}>{reminder.timeLabel}</Text>
         )}
       </View>
 
-      <Text style={styles.title}>Recordatorio de Medicamentos</Text>
-      <Text style={styles.medication}>{reminder.medication}</Text>
-      <Text style={styles.detail}>
-        {reminder.petName} · {reminder.dose} · {reminder.dayLabel}
-      </Text>
-
-      <View style={styles.progressTrack}>
+      <View
+        style={styles.progressTrack}
+        accessibilityRole="progressbar"
+        accessibilityValue={{ min: 0, max: reminder.dosesTotal, now: reminder.dosesTaken }}
+      >
         <View style={[styles.progressFill, { width: `${progress}%` }]} />
       </View>
 
-      <Text style={styles.progressLabel}>
-        Dosis {reminder.dosesTaken} de {reminder.dosesTotal} · {progress}%
-      </Text>
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>
+          Dosis {reminder.dosesTaken} de {reminder.dosesTotal}
+        </Text>
+        <Text style={styles.footerText}>{reminder.dayLabel}</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 24,
-    padding: 20,
-    backgroundColor: colors.cardGreen,
-    shadowColor: '#1B6B43',
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
+    borderRadius: 22,
+    padding: 16,
+    backgroundColor: colors.appSurface,
   },
 
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 14,
+    gap: 12,
   },
 
-  timePill: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 999,
-    backgroundColor: colors.appSurface,
+  icon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.tintGreen,
   },
 
-  timeLabel: {
+  texts: {
+    flex: 1,
+  },
+
+  medication: {
     fontFamily: fonts.bold,
-    fontSize: 12,
+    fontSize: 15,
+    color: colors.appTitle,
+  },
+
+  detail: {
+    marginTop: 2,
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.appMuted,
+  },
+
+  time: {
+    fontFamily: fonts.bold,
+    fontSize: 13,
     color: colors.appTitle,
   },
 
   takenPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: colors.appSurface,
+    backgroundColor: colors.tintGreen,
   },
 
   takenLabel: {
@@ -98,46 +123,29 @@ const styles = StyleSheet.create({
     color: colors.cardGreen,
   },
 
-  title: {
-    fontFamily: fonts.extrabold,
-    fontSize: 18,
-    color: colors.textLight,
-  },
-
-  medication: {
-    marginTop: 6,
-    fontFamily: fonts.bold,
-    fontSize: 14,
-    letterSpacing: 0.4,
-    color: colors.textLight,
-    textTransform: 'uppercase',
-  },
-
-  detail: {
-    marginTop: 4,
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.9)',
-  },
-
   progressTrack: {
-    height: 8,
-    marginTop: 16,
+    height: 6,
+    marginTop: 14,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.28)',
+    backgroundColor: colors.tintGreen,
     overflow: 'hidden',
   },
 
   progressFill: {
     height: '100%',
     borderRadius: 999,
-    backgroundColor: colors.appSurface,
+    backgroundColor: colors.cardGreen,
   },
 
-  progressLabel: {
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: 8,
-    fontFamily: fonts.semibold,
+  },
+
+  footerText: {
+    fontFamily: fonts.medium,
     fontSize: 12,
-    color: 'rgba(255,255,255,0.92)',
+    color: colors.appMuted,
   },
 });
