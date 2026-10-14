@@ -1,21 +1,8 @@
-// Responsabilidad: escritura de citas (capa DATA). Reserva con POST /citas y
-// cancela con PATCH /citas/:id/cancelar (FR-3 / UC-03, BR-5), y traduce cada
-// respuesta HTTP a una cita o a un error de dominio:
-//  - 201 → cita creada (estado 'reservada').
-//  - 409 → HoraNoDisponibleError (flujo A1: la UI pide otra hora).
-//  - 400 → ReservaInvalidaError con el mensaje del backend si viene.
-//  - 401 → httpClient ya limpió la sesión y avisó a auth (no hay refresh token
-//          todavía, ver httpClient); aquí solo se devuelve un mensaje mostrable.
+// Responsabilidad: escritura de citas (capa DATA).
+// Reserva con POST /citas y cancela con PATCH /citas/:id/cancelar.
 //
-// Antes de enviar se verifica la conectividad: sin red se lanza
-// SinConexionError y no se envía nada (flujo A2, la reserva no se encola).
-//
-// Una segunda llamada mientras la primera sigue en curso no dispara otro
-// request: recibe la misma promesa pendiente, así un doble toque no crea dos
-// citas aunque la UI no alcance a deshabilitar el botón.
-//
-// Nota: mientras ENV.USE_MOCKS esté activo, la respuesta se simula localmente
-// (la verificación de conectividad sí se hace igual).
+// Maneja errores de dominio y verifica conectividad antes de enviar
+// solicitudes de reserva o cancelación.
 
 import { isAxiosError } from 'axios';
 
@@ -24,30 +11,48 @@ import { ENDPOINTS } from '../../../core/api/endpoints';
 import { toHttpError } from '../../../core/api/httpError';
 import { ENV } from '../../../core/config/env';
 import { isOnline } from '../../../core/network/connectivity';
+
 import type { Appointment } from '../domain/Appointment';
+
 import {
   HoraNoDisponibleError,
   ReservaInvalidaError,
   SinConexionError,
 } from '../domain/bookingErrors';
+
 import type { BookingRequest } from '../domain/useBookAppointment';
 import type { AppointmentDto } from './appointmentsDto';
+
 import { appointmentsMock } from './appointmentsMock';
 import { toAppointment } from './appointmentsRepository';
-import type { BookingErrorDto, BookingRequestDto } from './bookingDto';
 
+import type {
+  BookingErrorDto,
+  BookingRequestDto,
+} from './bookingDto';
+
+// Mensajes de error al reservar.
 const RESERVE_ERROR_MESSAGES = {
-  unauthorized: 'Tu sesión expiró. Vuelve a iniciar sesión para reservar tu hora.',
-  fallback: 'No se pudo reservar la hora. Inténtalo más tarde.',
+  unauthorized:
+    'Tu sesión expiró. Vuelve a iniciar sesión para reservar tu hora.',
+  fallback:
+    'No se pudo reservar la hora. Inténtalo más tarde.',
 };
 
+// Mensajes de error al cancelar.
 const CANCEL_ERROR_MESSAGES = {
-  unauthorized: 'Tu sesión expiró. Vuelve a iniciar sesión para cancelar tu cita.',
-  notFound: 'La cita ya no existe.',
-  fallback: 'No se pudo cancelar la cita. Inténtalo más tarde.',
+  unauthorized:
+    'Tu sesión expiró. Vuelve a iniciar sesión para cancelar tu cita.',
+  notFound:
+    'La cita ya no existe.',
+  fallback:
+    'No se pudo cancelar la cita. Inténtalo más tarde.',
 };
 
-function toBookingRequestDto(request: BookingRequest): BookingRequestDto {
+// Convierte la solicitud del dominio al DTO esperado por la API.
+function toBookingRequestDto(
+  request: BookingRequest,
+): BookingRequestDto {
   return {
     id_mascota: request.petId,
     id_veterinario: request.veterinarianId,
@@ -57,6 +62,7 @@ function toBookingRequestDto(request: BookingRequest): BookingRequestDto {
   };
 }
 
+// Traduce errores HTTP a errores del dominio.
 function toReserveError(error: unknown): Error {
   if (isAxiosError<BookingErrorDto>(error)) {
     const status = error.response?.status;
@@ -67,6 +73,7 @@ function toReserveError(error: unknown): Error {
 
     if (status === 400) {
       const message = error.response?.data?.mensaje;
+
       return typeof message === 'string' && message
         ? new ReservaInvalidaError(message)
         : new ReservaInvalidaError();
@@ -76,13 +83,17 @@ function toReserveError(error: unknown): Error {
   return toHttpError(error, RESERVE_ERROR_MESSAGES);
 }
 
+// Comprueba que exista conexión antes de escribir.
 async function ensureOnline(): Promise<void> {
   if (!(await isOnline())) {
     throw new SinConexionError();
   }
 }
 
-function mockReservation(request: BookingRequest): AppointmentDto {
+// Genera una cita simulada mientras no exista backend.
+function mockReservation(
+  request: BookingRequest,
+): AppointmentDto {
   return {
     id: `mock-${Date.now()}`,
     id_mascota: request.petId,
@@ -93,11 +104,19 @@ function mockReservation(request: BookingRequest): AppointmentDto {
   };
 }
 
-async function sendReservation(request: BookingRequest): Promise<Appointment> {
+// Realiza la reserva.
+async function sendReservation(
+  request: BookingRequest,
+): Promise<Appointment> {
   await ensureOnline();
 
   if (ENV.USE_MOCKS) {
-    return toAppointment(mockReservation(request));
+    const appointment = mockReservation(request);
+
+    // Guarda la nueva reserva para que aparezca al consultar Mis citas.
+    appointmentsMock.push(appointment);
+
+    return toAppointment(appointment);
   }
 
   try {
@@ -105,12 +124,14 @@ async function sendReservation(request: BookingRequest): Promise<Appointment> {
       ENDPOINTS.APPOINTMENTS.BOOK,
       toBookingRequestDto(request),
     );
+
     return toAppointment(data);
   } catch (error) {
     throw toReserveError(error);
   }
 }
 
+// Evita reservas duplicadas por múltiples pulsaciones.
 let pendingReservation: Promise<Appointment> | null = null;
 
 export const bookingRepository = {
@@ -124,19 +145,41 @@ export const bookingRepository = {
     return pendingReservation;
   },
 
+  // Cancela una cita existente.
   async cancel(appointmentId: string): Promise<Appointment> {
     await ensureOnline();
 
     if (ENV.USE_MOCKS) {
-      const appointment = appointmentsMock.find((dto) => dto.id === appointmentId);
-      if (!appointment) throw new Error(CANCEL_ERROR_MESSAGES.notFound);
-      return { ...toAppointment(appointment), status: 'cancelada' };
+      const appointment = appointmentsMock.find(
+        (dto) => dto.id === appointmentId,
+      );
+
+      if (!appointment) {
+        throw new Error(CANCEL_ERROR_MESSAGES.notFound);
+      }
+
+      // Solo se pueden cancelar citas futuras y reservadas.
+      const isFuture =
+        new Date(appointment.fecha).getTime() > Date.now();
+
+      if (appointment.estado !== 'reservada' || !isFuture) {
+        throw new ReservaInvalidaError(
+          'Esta cita ya no se puede cancelar.',
+        );
+      }
+
+      // Modifica el objeto original del mock.
+      // Así, getAppointments() devolverá el nuevo estado.
+      appointment.estado = 'cancelada';
+
+      return toAppointment(appointment);
     }
 
     try {
       const { data } = await httpClient.patch<AppointmentDto>(
         ENDPOINTS.APPOINTMENTS.CANCEL(appointmentId),
       );
+
       return toAppointment(data);
     } catch (error) {
       throw toHttpError(error, CANCEL_ERROR_MESSAGES);
