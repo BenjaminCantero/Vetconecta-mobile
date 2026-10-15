@@ -1,9 +1,5 @@
-// Responsabilidad: acceso a datos de disponibilidad de horas (capa DATA).
-// Llama a GET /disponibilidad (FR-3 / UC-03) filtrando por mascota,
-// especialidad, veterinario y fecha, y devuelve las horas disponibles.
-//
-// Nota: el backend lo desarrolla otro equipo y aún no está disponible, así que
-// mientras ENV.USE_MOCKS esté activo las horas salen de `availabilityMock`.
+// Responsabilidad: acceso a disponibilidad (DATA).
+// En mocks, excluye los horarios ya reservados para el mismo profesional.
 
 import { httpClient } from '../../../core/api/httpClient';
 import { ENDPOINTS } from '../../../core/api/endpoints';
@@ -11,6 +7,8 @@ import { toHttpError } from '../../../core/api/httpError';
 import { ENV } from '../../../core/config/env';
 import type { AvailabilityDto } from './availabilityDto';
 import { availabilityMock } from './availabilityMock';
+import { appointmentsMock } from './appointmentsMock';
+import { bookingVeterinariansMock } from './bookingCatalogMock';
 
 export interface AvailabilityQuery {
   petId: string;
@@ -27,20 +25,34 @@ const AVAILABILITY_ERROR_MESSAGES = {
 export const availabilityRepository = {
   async getAvailability(query: AvailabilityQuery): Promise<string[]> {
     if (ENV.USE_MOCKS) {
-      return availabilityMock.horas;
+      const selectedVet = bookingVeterinariansMock.find(
+        (vet) => vet.id === query.veterinarian,
+      );
+      const occupiedHours = new Set(
+        appointmentsMock
+          .filter((appointment) =>
+            (appointment.veterinario === query.veterinarian ||
+              appointment.veterinario === selectedVet?.name) &&
+            appointment.fecha.slice(0, 10) === query.date &&
+            appointment.estado !== 'cancelada'
+          )
+          .map((appointment) => appointment.fecha.slice(11, 16)),
+      );
+      return availabilityMock.horas.filter((hour) => !occupiedHours.has(hour));
     }
 
     try {
-      const { data } = await httpClient.get<AvailabilityDto>(ENDPOINTS.APPOINTMENTS.AVAILABILITY, {
-        params: {
-          id_mascota: query.petId,
-          especialidad: query.specialty,
-          veterinario: query.veterinarian,
-          fecha: query.date,
+      const { data } = await httpClient.get<AvailabilityDto>(
+        ENDPOINTS.APPOINTMENTS.AVAILABILITY,
+        {
+          params: {
+            id_mascota: query.petId,
+            especialidad: query.specialty,
+            veterinario: query.veterinarian,
+            fecha: query.date,
+          },
         },
-      });
-      // Defensa mínima: si la API devuelve algo que no es una lista, se trata
-      // como "sin horas disponibles" en lugar de reventar al mapear.
+      );
       return Array.isArray(data?.horas) ? data.horas : [];
     } catch (error) {
       throw toHttpError(error, AVAILABILITY_ERROR_MESSAGES);

@@ -1,6 +1,7 @@
 // Responsabilidad: pantalla Mis Citas (capa PRESENTATION).
 // Lista citas, filtra por mascota activa y permite cancelar reservas.
 // Soporta consulta de datos guardados sin conexión (G1).
+// D3: permite navegar al flujo de agendamiento.
 
 import { useMemo, useState } from 'react';
 
@@ -18,6 +19,8 @@ import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActivePetSwitcher } from '../../../../shared/components/ActivePetSwitcher';
@@ -74,9 +77,17 @@ export default function AppointmentsScreen({ navigation }: Props) {
   const [cancellingId, setCancellingId] =
     useState<string | null>(null);
 
-  // Se actualiza al renderizar la pantalla.
+  // Recarga las citas al regresar desde el flujo de reserva.
+  // Así, una nueva cita puede aparecer en Mis citas.
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
+
   const now = Date.now();
 
+  // Separa citas próximas y pasadas.
   const { upcoming, past } = useMemo(() => {
     const sorted = appointments
       .filter(
@@ -94,6 +105,7 @@ export default function AppointmentsScreen({ navigation }: Props) {
         (appointment) =>
           new Date(appointment.date).getTime() >= now,
       ),
+
       past: sorted
         .filter(
           (appointment) =>
@@ -106,6 +118,7 @@ export default function AppointmentsScreen({ navigation }: Props) {
   const visible =
     section === 'upcoming' ? upcoming : past;
 
+  // Agrupa las citas por mes.
   const groups = useMemo(() => {
     const byMonth = new Map<string, Appointment[]>();
 
@@ -185,13 +198,17 @@ export default function AppointmentsScreen({ navigation }: Props) {
     );
   };
 
-  // D3 todavía no tiene una pantalla registrada en RootNavigator.
-  // Se informa al usuario sin navegar a una ruta inexistente.
+  // D3: abre la nueva pantalla de reserva.
   const handleSchedule = () => {
-    Alert.alert(
-      'Agendar hora',
-      'Estamos preparando el flujo para agendar una nueva cita.',
-    );
+    if (isOffline) {
+      Alert.alert(
+        'Sin conexión',
+        'Necesitas conexión a internet para reservar una hora.',
+      );
+      return;
+    }
+
+    navigation.navigate('BookAppointment');
   };
 
   return (
@@ -329,6 +346,27 @@ export default function AppointmentsScreen({ navigation }: Props) {
               </View>
             ))
           )}
+
+          {/* D3: permite agendar aunque ya existan citas. */}
+          {visible.length > 0 &&
+            section === 'upcoming' &&
+            !isOffline && (
+              <Pressable
+                style={styles.scheduleButton}
+                onPress={handleSchedule}
+                accessibilityRole="button"
+              >
+                <Ionicons
+                  name="add-circle-outline"
+                  size={20}
+                  color={colors.textLight}
+                />
+
+                <Text style={styles.scheduleButtonText}>
+                  Agendar nueva hora
+                </Text>
+              </Pressable>
+            )}
 
           <EmergencyCard />
         </ScrollView>
