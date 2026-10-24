@@ -3,7 +3,7 @@
 // Soporta consulta de datos guardados sin conexión (G1).
 // D3: permite navegar al flujo de agendamiento.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
   Alert,
@@ -55,7 +55,13 @@ type Props = CompositeScreenProps<
 
 type Section = 'upcoming' | 'past';
 
-export default function AppointmentsScreen({ navigation }: Props) {
+// Cuánto tiempo queda destacada la cita abierta desde una notificación push.
+const FOCUS_HIGHLIGHT_MS = 4000;
+
+export default function AppointmentsScreen({
+  navigation,
+  route,
+}: Props) {
   const insets = useSafeAreaInsets();
 
   const {
@@ -67,12 +73,15 @@ export default function AppointmentsScreen({ navigation }: Props) {
     refetch,
   } = useAppointments(appointmentsRepository);
 
-  const { activePetId, activePet } = useActivePet();
+  const { activePetId, activePet, setActivePetId } =
+    useActivePet();
 
   const { cancel, isSubmitting } =
     useBookAppointment(bookingRepository);
 
-  const [section, setSection] = useState<Section>('upcoming');
+  // Sección elegida por el dueño con las pestañas Próximas / Pasadas.
+  const [chosenSection, setChosenSection] =
+    useState<Section>('upcoming');
 
   const [cancellingId, setCancellingId] =
     useState<string | null>(null);
@@ -86,6 +95,56 @@ export default function AppointmentsScreen({ navigation }: Props) {
   );
 
   const now = Date.now();
+
+  // Llegada desde una notificación push (deep link con citaId): se muestra esa cita
+  // en su mascota y en su sección, destacada unos segundos. Si la cita aún no está en
+  // la lista (recién creada), se espera a que la recarga de arriba la traiga.
+  const focusedAppointmentId = route.params?.citaId;
+
+  const focusedAppointment = useMemo(
+    () =>
+      focusedAppointmentId
+        ? (appointments.find(
+            (appointment) => appointment.id === focusedAppointmentId,
+          ) ?? null)
+        : null,
+    [appointments, focusedAppointmentId],
+  );
+
+  // La lista se filtra por la mascota activa: se cambia a la mascota de la cita.
+  useEffect(() => {
+    if (focusedAppointment) {
+      setActivePetId(focusedAppointment.petId);
+    }
+  }, [focusedAppointment, setActivePetId]);
+
+  // Pasado el destacado, se limpia el parámetro y la pantalla vuelve a la normalidad.
+  useEffect(() => {
+    if (!focusedAppointment) return;
+
+    const timer = setTimeout(
+      () => navigation.setParams({ citaId: undefined }),
+      FOCUS_HIGHLIGHT_MS,
+    );
+
+    return () => clearTimeout(timer);
+  }, [focusedAppointment, navigation]);
+
+  // Mientras hay una cita destacada, la sección la decide su fecha;
+  // si no, la que eligió el dueño.
+  const section: Section = focusedAppointment
+    ? new Date(focusedAppointment.date).getTime() >= now
+      ? 'upcoming'
+      : 'past'
+    : chosenSection;
+
+  const handleSectionChange = (next: Section) => {
+    setChosenSection(next);
+
+    if (focusedAppointmentId) {
+      navigation.setParams({ citaId: undefined });
+    }
+  };
 
   // Separa citas próximas y pasadas.
   const { upcoming, past } = useMemo(() => {
@@ -235,7 +294,7 @@ export default function AppointmentsScreen({ navigation }: Props) {
             { value: 'past', label: 'Pasadas' },
           ]}
           value={section}
-          onChange={setSection}
+          onChange={handleSectionChange}
         />
       </View>
 
@@ -336,6 +395,9 @@ export default function AppointmentsScreen({ navigation }: Props) {
                   <AppointmentCard
                     key={appointment.id}
                     appointment={appointment}
+                    highlighted={
+                      appointment.id === focusedAppointment?.id
+                    }
                     onCancel={
                       canCancelAppointment(appointment)
                         ? () => handleCancel(appointment.id)

@@ -1,7 +1,8 @@
-// Responsabilidad: stack raíz de navegación (CORE).
+// Responsabilidad: stack raíz de navegación.
 // Decide entre autenticación y aplicación según la sesión activa.
 
 import { useState } from 'react';
+import type { NavigatorScreenParams } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { colors } from '../theme/colors';
@@ -18,6 +19,7 @@ import { PetDetailScreen, HealthCardScreen } from '../../features/pets';
 import { BookAppointmentScreen } from '../../features/appointments';
 
 import { TabNavigator } from './TabNavigator';
+import type { TabParamList } from './TabNavigator';
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -25,7 +27,7 @@ export type RootStackParamList = {
   Register: undefined;
   ForgotPassword: undefined;
 
-  AppTabs: undefined;
+  AppTabs: NavigatorScreenParams<TabParamList> | undefined;
 
   PetDetail: {
     petId: string;

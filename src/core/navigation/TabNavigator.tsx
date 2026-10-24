@@ -1,4 +1,4 @@
-// Responsabilidad: tabs inferiores de la app autenticada (capa CORE).
+// Responsabilidad: tabs inferiores de la app autenticada.
 // Agrupa la pantalla principal de cada feature. Las pantallas de detalle
 // (PetDetail, HealthCard) se navegan como push sobre el stack raíz.
 //
@@ -14,12 +14,13 @@ import { fonts } from '../theme/typography';
 import { HomeScreen } from '../../features/home';
 import { ActivePetSync, MyPetsScreen } from '../../features/pets';
 import { AppointmentsScreen } from '../../features/appointments';
-import { NotificationsScreen } from '../../features/notifications';
+import { NotificationsScreen, PushNotificationsBridge } from '../../features/notifications';
 
 export type TabParamList = {
   Inicio: undefined;
   MisMascotas: undefined;
-  Citas: undefined;
+  // citaId: cita a destacar al llegar desde una notificacion push
+  Citas: { citaId?: string } | undefined;
   Notificaciones: undefined;
 };
 
@@ -81,6 +82,8 @@ export function TabNavigator() {
           options={{ title: 'Avisos' }}
         />
       </Tab.Navigator>
+      {/* Permiso tras el login, registro del token y navegacion al tocar una notificacion. Despues de las tabs */}
+      <PushNotificationsBridge/> 
     </>
   );
 }

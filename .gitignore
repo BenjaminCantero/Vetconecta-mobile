@@ -36,6 +36,11 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# Firebase / APNs: credenciales
+google-services.json
+GoogleService-Info.plist
+*firebase-adminsdk*.json
+
 # generated native folders
 /ios
 /android

@@ -68,12 +68,15 @@ const STATUS_STYLE: Record<
 
 interface AppointmentCardProps {
   appointment: Appointment;
+  // true cuando se llega a esta cita desde una notificacion push
+  highlighted?: boolean;
   onReschedule?: () => void;
   onCancel?: () => void;
 }
 
 export function AppointmentCard({
   appointment,
+  highlighted = false,
   onReschedule,
   onCancel,
 }: AppointmentCardProps) {
@@ -99,7 +102,7 @@ export function AppointmentCard({
   const specialty = appointment.specialty?.trim();
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, highlighted && styles.cardHighlighted]}>
       <View style={styles.body}>
         <DateLeaf
           isoDate={appointment.date}
@@ -265,6 +268,11 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: colors.appSurface,
     overflow: 'hidden',
+  },
+
+  cardHighlighted: {
+    borderWidth: 2,
+    borderColor: colors.appHeading,
   },
 
   body: {

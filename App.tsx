@@ -21,6 +21,12 @@ import { ActivePetProvider } from './src/shared/context/ActivePetContext';
 
 import { AuthProvider } from './src/features/auth';
 
+import { configureForegroundPresentation } from './src/core/notifications/pushClient';
+
+// Notificaciones push recibidas con la app abierta: se muestran como banner.
+// Va fuera del componente para que quede configurado antes de que llegue cualquier aviso.
+configureForegroundPresentation();
+
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,
