@@ -7,7 +7,9 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.vetconectamobile"
+      
     },
     "android": {
       "adaptiveIcon": {
@@ -17,11 +19,21 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.vetconectamobile"
+      "package": "com.anonymous.vetconectamobile",
+      "permissions": ["android.permission.POST_NOTIFICATIONS"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-font"]
+    "plugins": [
+      "expo-font", 
+      [
+        "expo-notifications", 
+        {
+          "color": "#7A22E0", 
+          "defaultChannel": "recordatorios"
+        }
+      ]
+    ]
   }
 }

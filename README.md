@@ -146,8 +146,9 @@ Ejemplos:
 
 Al final del sprint, `develop` se fusiona a `main`, que queda con el producto integrado y estable, listo para entregar.
 
-### Mejora identificada (próximo sprint)
+## Notificaciones push (FCM / APNs)
 
+<<<<<<< HEAD
 Migrar de ramas personales a **ramas por tarea** (`feat/B5-...`) que entren a `develop` de forma aislada y revisable.
 
 ## CI/CD
@@ -162,3 +163,53 @@ Configuración inicial del CD (una sola vez):
 3. En GitHub, **Settings → Secrets and variables → Actions → New repository secret**, nombre `EXPO_TOKEN`.
 
 Sin el secret `EXPO_TOKEN` el workflow de build termina sin compilar y deja un aviso.
+=======
+La app recibe recordatorios de citas y controles con [`expo-notifications`](https://docs.expo.dev/versions/v57.0.0/sdk/notifications/). El backend (Web H1) los envía por **Firebase Cloud Messaging** usando el **mismo proyecto de Firebase** que la app.
+
+> **No subir credenciales al repositorio.** `google-services.json`, `GoogleService-Info.plist`, las claves `.p8` y las cuentas de servicio de Firebase están en `.gitignore`. Se comparten por el canal privado del equipo.
+
+### Configuración (una vez por integrante)
+
+1. Pedir a Web H1 acceso como miembro del proyecto de Firebase.
+2. **Android:** en Firebase → *Configuración del proyecto* → *Tus apps*, la app Android debe estar registrada con el package `com.anonymous.vetconectamobile` (el de `app.json`). Descargar `google-services.json` y dejarlo en la **raíz del repo**.
+3. Instalar la librería (solo la primera vez que se integra esta rama):
+
+   ```bash
+   npx expo install expo-notifications
+   ```
+
+4. Compilar la development build (las push **no funcionan en Expo Go** en Android):
+
+   ```bash
+   npm run android
+   ```
+
+   Si falta `google-services.json`, la app compila igual pero sin push (lo avisa `app.config.js`).
+
+### iOS (solo si el equipo tiene cuenta de Apple Developer pagada)
+
+- En Apple Developer → *Keys*, crear una clave con **Apple Push Notifications service (APNs)** y descargar el `.p8` (se descarga una sola vez). Anotar el *Key ID* y el *Team ID*.
+- Registrar la app iOS en Firebase con el bundle `com.anonymous.vetconectamobile` y cargar la clave `.p8` en *Cloud Messaging → Configuración de apps de Apple*.
+- **Limitación conocida:** con `expo-notifications`, iOS entrega un token de **APNs**, no de FCM. La consola de Firebase solo envía a tokens de FCM, así que en iOS el envío de prueba debe hacerse con APNs directo. La app informa al backend el tipo de token (`proveedor: 'fcm' | 'apns'`).
+
+### Probar desde la consola de Firebase
+
+1. Abrir la app, iniciar sesión y aceptar el permiso. En la consola de Metro aparece:
+
+   ```
+   [push] Token android del dispositivo:
+   <token>
+   ```
+
+2. En Firebase → *Messaging* → nueva campaña de *Notificaciones*: escribir título y texto.
+3. En *Opciones adicionales*: canal de Android `recordatorios` y, en *Datos personalizados*, la clave `citaId` con el id de una cita (con los mocks: `cita-005`).
+4. Volver al primer paso → *Enviar mensaje de prueba* → pegar el token.
+
+| Estado de la app | Qué debe pasar |
+|---|---|
+| Abierta | Aparece el banner del sistema |
+| En segundo plano | Aparece en la bandeja; al tocarla abre *Mis citas* con la cita destacada |
+| Cerrada (deslizada fuera de recientes) | Igual que en segundo plano; si no hay sesión, primero pide login |
+
+Sin `citaId`, al tocar se abre la pestaña *Avisos* (centro de notificaciones). No usar *Forzar detención* para probar "cerrada": Android no entrega notificaciones a una app detenida a la fuerza hasta que se abra de nuevo.
+>>>>>>> Develop

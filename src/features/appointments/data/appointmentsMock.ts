@@ -1,8 +1,8 @@
-// Responsabilidad: datos de ejemplo de citas (capa DATA).
-// Reproducen la forma exacta de la respuesta esperada de GET /citas, para
-// que el mapeo a la entidad del dominio sea el mismo con mock y con backend.
-// Se usan solo mientras ENV.USE_MOCKS está activo; cuando el otro equipo
-// publique la API, este archivo se elimina junto con su rama en el repositorio.
+// Responsabilidad: datos simulados de citas (capa DATA).
+// Mantiene la estructura esperada de GET /citas.
+//
+// Los datos pueden modificarse en memoria mientras la aplicación
+// está ejecutándose, para simular reservas y cancelaciones.
 
 import type { AppointmentDto } from './appointmentsDto';
 
@@ -40,11 +40,12 @@ export const appointmentsMock: AppointmentDto[] = [
     veterinario: 'Dr. Ignacio Pérez',
   },
   {
+    // Cita futura reservada para probar D4.
     id: 'cita-005',
     id_mascota: 'mascota-001',
     fecha: '2026-11-18T08:45:00.000Z',
     motivo: 'Desparasitación',
-    estado: 'pendiente',
+    estado: 'reservada',
     veterinario: 'Dr. Manuel Soto',
   },
 ];

@@ -1,24 +1,7 @@
-// Responsabilidad: escritura de citas (capa DATA). Reserva con POST /citas y
-// cancela con PATCH /citas/:id/cancelar (FR-3 / UC-03, BR-5), y traduce cada
-// respuesta HTTP a una cita o a un error de dominio:
-//  - 201 → cita creada (estado 'reservada').
-//  - 409 → HoraNoDisponibleError (flujo A1: la UI pide otra hora).
-//  - 400 → ReservaInvalidaError con el mensaje del backend si viene.
-//  - 401 → httpClient ya limpió la sesión y avisó a auth (no hay refresh token
-//          todavía, ver httpClient); aquí solo se devuelve un mensaje mostrable.
-//
-// Antes de enviar se verifica la conectividad: sin red se lanza
-// SinConexionError y no se envía nada (flujo A2, la reserva no se encola).
-//
-// Una segunda llamada mientras la primera sigue en curso no dispara otro
-// request: recibe la misma promesa pendiente, así un doble toque no crea dos
-// citas aunque la UI no alcance a deshabilitar el botón.
-//
-// Nota: mientras ENV.USE_MOCKS esté activo, la respuesta se simula localmente
-// (la verificación de conectividad sí se hace igual).
+// Responsabilidad: escritura de citas (DATA).
+// Reserva con POST /citas y cancela con PATCH /citas/:id/cancelar.
 
 import { isAxiosError } from 'axios';
-
 import { httpClient } from '../../../core/api/httpClient';
 import { ENDPOINTS } from '../../../core/api/endpoints';
 import { toHttpError } from '../../../core/api/httpError';
@@ -33,8 +16,10 @@ import {
 import type { BookingRequest } from '../domain/useBookAppointment';
 import type { AppointmentDto } from './appointmentsDto';
 import { appointmentsMock } from './appointmentsMock';
+import { availabilityMock } from './availabilityMock';
 import { toAppointment } from './appointmentsRepository';
 import type { BookingErrorDto, BookingRequestDto } from './bookingDto';
+import { bookingSpecialtiesMock, bookingVeterinariansMock } from './bookingCatalogMock';
 
 const RESERVE_ERROR_MESSAGES = {
   unauthorized: 'Tu sesión expiró. Vuelve a iniciar sesión para reservar tu hora.',
@@ -60,11 +45,7 @@ function toBookingRequestDto(request: BookingRequest): BookingRequestDto {
 function toReserveError(error: unknown): Error {
   if (isAxiosError<BookingErrorDto>(error)) {
     const status = error.response?.status;
-
-    if (status === 409) {
-      return new HoraNoDisponibleError();
-    }
-
+    if (status === 409) return new HoraNoDisponibleError();
     if (status === 400) {
       const message = error.response?.data?.mensaje;
       return typeof message === 'string' && message
@@ -72,24 +53,23 @@ function toReserveError(error: unknown): Error {
         : new ReservaInvalidaError();
     }
   }
-
   return toHttpError(error, RESERVE_ERROR_MESSAGES);
 }
 
 async function ensureOnline(): Promise<void> {
-  if (!(await isOnline())) {
-    throw new SinConexionError();
-  }
+  if (!(await isOnline())) throw new SinConexionError();
 }
 
 function mockReservation(request: BookingRequest): AppointmentDto {
+  const specialty = bookingSpecialtiesMock.find((item) => item.id === request.specialtyId);
+  const veterinarian = bookingVeterinariansMock.find((item) => item.id === request.veterinarianId);
   return {
     id: `mock-${Date.now()}`,
     id_mascota: request.petId,
     fecha: `${request.date}T${request.hour}:00`,
-    motivo: 'Consulta',
+    motivo: specialty?.name ?? 'Consulta',
     estado: 'reservada',
-    veterinario: request.veterinarianId,
+    veterinario: veterinarian?.name ?? request.veterinarianId,
   };
 }
 
@@ -97,7 +77,32 @@ async function sendReservation(request: BookingRequest): Promise<Appointment> {
   await ensureOnline();
 
   if (ENV.USE_MOCKS) {
-    return toAppointment(mockReservation(request));
+    const dateTime = new Date(`${request.date}T${request.hour}:00`);
+    if (!request.petId || !request.veterinarianId || !request.specialtyId ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(request.date) ||
+        !/^\d{2}:\d{2}$/.test(request.hour) ||
+        !Number.isFinite(dateTime.getTime()) || dateTime.getTime() <= Date.now()) {
+      throw new ReservaInvalidaError('Selecciona una mascota, especialidad, veterinario y una fecha futura válida.');
+    }
+
+    const veterinarian = bookingVeterinariansMock.find((item) => item.id === request.veterinarianId);
+    if (!veterinarian || !veterinarian.specialtyIds.includes(request.specialtyId)) {
+      throw new ReservaInvalidaError('El veterinario no atiende la especialidad seleccionada.');
+    }
+
+    if (!availabilityMock.horas.includes(request.hour)) throw new HoraNoDisponibleError();
+
+    const occupied = appointmentsMock.some((appointment) =>
+      appointment.estado !== 'cancelada' &&
+      (appointment.veterinario === request.veterinarianId || appointment.veterinario === veterinarian.name) &&
+      appointment.fecha.slice(0, 10) === request.date &&
+      appointment.fecha.slice(11, 16) === request.hour,
+    );
+    if (occupied) throw new HoraNoDisponibleError();
+
+    const appointment = mockReservation(request);
+    appointmentsMock.push(appointment);
+    return toAppointment(appointment);
   }
 
   try {
@@ -120,7 +125,6 @@ export const bookingRepository = {
         pendingReservation = null;
       });
     }
-
     return pendingReservation;
   },
 
@@ -130,7 +134,12 @@ export const bookingRepository = {
     if (ENV.USE_MOCKS) {
       const appointment = appointmentsMock.find((dto) => dto.id === appointmentId);
       if (!appointment) throw new Error(CANCEL_ERROR_MESSAGES.notFound);
-      return { ...toAppointment(appointment), status: 'cancelada' };
+      const isFuture = new Date(appointment.fecha).getTime() > Date.now();
+      if (appointment.estado !== 'reservada' || !isFuture) {
+        throw new ReservaInvalidaError('Esta cita ya no se puede cancelar.');
+      }
+      appointment.estado = 'cancelada';
+      return toAppointment(appointment);
     }
 
     try {
