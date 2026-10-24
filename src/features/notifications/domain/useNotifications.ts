@@ -1,31 +1,38 @@
 // Responsabilidad: caso de uso de notificaciones (capa DOMAIN).
 
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
+import { useFetch } from '../../../shared/hooks/useFetch';
 
 import type { Notification } from './Notification';
 
 export interface NotificationsRepository {
   getNotifications: () => Promise<Notification[]>;
+  markAsRead: (ids: string[]) => Promise<void>;
 }
 
 export function useNotifications(notificationsRepository: NotificationsRepository) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    notificationsRepository
-      .getNotifications()
-      .then((data) => {
-        if (!cancelled) setNotifications(data);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [notificationsRepository]);
-
-  return { notifications, isLoading };
+  const { data, isLoading, error, refetch } = useFetch(notificationsRepository.getNotifications, [
+    notificationsRepository,
+  ]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const busy = useRef(false);
+  async function markAsRead(ids: string[]) {
+    if (busy.current) return false;
+    busy.current = true;
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      await notificationsRepository.markAsRead(ids);
+      refetch();
+      return true;
+    } catch (cause) {
+      setSaveError(cause instanceof Error ? cause.message : 'No se pudo guardar la lectura.');
+      return false;
+    } finally {
+      busy.current = false;
+      setIsSaving(false);
+    }
+  }
+  return { notifications: data ?? [], isLoading, error, refetch, isSaving, saveError, markAsRead };
 }

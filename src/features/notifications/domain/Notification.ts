@@ -7,4 +7,5 @@ export interface Notification {
   body: string;
   date: string; // ISO 8601
   read: boolean;
+  target?: { screen: 'appointment'; appointmentId: string } | { screen: 'health'; petId: string };
 }

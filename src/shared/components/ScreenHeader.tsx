@@ -30,8 +30,7 @@ export function ScreenHeader({
   return (
     <View style={styles.container}>
       <View style={styles.titles}>
-        {eyebrow && <Text style={styles.eyebrow}>{eyebrow}</Text>}
-        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.title}>{eyebrow ? `${eyebrow} ${title}` : title}</Text>
       </View>
 
       {extraAction && (
@@ -47,17 +46,19 @@ export function ScreenHeader({
         </Pressable>
       )}
 
-      <Pressable
-        onPress={onBellPress}
-        hitSlop={10}
-        accessibilityRole="button"
-        accessibilityLabel="Notificaciones"
-        android_ripple={{ color: colors.appDivider, borderless: true }}
-        style={styles.bell}
-      >
-        <Ionicons name="notifications-outline" size={20} color={colors.appHeading} />
-        {hasUnread && <View style={styles.dot} />}
-      </Pressable>
+      {onBellPress && (
+        <Pressable
+          onPress={onBellPress}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="Notificaciones"
+          android_ripple={{ color: colors.appDivider, borderless: true }}
+          style={styles.bell}
+        >
+          <Ionicons name="notifications-outline" size={20} color={colors.appHeading} />
+          {hasUnread && <View style={styles.dot} />}
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -84,7 +85,8 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: fonts.extrabold,
     fontSize: 26,
-    color: colors.appHeading,
+    color: colors.appTitle,
+    lineHeight: 34,
   },
 
   bell: {
@@ -94,11 +96,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.appSurface,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#4B2A6B',
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.appDivider,
   },
 
   dot: {

@@ -44,8 +44,6 @@ export function HeroAppointmentCard({
         importantForAccessibility="no"
       />
 
-      <Text style={styles.eyebrow}>Próxima cita de {petName}</Text>
-
       <View style={styles.body}>
         <DateLeaf isoDate={date} accent={colors.cardPinkEnd} size="large" />
 
@@ -53,6 +51,7 @@ export function HeroAppointmentCard({
           <Text style={styles.reason} numberOfLines={2}>
             {reason}
           </Text>
+          <Text style={styles.petName}>Próxima cita de {petName}</Text>
           <Text style={styles.detail} numberOfLines={1}>
             {veterinarian}
           </Text>
@@ -84,7 +83,7 @@ const styles = StyleSheet.create({
     padding: 20,
     overflow: 'hidden',
     shadowColor: '#B04A76',
-    shadowOpacity: 0.28,
+    shadowOpacity: 0.12,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 8 },
     elevation: 4,
@@ -97,7 +96,7 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '-18deg' }],
   },
 
-  eyebrow: {
+  petName: {
     fontFamily: fonts.semibold,
     fontSize: 14,
     color: 'rgba(255,255,255,0.92)',
@@ -107,7 +106,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-    marginTop: 14,
+    marginTop: 0,
   },
 
   texts: {
@@ -136,6 +135,7 @@ const styles = StyleSheet.create({
   },
 
   time: {
+    flexShrink: 1,
     fontFamily: fonts.bold,
     fontSize: 14,
     color: colors.textLight,

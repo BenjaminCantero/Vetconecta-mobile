@@ -119,8 +119,10 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     minHeight: 128,
-    borderRadius: 22,
-    padding: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.appDivider,
+    padding: 16,
     gap: 14,
     justifyContent: 'space-between',
     overflow: 'hidden',
@@ -164,7 +166,7 @@ const styles = StyleSheet.create({
   subtitle: {
     marginTop: 3,
     fontFamily: fonts.medium,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 13,
+    lineHeight: 19,
   },
 });

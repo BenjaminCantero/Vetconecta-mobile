@@ -209,10 +209,10 @@ const styles = StyleSheet.create({
   sheet: {
     flexGrow: 1,
     gap: 20,
-    paddingTop: 12,
-    paddingHorizontal: 16,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
+    paddingTop: 24,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     backgroundColor: colors.sheetSurface,
     shadowColor: '#4B2A6B',
     shadowOpacity: 0.08,
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   handle: {
     alignSelf: 'center',
     width: 40,
-    height: 8,
+    height: 4,
     borderRadius: 4,
     marginBottom: 20,
     backgroundColor: colors.sheetHandle,

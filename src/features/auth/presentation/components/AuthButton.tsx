@@ -28,6 +28,8 @@ export function AuthButton({
       onPress={onPress}
       disabled={disabled || loading}
       accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
+      accessibilityLabel={label}
       android_ripple={{ color: 'rgba(0,0,0,0.08)' }}
       style={[styles.button, styles[variant], (disabled || loading) && styles.buttonDisabled]}
     >
@@ -43,7 +45,9 @@ export function AuthButton({
 const styles = StyleSheet.create({
   button: {
     width: '100%',
-    height: 50,
+    minHeight: 52,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',

@@ -2,7 +2,7 @@
 
 export const colors = {
   // Colores principales de VetConecta
-  primary: '#8A4FFF',
+  primary: '#6936B8',
   secondary: '#C3BEF7',
 
   // Fondos
@@ -12,7 +12,7 @@ export const colors = {
 
   // Textos
   text: '#1A1A1A',
-  textMuted: '#6B7280',
+  textMuted: '#625D70',
   textLight: '#FFFFFF',
 
   // Elementos de interfaz
@@ -28,15 +28,15 @@ export const colors = {
   mintCream: '#EFFFFA',
 
   // Flujo de autenticación (maqueta Bienvenida / Iniciar sesión / Recuperar acceso)
-  gradientStart: '#E596BC',
-  gradientEnd: '#A45BDA',
-  authBackground: '#F2E9FA',
-  authInput: '#E8E0F2',
-  authButton: '#A580EC',
+  gradientStart: '#8150AF',
+  gradientEnd: '#51317F',
+  authBackground: '#F8F7FB',
+  authInput: '#FFFFFF',
+  authButton: '#6936B8',
   authTitle: '#1E1A2E',
-  authMuted: '#7A7488',
+  authMuted: '#625D70',
   authLabel: '#6E6880',
-  authLink: '#3A96D2',
+  authLink: '#226A9C',
   authCheckboxBorder: '#CFC3E3',
   brandHeart: '#FF2B2B', // rojo del logo (assets/images/logo.png)
   infoBackground: '#E3F4E9',
@@ -44,27 +44,27 @@ export const colors = {
   infoText: '#2E5A43',
 
   // App autenticada (maqueta Inicio / Mis mascotas / Citas)
-  appBackground: '#F2E9FA',
+  appBackground: '#F8F7FB',
   appSurface: '#FFFFFF',
-  appHeading: '#7A22E0',
+  appHeading: '#6936B8',
   appTitle: '#1E1A2E',
-  appMuted: '#7A7488',
-  appDivider: '#ECE7F3',
-  statSurface: '#F4F1F8',
+  appMuted: '#625D70',
+  appDivider: '#E5DFED',
+  statSurface: '#EFECF5',
 
   // Tarjetas de acción
-  cardPinkStart: '#F7B4CC',
-  cardPinkEnd: '#EE87AE',
-  cardOrange: '#D9823B',
+  cardPinkStart: '#943A67',
+  cardPinkEnd: '#793557',
+  cardOrange: '#995018',
   cardPurple: '#9B51E0',
   cardRed: '#CD3A2A',
-  cardGreen: '#2E9E63',
+  cardGreen: '#24764C',
   cardBlue: '#2C7FB8',
 
   // Mis mascotas (maqueta con hoja inferior y grilla de tarjetas)
   petSelectedRing: '#F59AD6',
   addPetSurface: '#F0EEF2',
-  sheetSurface: '#FBF7FD',
+  sheetSurface: '#FFFFFF',
   sheetHandle: '#6F7775',
   statValueSurface: '#E4E4E6',
   cardSky: '#5AAFD6',
@@ -82,8 +82,8 @@ export const colors = {
   tintGray: '#EEEEF1',
 
   // Estados de cita
-  statusPending: '#D9823B',
-  statusConfirmed: '#2E9E63',
+  statusPending: '#995018',
+  statusConfirmed: '#24764C',
   statusCancelled: '#CD3A2A',
   statusDone: '#6B7280',
 } as const;

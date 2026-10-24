@@ -50,6 +50,7 @@ export function TabNavigator() {
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
+          tabBarHideOnKeyboard: true,
           tabBarActiveTintColor: colors.appHeading,
           tabBarInactiveTintColor: colors.appMuted,
           tabBarStyle: {
@@ -62,7 +63,7 @@ export function TabNavigator() {
           },
           tabBarLabelStyle: {
             fontFamily: fonts.semibold,
-            fontSize: 11,
+            fontSize: 12,
           },
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
@@ -83,7 +84,7 @@ export function TabNavigator() {
         />
       </Tab.Navigator>
       {/* Permiso tras el login, registro del token y navegacion al tocar una notificacion. Despues de las tabs */}
-      <PushNotificationsBridge/> 
+      <PushNotificationsBridge />
     </>
   );
 }

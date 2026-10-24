@@ -137,8 +137,8 @@ const styles = StyleSheet.create({
   },
 
   back: {
-    width: 36,
-    height: 36,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },

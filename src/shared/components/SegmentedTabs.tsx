@@ -47,16 +47,18 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     padding: 5,
-    borderRadius: 999,
+    borderRadius: 16,
     backgroundColor: colors.statSurface,
   },
 
   tab: {
     flex: 1,
+    minHeight: 48,
+    paddingHorizontal: 8,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 11,
-    borderRadius: 999,
+    borderRadius: 12,
   },
 
   tabSelected: {
@@ -76,6 +78,6 @@ const styles = StyleSheet.create({
 
   labelSelected: {
     fontFamily: fonts.bold,
-    color: colors.appTitle,
+    color: colors.appHeading,
   },
 });

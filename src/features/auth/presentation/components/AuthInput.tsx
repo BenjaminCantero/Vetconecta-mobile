@@ -99,10 +99,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    height: 52,
+    minHeight: 56,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: 'transparent',
+    borderColor: colors.appDivider,
     backgroundColor: colors.authInput,
     paddingHorizontal: 16,
   },
@@ -118,7 +118,8 @@ const styles = StyleSheet.create({
 
   input: {
     flex: 1,
-    height: '100%',
+    minHeight: 54,
+    paddingVertical: 12,
     fontFamily: fonts.medium,
     fontSize: 15,
     color: colors.authTitle,
