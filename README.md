@@ -148,22 +148,6 @@ Al final del sprint, `develop` se fusiona a `main`, que queda con el producto in
 
 ## Notificaciones push (FCM / APNs)
 
-<<<<<<< HEAD
-Migrar de ramas personales a **ramas por tarea** (`feat/B5-...`) que entren a `develop` de forma aislada y revisable.
-
-## CI/CD
-
-- **CI** (`.github/workflows/ci.yml`): en cada pull request y en cada push a `main` corre `npm run lint`, `npm run format:check`, `npm run typecheck` y los tests. Antes de subir cambios se pueden correr los mismos comandos en local.
-- **CD** (`.github/workflows/eas-build.yml`): compila la app con [EAS Build](https://docs.expo.dev/build/introduction/) en cada push a `main` (APK Android de prueba, perfil `preview`) o a mano desde la pestaña **Actions → EAS Build → Run workflow**, eligiendo plataforma y perfil. Los perfiles están en `eas.json`.
-
-Configuración inicial del CD (una sola vez):
-
-1. Crear una cuenta en [expo.dev](https://expo.dev), correr `npx eas-cli login` y luego `npx eas-cli init` para vincular el proyecto (agrega `extra.eas.projectId` a `app.json`; hay que commitear ese cambio).
-2. Crear un token en expo.dev → **Account settings → Access tokens**.
-3. En GitHub, **Settings → Secrets and variables → Actions → New repository secret**, nombre `EXPO_TOKEN`.
-
-Sin el secret `EXPO_TOKEN` el workflow de build termina sin compilar y deja un aviso.
-=======
 La app recibe recordatorios de citas y controles con [`expo-notifications`](https://docs.expo.dev/versions/v57.0.0/sdk/notifications/). El backend (Web H1) los envía por **Firebase Cloud Messaging** usando el **mismo proyecto de Firebase** que la app.
 
 > **No subir credenciales al repositorio.** `google-services.json`, `GoogleService-Info.plist`, las claves `.p8` y las cuentas de servicio de Firebase están en `.gitignore`. Se comparten por el canal privado del equipo.
@@ -212,4 +196,3 @@ La app recibe recordatorios de citas y controles con [`expo-notifications`](http
 | Cerrada (deslizada fuera de recientes) | Igual que en segundo plano; si no hay sesión, primero pide login |
 
 Sin `citaId`, al tocar se abre la pestaña *Avisos* (centro de notificaciones). No usar *Forzar detención* para probar "cerrada": Android no entrega notificaciones a una app detenida a la fuerza hasta que se abra de nuevo.
->>>>>>> Develop
