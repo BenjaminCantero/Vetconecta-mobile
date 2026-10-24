@@ -53,7 +53,8 @@
   "jest": {
     "preset": "jest-expo",
     "setupFiles": [
-      "./node_modules/@react-native-community/netinfo/jest/netinfo-mock.js"
+      "./node_modules/@react-native-community/netinfo/jest/netinfo-mock.js",
+      "./jest.setup.js"
     ]
   }
 }
