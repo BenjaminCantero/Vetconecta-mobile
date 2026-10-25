@@ -1,7 +1,8 @@
-name: EAS Build
+name: CD · EAS Build
 
-# CD: compila la app en los servidores de Expo (EAS).
-# Requiere el secret EXPO_TOKEN en Settings → Secrets and variables → Actions.
+# Compila en los servidores de Expo (EAS). Los artefactos quedan disponibles en
+# el dashboard de Expo; la publicación en tiendas se realiza explícitamente tras
+# aprobar un build de producción.
 on:
   workflow_dispatch:
     inputs:
@@ -16,41 +17,48 @@ on:
         options: [preview, production]
         default: preview
   push:
-    branches: [main]
+    branches: [Develop, main]
+
+concurrency:
+  group: eas-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   build:
-    name: Build ${{ inputs.profile || 'preview' }} (${{ inputs.platform || 'android' }})
+    name: Build EAS
     runs-on: ubuntu-latest
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     steps:
       - name: Verificar EXPO_TOKEN
-        if: env.EXPO_TOKEN == ''
         run: |
-          echo "::warning::Falta el secret EXPO_TOKEN; se omite el build."
+          test -n "$EXPO_TOKEN" || {
+            echo "::error::Falta el secret EXPO_TOKEN en GitHub Actions."
+            exit 1
+          }
 
       - uses: actions/checkout@v4
-        if: env.EXPO_TOKEN != ''
 
       - uses: actions/setup-node@v4
-        if: env.EXPO_TOKEN != ''
         with:
           node-version: 22
           cache: npm
 
       - run: npm ci
-        if: env.EXPO_TOKEN != ''
+
+      - name: Validar configuración de Expo
+        run: npx expo config --type public
 
       - uses: expo/expo-github-action@v8
-        if: env.EXPO_TOKEN != ''
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build
-        if: env.EXPO_TOKEN != ''
         run: >
           eas build --non-interactive --no-wait
-          --platform ${{ inputs.platform || 'android' }}
-          --profile ${{ inputs.profile || 'preview' }}
+          --platform ${{ github.event_name == 'workflow_dispatch' && inputs.platform || 'android' }}
+          --profile ${{ github.event_name == 'workflow_dispatch' && inputs.profile || (github.ref_name == 'main' && 'production' || 'preview') }}

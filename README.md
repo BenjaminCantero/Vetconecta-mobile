@@ -79,9 +79,27 @@ Solo funciona si la versión de Expo Go instalada en el teléfono soporta el SDK
 | `npm run ios` | Compila e instala la app en iOS (macOS) |
 | `npm run lint` | ESLint, incluidas las reglas de frontera entre dominios |
 | `npm run format` | Formatea el código con Prettier |
-| `npx tsc --noEmit` | Verifica tipos de TypeScript |
+| `npm run format:check` | Comprueba el formato sin modificar archivos |
+| `npm run typecheck` | Verifica tipos de TypeScript |
+| `npm test -- --ci --runInBand` | Ejecuta los tests como lo hace CI |
 
 `npm run web` existe en `package.json`, pero la web no está configurada (faltan `react-dom` y `react-native-web`).
+
+## CI/CD
+
+GitHub Actions automatiza las comprobaciones y los builds de Expo:
+
+- **CI** (`.github/workflows/ci.yml`) se ejecuta en cada pull request y en cada push a `Develop` o `main`. Instala dependencias de forma reproducible y valida lint, formato, tipos y tests.
+- **CD** (`.github/workflows/eas-build.yml`) crea un build EAS de **preview Android** al integrar en `Develop`, y uno de **producción Android** al integrar en `main`. También puede ejecutarse manualmente desde la pestaña **Actions**, escogiendo plataforma y perfil.
+
+### Configuración única de CD
+
+1. Crear una cuenta/proyecto en [Expo](https://expo.dev/) con acceso al proyecto `vetconecta-mobile`.
+2. Generar un token personal de Expo y guardarlo en GitHub: **Settings → Secrets and variables → Actions → New repository secret**, con el nombre `EXPO_TOKEN`.
+3. Si se usan notificaciones Android, subir `google-services.json` como variable de entorno de tipo **file** en EAS con el nombre `GOOGLE_SERVICES_JSON`. No se sube al repositorio.
+4. En GitHub, proteger `Develop` y `main`: exigir el check **Lint, tipos y tests** antes del merge y bloquear pushes directos a `main`.
+
+Los builds terminados y sus enlaces de instalación se consultan en el dashboard de Expo. La subida a Google Play o App Store queda separada y debe hacerse tras aprobar un build de producción, usando `eas submit`; así no se publica una versión por cada merge.
 
 ## Problemas comunes
 
