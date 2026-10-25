@@ -10,16 +10,9 @@ import { toHttpError } from '../../../core/api/httpError';
 import { ENV } from '../../../core/config/env';
 import { isOnline } from '../../../core/network/connectivity';
 
-import {
-  StorageKeys,
-  asyncStorage,
-} from '../../../core/storage/asyncStorage';
+import { StorageKeys, asyncStorage } from '../../../core/storage/asyncStorage';
 
-import type { User } from '../../auth/domain/User';
-import type {
-  Appointment,
-  AppointmentStatus,
-} from '../domain/Appointment';
+import type { Appointment, AppointmentStatus } from '../domain/Appointment';
 
 import { SinConexionError } from '../domain/bookingErrors';
 import type { AppointmentDto } from './appointmentsDto';
@@ -39,24 +32,24 @@ interface AppointmentsCache {
   savedAt: string;
 }
 
+interface StoredSessionUser {
+  id: string;
+}
+
 export interface AppointmentsSnapshot {
   appointments: Appointment[];
   isOffline: boolean;
 }
 
 const APPOINTMENTS_ERROR_MESSAGES = {
-  unauthorized:
-    'Tu sesión expiró. Vuelve a iniciar sesión para ver tus citas.',
-  fallback:
-    'No se pudieron cargar tus citas. Inténtalo más tarde.',
+  unauthorized: 'Tu sesión expiró. Vuelve a iniciar sesión para ver tus citas.',
+  fallback: 'No se pudieron cargar tus citas. Inténtalo más tarde.',
 };
 
 function toAppointmentStatus(estado: string): AppointmentStatus {
   const status = estado?.toLowerCase() as AppointmentStatus;
 
-  return APPOINTMENT_STATUSES.includes(status)
-    ? status
-    : 'pendiente';
+  return APPOINTMENT_STATUSES.includes(status) ? status : 'pendiente';
 }
 
 export function toAppointment(dto: AppointmentDto): Appointment {
@@ -71,42 +64,26 @@ export function toAppointment(dto: AppointmentDto): Appointment {
 }
 
 async function getCurrentUserId(): Promise<string | null> {
-  const user = await asyncStorage.getItem<User>(
-    StorageKeys.AUTH_USER,
-  );
+  const user = await asyncStorage.getItem<StoredSessionUser>(StorageKeys.AUTH_USER);
 
   return user?.id ?? null;
 }
 
-async function saveCache(
-  userId: string,
-  appointments: Appointment[],
-): Promise<void> {
+async function saveCache(userId: string, appointments: Appointment[]): Promise<void> {
   const cache: AppointmentsCache = {
     userId,
     appointments,
     savedAt: new Date().toISOString(),
   };
 
-  await asyncStorage.setItem(
-    StorageKeys.APPOINTMENTS_CACHE,
-    cache,
-  );
+  await asyncStorage.setItem(StorageKeys.APPOINTMENTS_CACHE, cache);
 }
 
-async function readCache(
-  userId: string,
-): Promise<Appointment[] | null> {
-  const cache = await asyncStorage.getItem<AppointmentsCache>(
-    StorageKeys.APPOINTMENTS_CACHE,
-  );
+async function readCache(userId: string): Promise<Appointment[] | null> {
+  const cache = await asyncStorage.getItem<AppointmentsCache>(StorageKeys.APPOINTMENTS_CACHE);
 
   // Nunca se muestran citas guardadas de otro usuario.
-  if (
-    !cache ||
-    cache.userId !== userId ||
-    !Array.isArray(cache.appointments)
-  ) {
+  if (!cache || cache.userId !== userId || !Array.isArray(cache.appointments)) {
     return null;
   }
 
@@ -118,9 +95,7 @@ async function fetchAppointments(): Promise<Appointment[]> {
     return appointmentsMock.map(toAppointment);
   }
 
-  const { data } = await httpClient.get<AppointmentDto[]>(
-    ENDPOINTS.APPOINTMENTS.LIST,
-  );
+  const { data } = await httpClient.get<AppointmentDto[]>(ENDPOINTS.APPOINTMENTS.LIST);
 
   if (!Array.isArray(data)) {
     throw new Error('La respuesta de citas no tiene un formato válido.');
@@ -134,9 +109,7 @@ export const appointmentsRepository = {
     const userId = await getCurrentUserId();
 
     if (!userId) {
-      throw new Error(
-        'No se encontró una sesión activa para consultar tus citas.',
-      );
+      throw new Error('No se encontró una sesión activa para consultar tus citas.');
     }
 
     const online = await isOnline();
@@ -151,9 +124,7 @@ export const appointmentsRepository = {
         };
       }
 
-      throw new SinConexionError(
-        'Sin conexión. No hay citas guardadas para mostrar.',
-      );
+      throw new SinConexionError('Sin conexión. No hay citas guardadas para mostrar.');
     }
 
     try {
@@ -168,8 +139,7 @@ export const appointmentsRepository = {
     } catch (error) {
       // Solo se usa caché como respaldo ante fallos de red.
       // No se ocultan errores HTTP como 401, 403 o 500.
-      const networkFailure =
-        isAxiosError(error) && !error.response;
+      const networkFailure = isAxiosError(error) && !error.response;
 
       if (networkFailure) {
         const cached = await readCache(userId);

@@ -6,12 +6,7 @@
 //
 // Mantiene las acciones de reprogramación y cancelación.
 
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -22,10 +17,7 @@ import { useActivePet } from '../../../../shared/context/ActivePetContext';
 import { colors } from '../../../../core/theme/colors';
 import { fonts } from '../../../../core/theme/typography';
 
-import type {
-  Appointment,
-  AppointmentStatus,
-} from '../../domain/Appointment';
+import type { Appointment, AppointmentStatus } from '../../domain/Appointment';
 
 const STATUS_STYLE: Record<
   AppointmentStatus,
@@ -82,8 +74,7 @@ export function AppointmentCard({
 }: AppointmentCardProps) {
   const { pets } = useActivePet();
 
-  const { color, tint, label } =
-    STATUS_STYLE[appointment.status];
+  const { color, tint, label } = STATUS_STYLE[appointment.status];
 
   const { time } = dateLeafParts(appointment.date);
 
@@ -93,9 +84,7 @@ export function AppointmentCard({
 
   // Busca la mascota de esta cita, no necesariamente
   // la mascota seleccionada actualmente.
-  const appointmentPet = pets.find(
-    (pet) => pet.id === appointment.petId,
-  );
+  const appointmentPet = pets.find((pet) => pet.id === appointment.petId);
 
   const petName = appointmentPet?.name ?? 'Mascota';
 
@@ -104,60 +93,26 @@ export function AppointmentCard({
   return (
     <View style={[styles.card, highlighted && styles.cardHighlighted]}>
       <View style={styles.body}>
-        <DateLeaf
-          isoDate={appointment.date}
-          accent={color}
-          surface={tint}
-        />
+        <DateLeaf isoDate={appointment.date} accent={color} surface={tint} />
 
         <View style={styles.texts}>
           {/* Estado de la cita */}
-          <View
-            style={[
-              styles.statusPill,
-              { backgroundColor: tint },
-            ]}
-          >
-            <View
-              style={[
-                styles.statusDot,
-                { backgroundColor: color },
-              ]}
-            />
+          <View style={[styles.statusPill, { backgroundColor: tint }]}>
+            <View style={[styles.statusDot, { backgroundColor: color }]} />
 
-            <Text
-              style={[
-                styles.statusLabel,
-                { color },
-              ]}
-            >
-              {label}
-            </Text>
+            <Text style={[styles.statusLabel, { color }]}>{label}</Text>
           </View>
 
           {/* Motivo de la consulta */}
-          <Text
-            style={[
-              styles.reason,
-              muted && styles.reasonMuted,
-            ]}
-            numberOfLines={2}
-          >
+          <Text style={[styles.reason, muted && styles.reasonMuted]} numberOfLines={2}>
             {appointment.reason}
           </Text>
 
           {/* Mascota asociada */}
           <View style={styles.detailRow}>
-            <Ionicons
-              name="paw-outline"
-              size={15}
-              color={colors.appMuted}
-            />
+            <Ionicons name="paw-outline" size={15} color={colors.appMuted} />
 
-            <Text
-              style={styles.detail}
-              numberOfLines={1}
-            >
+            <Text style={styles.detail} numberOfLines={1}>
               {petName}
             </Text>
           </View>
@@ -165,16 +120,9 @@ export function AppointmentCard({
           {/* Especialidad, cuando exista */}
           {specialty ? (
             <View style={styles.detailRow}>
-              <Ionicons
-                name="medkit-outline"
-                size={15}
-                color={colors.appMuted}
-              />
+              <Ionicons name="medkit-outline" size={15} color={colors.appMuted} />
 
-              <Text
-                style={styles.detail}
-                numberOfLines={1}
-              >
+              <Text style={styles.detail} numberOfLines={1}>
                 {specialty}
               </Text>
             </View>
@@ -182,31 +130,18 @@ export function AppointmentCard({
 
           {/* Veterinario */}
           <View style={styles.detailRow}>
-            <Ionicons
-              name="person-outline"
-              size={15}
-              color={colors.appMuted}
-            />
+            <Ionicons name="person-outline" size={15} color={colors.appMuted} />
 
-            <Text
-              style={styles.detail}
-              numberOfLines={1}
-            >
+            <Text style={styles.detail} numberOfLines={1}>
               {appointment.veterinarian}
             </Text>
           </View>
 
           {/* Hora de la cita */}
           <View style={styles.timeRow}>
-            <Ionicons
-              name="time-outline"
-              size={15}
-              color={colors.appMuted}
-            />
+            <Ionicons name="time-outline" size={15} color={colors.appMuted} />
 
-            <Text style={styles.detail}>
-              {time} h
-            </Text>
+            <Text style={styles.detail}>{time} h</Text>
           </View>
         </View>
       </View>
@@ -223,20 +158,11 @@ export function AppointmentCard({
               }}
               style={styles.actionButton}
             >
-              <Text
-                style={[
-                  styles.actionLabel,
-                  { color: colors.appHeading },
-                ]}
-              >
-                Reprogramar
-              </Text>
+              <Text style={[styles.actionLabel, { color: colors.appHeading }]}>Reprogramar</Text>
             </Pressable>
           )}
 
-          {onReschedule && onCancel && (
-            <View style={styles.actionDivider} />
-          )}
+          {onReschedule && onCancel && <View style={styles.actionDivider} />}
 
           {onCancel && (
             <Pressable
@@ -247,14 +173,7 @@ export function AppointmentCard({
               }}
               style={styles.actionButton}
             >
-              <Text
-                style={[
-                  styles.actionLabel,
-                  { color: colors.statusCancelled },
-                ]}
-              >
-                Cancelar
-              </Text>
+              <Text style={[styles.actionLabel, { color: colors.statusCancelled }]}>Cancelar</Text>
             </Pressable>
           )}
         </View>

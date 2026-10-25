@@ -6,8 +6,7 @@
 //  - sin citaId       → se abre el centro de notificaciones.
 
 export type NotificationTarget =
-  | { screen: 'appointment'; appointmentId: string }
-  | { screen: 'center' };
+  { screen: 'appointment'; appointmentId: string } | { screen: 'center' };
 
 export function resolveNotificationTarget(
   data: Record<string, unknown> | null | undefined,

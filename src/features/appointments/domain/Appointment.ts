@@ -2,11 +2,7 @@
 // Capa DOMAIN de appointments.
 
 export type AppointmentStatus =
-  | 'reservada'
-  | 'pendiente'
-  | 'confirmada'
-  | 'cancelada'
-  | 'completada';
+  'reservada' | 'pendiente' | 'confirmada' | 'cancelada' | 'completada';
 
 export interface Appointment {
   id: string;

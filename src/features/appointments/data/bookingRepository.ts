@@ -78,25 +78,36 @@ async function sendReservation(request: BookingRequest): Promise<Appointment> {
 
   if (ENV.USE_MOCKS) {
     const dateTime = new Date(`${request.date}T${request.hour}:00`);
-    if (!request.petId || !request.veterinarianId || !request.specialtyId ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(request.date) ||
-        !/^\d{2}:\d{2}$/.test(request.hour) ||
-        !Number.isFinite(dateTime.getTime()) || dateTime.getTime() <= Date.now()) {
-      throw new ReservaInvalidaError('Selecciona una mascota, especialidad, veterinario y una fecha futura válida.');
+    if (
+      !request.petId ||
+      !request.veterinarianId ||
+      !request.specialtyId ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(request.date) ||
+      !/^\d{2}:\d{2}$/.test(request.hour) ||
+      !Number.isFinite(dateTime.getTime()) ||
+      dateTime.getTime() <= Date.now()
+    ) {
+      throw new ReservaInvalidaError(
+        'Selecciona una mascota, especialidad, veterinario y una fecha futura válida.',
+      );
     }
 
-    const veterinarian = bookingVeterinariansMock.find((item) => item.id === request.veterinarianId);
+    const veterinarian = bookingVeterinariansMock.find(
+      (item) => item.id === request.veterinarianId,
+    );
     if (!veterinarian || !veterinarian.specialtyIds.includes(request.specialtyId)) {
       throw new ReservaInvalidaError('El veterinario no atiende la especialidad seleccionada.');
     }
 
     if (!availabilityMock.horas.includes(request.hour)) throw new HoraNoDisponibleError();
 
-    const occupied = appointmentsMock.some((appointment) =>
-      appointment.estado !== 'cancelada' &&
-      (appointment.veterinario === request.veterinarianId || appointment.veterinario === veterinarian.name) &&
-      appointment.fecha.slice(0, 10) === request.date &&
-      appointment.fecha.slice(11, 16) === request.hour,
+    const occupied = appointmentsMock.some(
+      (appointment) =>
+        appointment.estado !== 'cancelada' &&
+        (appointment.veterinario === request.veterinarianId ||
+          appointment.veterinario === veterinarian.name) &&
+        appointment.fecha.slice(0, 10) === request.date &&
+        appointment.fecha.slice(11, 16) === request.hour,
     );
     if (occupied) throw new HoraNoDisponibleError();
 

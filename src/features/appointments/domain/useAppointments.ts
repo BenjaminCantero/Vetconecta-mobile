@@ -19,9 +19,7 @@ export interface AppointmentsRepository {
   getAppointmentsSnapshot?: () => Promise<AppointmentsSnapshot>;
 }
 
-export function useAppointments(
-  appointmentsRepository: AppointmentsRepository,
-) {
+export function useAppointments(appointmentsRepository: AppointmentsRepository) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -32,15 +30,12 @@ export function useAppointments(
   useEffect(() => {
     let cancelled = false;
 
-    setError(null);
-
     const loadAppointments = async () => {
       try {
         const snapshot = appointmentsRepository.getAppointmentsSnapshot
           ? await appointmentsRepository.getAppointmentsSnapshot()
           : {
-              appointments:
-                await appointmentsRepository.getAppointments(),
+              appointments: await appointmentsRepository.getAppointments(),
               isOffline: false,
             };
 
@@ -50,11 +45,7 @@ export function useAppointments(
         }
       } catch (err) {
         if (!cancelled) {
-          setError(
-            err instanceof Error
-              ? err
-              : new Error('Error al cargar citas'),
-          );
+          setError(err instanceof Error ? err : new Error('Error al cargar citas'));
         }
       } finally {
         if (!cancelled) {
@@ -72,6 +63,7 @@ export function useAppointments(
   }, [appointmentsRepository, reloadIndex]);
 
   const refetch = useCallback(() => {
+    setError(null);
     setIsRefreshing(true);
     setReloadIndex((index) => index + 1);
   }, []);

@@ -16,6 +16,6 @@ export const ENDPOINTS = {
     CANCEL: (appointmentId: string) => `/citas/${appointmentId}/cancelar`,
   },
   NOTIFICATIONS: {
-    REGISTER_DEVICE: '/dispositivos' // pendiente de acordar con equipo web
+    REGISTER_DEVICE: '/dispositivos', // pendiente de acordar con equipo web
   },
 } as const;

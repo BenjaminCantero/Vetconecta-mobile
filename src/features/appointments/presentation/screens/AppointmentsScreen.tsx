@@ -3,24 +3,15 @@
 // Soporta consulta de datos guardados sin conexión (G1).
 // D3: permite navegar al flujo de agendamiento.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import {
-  Alert,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActivePetSwitcher } from '../../../../shared/components/ActivePetSwitcher';
@@ -58,33 +49,20 @@ type Section = 'upcoming' | 'past';
 // Cuánto tiempo queda destacada la cita abierta desde una notificación push.
 const FOCUS_HIGHLIGHT_MS = 4000;
 
-export default function AppointmentsScreen({
-  navigation,
-  route,
-}: Props) {
+export default function AppointmentsScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
 
-  const {
-    appointments,
-    isLoading,
-    isRefreshing,
-    isOffline,
-    error,
-    refetch,
-  } = useAppointments(appointmentsRepository);
+  const { appointments, isLoading, isRefreshing, isOffline, error, refetch } =
+    useAppointments(appointmentsRepository);
 
-  const { activePetId, activePet, setActivePetId } =
-    useActivePet();
+  const { activePetId, activePet, setActivePetId } = useActivePet();
 
-  const { cancel, isSubmitting } =
-    useBookAppointment(bookingRepository);
+  const { cancel, isSubmitting } = useBookAppointment(bookingRepository);
 
   // Sección elegida por el dueño con las pestañas Próximas / Pasadas.
-  const [chosenSection, setChosenSection] =
-    useState<Section>('upcoming');
+  const [chosenSection, setChosenSection] = useState<Section>('upcoming');
 
-  const [cancellingId, setCancellingId] =
-    useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   // Recarga las citas al regresar desde el flujo de reserva.
   // Así, una nueva cita puede aparecer en Mis citas.
@@ -94,7 +72,7 @@ export default function AppointmentsScreen({
     }, [refetch]),
   );
 
-  const now = Date.now();
+  const [now] = useState(() => Date.now());
 
   // Llegada desde una notificación push (deep link con citaId): se muestra esa cita
   // en su mascota y en su sección, destacada unos segundos. Si la cita aún no está en
@@ -104,9 +82,7 @@ export default function AppointmentsScreen({
   const focusedAppointment = useMemo(
     () =>
       focusedAppointmentId
-        ? (appointments.find(
-            (appointment) => appointment.id === focusedAppointmentId,
-          ) ?? null)
+        ? (appointments.find((appointment) => appointment.id === focusedAppointmentId) ?? null)
         : null,
     [appointments, focusedAppointmentId],
   );
@@ -122,10 +98,7 @@ export default function AppointmentsScreen({
   useEffect(() => {
     if (!focusedAppointment) return;
 
-    const timer = setTimeout(
-      () => navigation.setParams({ citaId: undefined }),
-      FOCUS_HIGHLIGHT_MS,
-    );
+    const timer = setTimeout(() => navigation.setParams({ citaId: undefined }), FOCUS_HIGHLIGHT_MS);
 
     return () => clearTimeout(timer);
   }, [focusedAppointment, navigation]);
@@ -149,33 +122,17 @@ export default function AppointmentsScreen({
   // Separa citas próximas y pasadas.
   const { upcoming, past } = useMemo(() => {
     const sorted = appointments
-      .filter(
-        (appointment) =>
-          !activePetId || appointment.petId === activePetId,
-      )
-      .sort(
-        (a, b) =>
-          new Date(a.date).getTime() -
-          new Date(b.date).getTime(),
-      );
+      .filter((appointment) => !activePetId || appointment.petId === activePetId)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     return {
-      upcoming: sorted.filter(
-        (appointment) =>
-          new Date(appointment.date).getTime() >= now,
-      ),
+      upcoming: sorted.filter((appointment) => new Date(appointment.date).getTime() >= now),
 
-      past: sorted
-        .filter(
-          (appointment) =>
-            new Date(appointment.date).getTime() < now,
-        )
-        .reverse(),
+      past: sorted.filter((appointment) => new Date(appointment.date).getTime() < now).reverse(),
     };
   }, [appointments, activePetId, now]);
 
-  const visible =
-    section === 'upcoming' ? upcoming : past;
+  const visible = section === 'upcoming' ? upcoming : past;
 
   // Agrupa las citas por mes.
   const groups = useMemo(() => {
@@ -184,21 +141,16 @@ export default function AppointmentsScreen({
     visible.forEach((appointment) => {
       const month = formatMonthYear(appointment.date);
 
-      byMonth.set(month, [
-        ...(byMonth.get(month) ?? []),
-        appointment,
-      ]);
+      byMonth.set(month, [...(byMonth.get(month) ?? []), appointment]);
     });
 
     return [...byMonth.entries()];
   }, [visible]);
 
-  const canCancelAppointment = (
-    appointment: Appointment,
-  ): boolean => {
+  const canCancelAppointment = (appointment: Appointment): boolean => {
     return (
       appointment.status === 'reservada' &&
-      new Date(appointment.date).getTime() > Date.now() &&
+      new Date(appointment.date).getTime() > now &&
       !isSubmitting &&
       cancellingId === null &&
       !isOffline
@@ -210,60 +162,46 @@ export default function AppointmentsScreen({
       return;
     }
 
-    Alert.alert(
-      'Cancelar cita',
-      '¿Estás seguro de que deseas cancelar esta reserva?',
-      [
-        {
-          text: 'Volver',
-          style: 'cancel',
-        },
-        {
-          text: 'Sí, cancelar',
-          style: 'destructive',
-          onPress: async () => {
-            if (isSubmitting || cancellingId !== null) {
-              return;
+    Alert.alert('Cancelar cita', '¿Estás seguro de que deseas cancelar esta reserva?', [
+      {
+        text: 'Volver',
+        style: 'cancel',
+      },
+      {
+        text: 'Sí, cancelar',
+        style: 'destructive',
+        onPress: async () => {
+          if (isSubmitting || cancellingId !== null) {
+            return;
+          }
+
+          setCancellingId(appointmentId);
+
+          try {
+            const result = await cancel(appointmentId);
+
+            if (result) {
+              refetch();
+
+              Alert.alert('Cita cancelada', 'Tu reserva fue cancelada correctamente.');
             }
-
-            setCancellingId(appointmentId);
-
-            try {
-              const result = await cancel(appointmentId);
-
-              if (result) {
-                refetch();
-
-                Alert.alert(
-                  'Cita cancelada',
-                  'Tu reserva fue cancelada correctamente.',
-                );
-              }
-            } catch (cancelError) {
-              Alert.alert(
-                cancelError instanceof SinConexionError
-                  ? 'Sin conexión'
-                  : 'No se pudo cancelar',
-                cancelError instanceof Error
-                  ? cancelError.message
-                  : 'Ocurrió un error inesperado.',
-              );
-            } finally {
-              setCancellingId(null);
-            }
-          },
+          } catch (cancelError) {
+            Alert.alert(
+              cancelError instanceof SinConexionError ? 'Sin conexión' : 'No se pudo cancelar',
+              cancelError instanceof Error ? cancelError.message : 'Ocurrió un error inesperado.',
+            );
+          } finally {
+            setCancellingId(null);
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   // D3: abre la nueva pantalla de reserva.
   const handleSchedule = () => {
     if (isOffline) {
-      Alert.alert(
-        'Sin conexión',
-        'Necesitas conexión a internet para reservar una hora.',
-      );
+      Alert.alert('Sin conexión', 'Necesitas conexión a internet para reservar una hora.');
       return;
     }
 
@@ -272,18 +210,11 @@ export default function AppointmentsScreen({
 
   return (
     <View style={styles.screen}>
-      <View
-        style={[
-          styles.headerArea,
-          { paddingTop: insets.top + 12 },
-        ]}
-      >
+      <View style={[styles.headerArea, { paddingTop: insets.top + 12 }]}>
         <ScreenHeader
           title="Mis Citas"
           hasUnread
-          onBellPress={() =>
-            navigation.navigate('Notificaciones')
-          }
+          onBellPress={() => navigation.navigate('Notificaciones')}
         />
 
         <ActivePetSwitcher />
@@ -298,18 +229,10 @@ export default function AppointmentsScreen({
         />
       </View>
 
-      <QueryState
-        isLoading={isLoading}
-        error={error}
-        isEmpty={false}
-        onRetry={refetch}
-      >
+      <QueryState isLoading={isLoading} error={error} isEmpty={false} onRetry={refetch}>
         <ScrollView
           style={styles.container}
-          contentContainerStyle={[
-            styles.content,
-            { paddingBottom: insets.bottom + 24 },
-          ]}
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -321,20 +244,14 @@ export default function AppointmentsScreen({
         >
           {isOffline && (
             <View style={styles.offlineBanner}>
-              <Ionicons
-                name="cloud-offline-outline"
-                size={21}
-                color={colors.statusPending}
-              />
+              <Ionicons name="cloud-offline-outline" size={21} color={colors.statusPending} />
 
               <View style={styles.offlineTexts}>
-                <Text style={styles.offlineTitle}>
-                  Datos sin conexión
-                </Text>
+                <Text style={styles.offlineTitle}>Datos sin conexión</Text>
 
                 <Text style={styles.offlineDescription}>
-                  Estás viendo las últimas citas guardadas.
-                  Desliza hacia abajo cuando recuperes la conexión.
+                  Estás viendo las últimas citas guardadas. Desliza hacia abajo cuando recuperes la
+                  conexión.
                 </Text>
               </View>
             </View>
@@ -343,17 +260,11 @@ export default function AppointmentsScreen({
           {visible.length === 0 ? (
             <View style={styles.emptyCard}>
               <View style={styles.emptyIcon}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={28}
-                  color={colors.appHeading}
-                />
+                <Ionicons name="calendar-outline" size={28} color={colors.appHeading} />
               </View>
 
               <Text style={styles.emptyTitle}>
-                {section === 'upcoming'
-                  ? 'No tienes citas próximas'
-                  : 'No tienes citas pasadas'}
+                {section === 'upcoming' ? 'No tienes citas próximas' : 'No tienes citas pasadas'}
               </Text>
 
               <Text style={styles.emptyText}>
@@ -372,32 +283,22 @@ export default function AppointmentsScreen({
                   onPress={handleSchedule}
                   accessibilityRole="button"
                 >
-                  <Ionicons
-                    name="add-circle-outline"
-                    size={20}
-                    color={colors.textLight}
-                  />
+                  <Ionicons name="add-circle-outline" size={20} color={colors.textLight} />
 
-                  <Text style={styles.scheduleButtonText}>
-                    Agendar hora
-                  </Text>
+                  <Text style={styles.scheduleButtonText}>Agendar hora</Text>
                 </Pressable>
               )}
             </View>
           ) : (
             groups.map(([month, items]) => (
               <View key={month} style={styles.group}>
-                <Text style={styles.groupTitle}>
-                  {month}
-                </Text>
+                <Text style={styles.groupTitle}>{month}</Text>
 
                 {items.map((appointment) => (
                   <AppointmentCard
                     key={appointment.id}
                     appointment={appointment}
-                    highlighted={
-                      appointment.id === focusedAppointment?.id
-                    }
+                    highlighted={appointment.id === focusedAppointment?.id}
                     onCancel={
                       canCancelAppointment(appointment)
                         ? () => handleCancel(appointment.id)
@@ -410,25 +311,17 @@ export default function AppointmentsScreen({
           )}
 
           {/* D3: permite agendar aunque ya existan citas. */}
-          {visible.length > 0 &&
-            section === 'upcoming' &&
-            !isOffline && (
-              <Pressable
-                style={styles.scheduleButton}
-                onPress={handleSchedule}
-                accessibilityRole="button"
-              >
-                <Ionicons
-                  name="add-circle-outline"
-                  size={20}
-                  color={colors.textLight}
-                />
+          {visible.length > 0 && section === 'upcoming' && !isOffline && (
+            <Pressable
+              style={styles.scheduleButton}
+              onPress={handleSchedule}
+              accessibilityRole="button"
+            >
+              <Ionicons name="add-circle-outline" size={20} color={colors.textLight} />
 
-                <Text style={styles.scheduleButtonText}>
-                  Agendar nueva hora
-                </Text>
-              </Pressable>
-            )}
+              <Text style={styles.scheduleButtonText}>Agendar nueva hora</Text>
+            </Pressable>
+          )}
 
           <EmergencyCard />
         </ScrollView>

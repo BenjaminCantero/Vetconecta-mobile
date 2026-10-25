@@ -19,10 +19,7 @@ import type { RootStackParamList } from '../../../../core/navigation/RootNavigat
 import { colors } from '../../../../core/theme/colors';
 import { fonts } from '../../../../core/theme/typography';
 import { useActivePet } from '../../../../shared/context/ActivePetContext';
-import {
-  bookingSpecialtiesMock,
-  bookingVeterinariansMock,
-} from '../../data/bookingCatalogMock';
+import { bookingSpecialtiesMock, bookingVeterinariansMock } from '../../data/bookingCatalogMock';
 import { availabilityRepository } from '../../data/availabilityRepository';
 import { useAvailability } from '../../domain/useAvailability';
 import { bookingRepository } from '../../data/bookingRepository';
@@ -34,8 +31,18 @@ type Step = 1 | 2 | 3 | 4 | 5;
 
 const WEEKDAYS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'];
 const MONTHS = [
-  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
 ];
 
 function toLocalDateKey(date: Date): string {
@@ -73,6 +80,8 @@ export default function BookAppointmentScreen({ navigation }: Props) {
 
   useEffect(() => {
     if (!petId && activePetId && pets.some((pet) => pet.id === activePetId)) {
+      // La mascota inicial depende de datos cargados fuera del componente.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPetId(activePetId);
     } else if (!petId && pets.length === 1) {
       setPetId(pets[0].id);
@@ -80,13 +89,18 @@ export default function BookAppointmentScreen({ navigation }: Props) {
   }, [activePetId, pets, petId]);
 
   useEffect(() => {
-    if (pets.length === 1 && step === 1) setStep(2);
+    if (pets.length === 1 && step === 1) {
+      // Con una sola mascota, el primer paso no requiere interacción.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setStep(2);
+    }
   }, [pets.length, step]);
 
   const veterinarians = useMemo(
-    () => bookingVeterinariansMock.filter(
-      (vet) => specialtyId !== null && vet.specialtyIds.includes(specialtyId),
-    ),
+    () =>
+      bookingVeterinariansMock.filter(
+        (vet) => specialtyId !== null && vet.specialtyIds.includes(specialtyId),
+      ),
     [specialtyId],
   );
 
@@ -94,12 +108,15 @@ export default function BookAppointmentScreen({ navigation }: Props) {
   const selectedSpecialty = bookingSpecialtiesMock.find((item) => item.id === specialtyId);
   const selectedVeterinarian = bookingVeterinariansMock.find((item) => item.id === veterinarianId);
 
-  const availabilityQuery = useMemo(() => ({
-    petId: petId ?? '',
-    specialty: specialtyId ?? '',
-    veterinarian: veterinarianId ?? '',
-    date: step >= 4 ? date ?? '' : '',
-  }), [petId, specialtyId, veterinarianId, date, step]);
+  const availabilityQuery = useMemo(
+    () => ({
+      petId: petId ?? '',
+      specialty: specialtyId ?? '',
+      veterinarian: veterinarianId ?? '',
+      date: step >= 4 ? (date ?? '') : '',
+    }),
+    [petId, specialtyId, veterinarianId, date, step],
+  );
 
   const { availableHours, isLoading, error, refetch } = useAvailability(
     availabilityRepository,
@@ -132,7 +149,10 @@ export default function BookAppointmentScreen({ navigation }: Props) {
       if (date > todayKey) return true;
       if (date < todayKey) return false;
       const [hours, minutes] = slot.split(':').map(Number);
-      return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes).getTime() > now.getTime();
+      return (
+        new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes).getTime() >
+        now.getTime()
+      );
     });
   }, [availableHours, date, error, isLoading, todayKey]);
 
@@ -321,18 +341,19 @@ export default function BookAppointmentScreen({ navigation }: Props) {
         {step === 1 && (
           <>
             <Text style={styles.description}>Elige la mascota que necesita atención.</Text>
-            {pets.map((pet) => renderOption(
-              pet.id, pet.name, 'Mascota registrada', petId === pet.id,
-              () => {
+            {pets.map((pet) =>
+              renderOption(pet.id, pet.name, 'Mascota registrada', petId === pet.id, () => {
                 if (petId !== pet.id) {
                   setPetId(pet.id);
                   setDate(null);
                   setHour(null);
                 }
-              },
-            ))}
+              }),
+            )}
             {pets.length === 0 && (
-              <Text style={styles.description}>No hay mascotas disponibles. Revisa tus registros en Mis mascotas.</Text>
+              <Text style={styles.description}>
+                No hay mascotas disponibles. Revisa tus registros en Mis mascotas.
+              </Text>
             )}
           </>
         )}
@@ -342,24 +363,33 @@ export default function BookAppointmentScreen({ navigation }: Props) {
             <Text style={styles.description}>
               ¿Qué tipo de atención necesita {selectedPet?.name ?? 'tu mascota'}?
             </Text>
-            {bookingSpecialtiesMock.map((item) => renderOption(
-              item.id, item.name, '', specialtyId === item.id,
-              () => handleSelectSpecialty(item.id),
-            ))}
+            {bookingSpecialtiesMock.map((item) =>
+              renderOption(item.id, item.name, '', specialtyId === item.id, () =>
+                handleSelectSpecialty(item.id),
+              ),
+            )}
           </>
         )}
 
         {step === 3 && (
           <>
             <Text style={styles.description}>
-              Profesionales para {selectedSpecialty?.name.toLowerCase() ?? 'la especialidad seleccionada'}.
+              Profesionales para{' '}
+              {selectedSpecialty?.name.toLowerCase() ?? 'la especialidad seleccionada'}.
             </Text>
-            {veterinarians.map((vet) => renderOption(
-              vet.id, vet.name, selectedSpecialty?.name ?? '',
-              veterinarianId === vet.id, () => handleSelectVeterinarian(vet.id),
-            ))}
+            {veterinarians.map((vet) =>
+              renderOption(
+                vet.id,
+                vet.name,
+                selectedSpecialty?.name ?? '',
+                veterinarianId === vet.id,
+                () => handleSelectVeterinarian(vet.id),
+              ),
+            )}
             {veterinarians.length === 0 && (
-              <Text style={styles.description}>No hay profesionales disponibles para esta especialidad.</Text>
+              <Text style={styles.description}>
+                No hay profesionales disponibles para esta especialidad.
+              </Text>
             )}
           </>
         )}
@@ -378,7 +408,11 @@ export default function BookAppointmentScreen({ navigation }: Props) {
                   accessibilityRole="button"
                   accessibilityLabel="Mes anterior"
                 >
-                  <Ionicons name="chevron-back" size={22} color={canGoPreviousMonth ? colors.appHeading : colors.appDivider} />
+                  <Ionicons
+                    name="chevron-back"
+                    size={22}
+                    color={canGoPreviousMonth ? colors.appHeading : colors.appDivider}
+                  />
                 </Pressable>
                 <Text style={styles.monthTitle}>{monthTitle(displayedMonth)}</Text>
                 <Pressable
@@ -410,11 +444,13 @@ export default function BookAppointmentScreen({ navigation }: Props) {
                           accessibilityLabel={`Seleccionar ${key}`}
                           accessibilityState={{ disabled, selected }}
                         >
-                          <Text style={[
-                            styles.dayText,
-                            disabled && styles.disabledDayText,
-                            selected && styles.selectedDayText,
-                          ]}>
+                          <Text
+                            style={[
+                              styles.dayText,
+                              disabled && styles.disabledDayText,
+                              selected && styles.selectedDayText,
+                            ]}
+                          >
                             {fromLocalDateKey(key).getDate()}
                           </Text>
                         </Pressable>
@@ -427,7 +463,9 @@ export default function BookAppointmentScreen({ navigation }: Props) {
 
             <Text style={styles.sectionTitle}>Horarios disponibles</Text>
             {!date ? (
-              <Text style={styles.description}>Selecciona una fecha para consultar los horarios.</Text>
+              <Text style={styles.description}>
+                Selecciona una fecha para consultar los horarios.
+              </Text>
             ) : isLoading ? (
               <View style={styles.feedbackRow}>
                 <ActivityIndicator color={colors.appHeading} />
@@ -441,7 +479,9 @@ export default function BookAppointmentScreen({ navigation }: Props) {
                 </Pressable>
               </View>
             ) : validHours.length === 0 ? (
-              <Text style={styles.description}>No hay horas disponibles para esta fecha. Selecciona otro día.</Text>
+              <Text style={styles.description}>
+                No hay horas disponibles para esta fecha. Selecciona otro día.
+              </Text>
             ) : (
               <View style={styles.hoursGrid}>
                 {validHours.map((slot) => (
@@ -452,7 +492,9 @@ export default function BookAppointmentScreen({ navigation }: Props) {
                     accessibilityRole="radio"
                     accessibilityState={{ checked: hour === slot }}
                   >
-                    <Text style={[styles.hourText, hour === slot && styles.selectedHourText]}>{slot}</Text>
+                    <Text style={[styles.hourText, hour === slot && styles.selectedHourText]}>
+                      {slot}
+                    </Text>
                   </Pressable>
                 ))}
               </View>
@@ -465,9 +507,15 @@ export default function BookAppointmentScreen({ navigation }: Props) {
             <Text style={styles.description}>Comprueba los datos antes de confirmar tu cita.</Text>
             <View style={styles.summary}>
               <Text style={styles.summaryTitle}>Resumen de la reserva</Text>
-              <Text style={styles.summaryText}>Mascota: {selectedPet?.name ?? 'Sin seleccionar'}</Text>
-              <Text style={styles.summaryText}>Especialidad: {selectedSpecialty?.name ?? 'Sin seleccionar'}</Text>
-              <Text style={styles.summaryText}>Veterinario: {selectedVeterinarian?.name ?? 'Sin seleccionar'}</Text>
+              <Text style={styles.summaryText}>
+                Mascota: {selectedPet?.name ?? 'Sin seleccionar'}
+              </Text>
+              <Text style={styles.summaryText}>
+                Especialidad: {selectedSpecialty?.name ?? 'Sin seleccionar'}
+              </Text>
+              <Text style={styles.summaryText}>
+                Veterinario: {selectedVeterinarian?.name ?? 'Sin seleccionar'}
+              </Text>
               <Text style={styles.summaryText}>Fecha: {date ?? 'Sin seleccionar'}</Text>
               <Text style={styles.summaryText}>Hora: {hour ?? 'Sin seleccionar'}</Text>
             </View>
@@ -525,8 +573,21 @@ export default function BookAppointmentScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBackground },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 16, gap: 12 },
-  backButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.appSurface, alignItems: 'center', justifyContent: 'center' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    gap: 12,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: colors.appSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headerText: { flex: 1, gap: 3 },
   headerTitle: { fontFamily: fonts.bold, fontSize: 21, color: colors.appTitle },
   headerSubtitle: { fontFamily: fonts.medium, fontSize: 13, color: colors.appMuted },
@@ -536,8 +597,25 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingHorizontal: 20, paddingBottom: 24, gap: 12 },
   title: { fontFamily: fonts.bold, fontSize: 22, color: colors.appTitle, marginBottom: 4 },
-  description: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, color: colors.appMuted, marginBottom: 10 },
-  option: { minHeight: 68, flexDirection: 'row', alignItems: 'center', borderRadius: 17, borderWidth: 2, borderColor: colors.appDivider, backgroundColor: colors.appSurface, paddingHorizontal: 16, paddingVertical: 12, gap: 12 },
+  description: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 21,
+    color: colors.appMuted,
+    marginBottom: 10,
+  },
+  option: {
+    minHeight: 68,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 17,
+    borderWidth: 2,
+    borderColor: colors.appDivider,
+    backgroundColor: colors.appSurface,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
   selectedOption: { borderColor: colors.appHeading, backgroundColor: colors.tintPurple },
   optionText: { flex: 1, gap: 4 },
   optionTitle: { fontFamily: fonts.semibold, fontSize: 15, color: colors.appTitle },
@@ -545,11 +623,22 @@ const styles = StyleSheet.create({
   calendarCard: { padding: 14, borderRadius: 18, backgroundColor: colors.appSurface, gap: 12 },
   monthHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   monthButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  monthTitle: { fontFamily: fonts.bold, fontSize: 16, color: colors.appTitle, textTransform: 'capitalize' },
+  monthTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    color: colors.appTitle,
+    textTransform: 'capitalize',
+  },
   calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   dayCell: { width: '14.285714%', height: 46, alignItems: 'center', justifyContent: 'center' },
   weekdayText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.appMuted },
-  dayButton: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  dayButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   selectedDay: { backgroundColor: colors.appHeading },
   dayText: { fontFamily: fonts.medium, fontSize: 14, color: colors.appTitle },
   disabledDayText: { color: colors.appDivider },
@@ -557,20 +646,61 @@ const styles = StyleSheet.create({
   sectionTitle: { fontFamily: fonts.bold, fontSize: 17, color: colors.appTitle, marginTop: 8 },
   feedbackRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   feedbackCard: { padding: 16, borderRadius: 16, backgroundColor: colors.appSurface, gap: 8 },
-  retryButton: { minHeight: 44, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.tintPurple, borderRadius: 12 },
+  retryButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.tintPurple,
+    borderRadius: 12,
+  },
   retryText: { fontFamily: fonts.bold, color: colors.appHeading },
   hoursGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  hourButton: { minWidth: 82, minHeight: 48, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: colors.appSurface, borderWidth: 2, borderColor: colors.appDivider },
+  hourButton: {
+    minWidth: 82,
+    minHeight: 48,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 13,
+    backgroundColor: colors.appSurface,
+    borderWidth: 2,
+    borderColor: colors.appDivider,
+  },
   selectedHour: { borderColor: colors.appHeading, backgroundColor: colors.tintPurple },
   hourText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.appTitle },
   selectedHourText: { color: colors.appHeading },
   summary: { padding: 18, borderRadius: 18, backgroundColor: colors.appSurface, gap: 10 },
   summaryTitle: { fontFamily: fonts.bold, fontSize: 17, color: colors.appTitle },
   summaryText: { fontFamily: fonts.regular, fontSize: 14, color: colors.appMuted },
-  footer: { flexDirection: 'row', gap: 12, paddingHorizontal: 20, paddingTop: 14, backgroundColor: colors.appSurface, borderTopWidth: 1, borderTopColor: colors.appDivider },
-  secondaryButton: { minHeight: 48, flex: 1, borderWidth: 1, borderColor: colors.appDivider, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  footer: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    backgroundColor: colors.appSurface,
+    borderTopWidth: 1,
+    borderTopColor: colors.appDivider,
+  },
+  secondaryButton: {
+    minHeight: 48,
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.appDivider,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   secondaryText: { fontFamily: fonts.bold, fontSize: 14, color: colors.appHeading },
-  primaryButton: { minHeight: 48, flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, backgroundColor: colors.appHeading },
+  primaryButton: {
+    minHeight: 48,
+    flex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 14,
+    backgroundColor: colors.appHeading,
+  },
   disabledButton: { opacity: 0.45 },
   primaryText: { fontFamily: fonts.bold, fontSize: 14, color: colors.textLight },
 });

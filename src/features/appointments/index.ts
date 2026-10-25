@@ -3,10 +3,7 @@
 export { useAppointments } from './domain/useAppointments';
 export type { AppointmentsRepository } from './domain/useAppointments';
 
-export type {
-  Appointment,
-  AppointmentStatus,
-} from './domain/Appointment';
+export type { Appointment, AppointmentStatus } from './domain/Appointment';
 
 export { appointmentsRepository } from './data/appointmentsRepository';
 
@@ -22,10 +19,7 @@ export type { AvailabilityQuery } from './data/availabilityRepository';
 
 export { useBookAppointment } from './domain/useBookAppointment';
 
-export type {
-  BookingRepository,
-  BookingRequest,
-} from './domain/useBookAppointment';
+export type { BookingRepository, BookingRequest } from './domain/useBookAppointment';
 
 export {
   HoraNoDisponibleError,

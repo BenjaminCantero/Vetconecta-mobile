@@ -59,24 +59,14 @@ export function RootNavigator() {
   return (
     <Stack.Navigator
       key={isAuthenticated ? 'app' : 'auth'}
-      initialRouteName={
-        isAuthenticated
-          ? 'AppTabs'
-          : hasSignedIn
-            ? 'Login'
-            : 'Welcome'
-      }
+      initialRouteName={isAuthenticated ? 'AppTabs' : hasSignedIn ? 'Login' : 'Welcome'}
       screenOptions={{
         headerTintColor: colors.primary,
       }}
     >
       {isAuthenticated ? (
         <>
-          <Stack.Screen
-            name="AppTabs"
-            component={TabNavigator}
-            options={{ headerShown: false }}
-          />
+          <Stack.Screen name="AppTabs" component={TabNavigator} options={{ headerShown: false }} />
 
           <Stack.Screen
             name="PetDetail"
@@ -98,17 +88,9 @@ export function RootNavigator() {
         </>
       ) : (
         <>
-          <Stack.Screen
-            name="Welcome"
-            component={WelcomeScreen}
-            options={{ headerShown: false }}
-          />
+          <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
 
-          <Stack.Screen
-            name="Login"
-            component={LoginScreen}
-            options={{ headerShown: false }}
-          />
+          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
 
           <Stack.Screen
             name="Register"
