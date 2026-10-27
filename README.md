@@ -31,7 +31,7 @@ EXPO_PUBLIC_API_BASE_URL=https://url-del-backend
 ```
 
 | Variable | Por defecto | Uso |
-|---|---|---|
+|---|---|
 | `EXPO_PUBLIC_USE_MOCKS` | activo | `false` para usar la API real en vez de los mocks |
 | `EXPO_PUBLIC_API_BASE_URL` | `https://api.vetconecta.com` | URL base del backend |
 
