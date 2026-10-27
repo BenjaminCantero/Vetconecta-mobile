@@ -4,7 +4,7 @@
 // Regla de oro (A2): home depende de los dominios; ningún dominio depende de home.
 
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -49,7 +49,7 @@ function displayName(email: string | undefined): string {
 export default function HomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
 
-  const { user, logout } = useAuthSession();
+  const { user } = useAuthSession();
   const {
     pets,
     isLoading: petsLoading,
@@ -94,14 +94,6 @@ export default function HomeScreen({ navigation }: Props) {
     refetchAppointments();
   };
 
-  // Al cerrar sesión, RootNavigator vuelve solo al login.
-  const confirmLogout = () => {
-    Alert.alert('¿Cerrar sesión?', 'Tendrás que ingresar de nuevo con tu correo y contraseña.', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Cerrar sesión', style: 'destructive', onPress: () => void logout() },
-    ]);
-  };
-
   const openHealthCard = () => {
     if (featuredPetId) {
       navigation.navigate('HealthCard', { petId: featuredPetId });
@@ -119,7 +111,11 @@ export default function HomeScreen({ navigation }: Props) {
           title={displayName(user?.email)}
           hasUnread
           onBellPress={() => navigation.navigate('Notificaciones')}
-          extraAction={{ icon: 'log-out-outline', label: 'Cerrar sesión', onPress: confirmLogout }}
+          extraAction={{
+            icon: 'person-circle-outline',
+            label: 'Abrir mi perfil',
+            onPress: () => navigation.navigate('Profile'),
+          }}
         />
 
         <ActivePetSwitcher />

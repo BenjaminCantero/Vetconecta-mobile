@@ -15,6 +15,7 @@ import { create } from 'axios';
 
 import { ENV } from '../config/env';
 import { StorageKeys, asyncStorage } from '../storage/asyncStorage';
+import { ENDPOINTS } from './endpoints';
 import { notifySessionExpired } from './sessionEvents';
 
 export const httpClient = create({
@@ -39,7 +40,11 @@ httpClient.interceptors.response.use(
   async (error) => {
     // 401 = Token invalido o expirado, sesion cerrada
     // 403 = autenticado pero sin permiso
-    if (error.response?.status === 401) {
+    // El contrato de cambio de contraseña usa 401 también cuando la contraseña
+    // actual no coincide. En ese caso el repositorio debe mostrar el error de
+    // campo y conservar la sesión del dueño.
+    const isPasswordValidation = error.config?.url === ENDPOINTS.CLIENTS.PASSWORD;
+    if (error.response?.status === 401 && !isPasswordValidation) {
       await asyncStorage.removeItem(StorageKeys.AUTH_ACCESS_TOKEN);
       await asyncStorage.removeItem(StorageKeys.AUTH_REFRESH_TOKEN);
       await asyncStorage.removeItem(StorageKeys.AUTH_USER);
