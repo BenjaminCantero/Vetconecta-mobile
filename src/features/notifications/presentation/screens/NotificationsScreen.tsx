@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SectionList, Pressable, Text, View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,9 +13,34 @@ import { ENV } from '../../../../core/config/env';
 import { ScreenHeader } from '../../../../shared/components/ScreenHeader';
 import { SegmentedTabs } from '../../../../shared/components/SegmentedTabs';
 import { QueryState } from '../../../../shared/components/QueryState';
-import { notificationsRepository } from '../../data/notificationsRepository';
-import { useNotifications } from '../../domain/useNotifications';
+import { ActivePetSwitcher } from '../../../../shared/components/ActivePetSwitcher';
+import { useActivePet } from '../../../../shared/context/ActivePetContext';
+import { useNotificationsSession } from '../context/NotificationsContext';
 import type { Notification } from '../../domain/Notification';
+
+function elapsedLabel(isoDate: string): string {
+  const timestamp = Date.parse(isoDate);
+  if (!Number.isFinite(timestamp)) return 'Fecha desconocida';
+
+  const minutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
+  if (minutes < 1) return 'Ahora';
+  if (minutes < 60) return `Hace ${minutes} min`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Hace ${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Ayer';
+  if (days < 7) return `Hace ${days} días`;
+
+  return new Date(timestamp).toLocaleDateString('es-CL', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+const PAGE_SIZE = 10;
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<TabParamList, 'Notificaciones'>,
@@ -24,29 +49,86 @@ type Props = CompositeScreenProps<
 
 export default function NotificationsScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const { pets, activePetId } = useActivePet();
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
-  const { notifications, isLoading, error, refetch, isSaving, saveError, markAsRead } =
-    useNotifications(notificationsRepository);
-  const unread = notifications.filter((item) => !item.read);
-  const visible = filter === 'unread' ? unread : notifications;
-  const sections = visible.reduce<{ title: string; data: Notification[] }[]>((groups, item) => {
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  // E3: la pantalla y el contador comparten el mismo estado.
+  const {
+    notifications,
+    isLoading,
+    error,
+    refetch,
+    isSaving,
+    saveError,
+    markAsRead,
+  } = useNotificationsSession();
+
+  // Sin mascota activa, no se muestran avisos de otra mascota.
+  // Los avisos globales (petId null/undefined) se muestran siempre.
+  const forActivePet = notifications.filter((item) => {
+    const petId =
+      item.petId ??
+      (item.target?.screen === 'health' ? item.target.petId : null);
+
+    return !petId || (activePetId !== null && petId === activePetId);
+  });
+
+  const unread = forActivePet.filter((item) => !item.read);
+  const filtered = filter === 'unread' ? unread : forActivePet;
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
+
+  // Al cambiar de mascota o filtro, comenzar desde la primera página.
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [activePetId, filter]);
+
+  function loadMore() {
+    if (!isLoading && hasMore) {
+      setVisibleCount((count) => Math.min(count + PAGE_SIZE, filtered.length));
+    }
+  }
+
+  function refresh() {
+    setVisibleCount(PAGE_SIZE);
+    refetch();
+  }
+
+  const sections = visible.reduce<
+    { title: string; data: Notification[] }[]
+  >((groups, item) => {
     const title = new Date(item.date).toLocaleDateString('es-CL', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
     });
+
     const group = groups.find((entry) => entry.title === title);
-    if (group) group.data.push(item);
-    else groups.push({ title, data: [item] });
+
+    if (group) {
+      group.data.push(item);
+    } else {
+      groups.push({ title, data: [item] });
+    }
+
     return groups;
   }, []);
 
   async function open(item: Notification) {
     if (!item.read && !(await markAsRead([item.id]))) return;
-    if (item.target?.screen === 'appointment')
-      navigation.navigate('Citas', { citaId: item.target.appointmentId });
-    if (item.target?.screen === 'health')
-      navigation.navigate('HealthCard', { petId: item.target.petId });
+
+    if (item.target?.screen === 'appointment') {
+      navigation.navigate('Citas', {
+        citaId: item.target.appointmentId,
+      });
+    }
+
+    if (item.target?.screen === 'health') {
+      navigation.navigate('HealthCard', {
+        petId: item.target.petId,
+      });
+    }
   }
 
   return (
@@ -55,15 +137,21 @@ export default function NotificationsScreen({ navigation }: Props) {
         <View style={styles.texts}>
           <ScreenHeader title="Avisos" />
         </View>
+
         {ENV.USE_MOCKS && (
           <View style={styles.demo}>
             <Text style={styles.demoText}>Demo</Text>
           </View>
         )}
       </View>
+
       <QueryState
         isLoading={isLoading}
-        error={error ? new Error('No se pudieron cargar tus avisos. Intenta nuevamente.') : null}
+        error={
+          error
+            ? new Error('No se pudieron cargar tus avisos. Intenta nuevamente.')
+            : null
+        }
         onRetry={refetch}
       >
         <SectionList
@@ -73,8 +161,13 @@ export default function NotificationsScreen({ navigation }: Props) {
             <View style={styles.header}>
               <View style={styles.intro}>
                 <View style={styles.introIcon}>
-                  <Ionicons name="notifications-outline" size={28} color={colors.appHeading} />
+                  <Ionicons
+                    name="notifications-outline"
+                    size={28}
+                    color={colors.appHeading}
+                  />
                 </View>
+
                 <View style={styles.texts}>
                   <Text style={styles.introTitle}>Su cuidado, al día</Text>
                   <Text style={styles.description}>
@@ -82,23 +175,38 @@ export default function NotificationsScreen({ navigation }: Props) {
                   </Text>
                 </View>
               </View>
+
               <Text style={styles.demoDescription}>
                 {ENV.USE_MOCKS
                   ? 'Estás viendo avisos de ejemplo.'
                   : 'El centro de avisos estará disponible próximamente.'}
               </Text>
+
+              <ActivePetSwitcher />
+
               <SegmentedTabs
                 options={[
-                  { value: 'all', label: `Todos (${notifications.length})` },
-                  { value: 'unread', label: `Sin leer (${unread.length})` },
+                  {
+                    value: 'all',
+                    label: `Todos (${forActivePet.length})`,
+                  },
+                  {
+                    value: 'unread',
+                    label: `Sin leer (${unread.length})`,
+                  },
                 ]}
                 value={filter}
                 onChange={setFilter}
               />
+
               <View style={styles.toolbar}>
-                <Text style={styles.count} accessibilityLiveRegion="polite">
+                <Text
+                  style={styles.count}
+                  accessibilityLiveRegion="polite"
+                >
                   {unread.length ? 'Por revisar' : 'Todo revisado'}
                 </Text>
+
                 <Pressable
                   disabled={!unread.length || isSaving || isLoading}
                   accessibilityRole="button"
@@ -106,18 +214,29 @@ export default function NotificationsScreen({ navigation }: Props) {
                     disabled: !unread.length || isSaving || isLoading,
                     busy: isSaving,
                   }}
-                  onPress={() => void markAsRead(unread.map((item) => item.id))}
+                  onPress={() =>
+                    void markAsRead(unread.map((item) => item.id))
+                  }
                   style={[
                     styles.markAll,
-                    (!unread.length || isSaving || isLoading) && styles.disabled,
+                    (!unread.length || isSaving || isLoading) &&
+                      styles.disabled,
                   ]}
                 >
-                  <Ionicons name="checkmark-done-outline" size={18} color={colors.appHeading} />
+                  <Ionicons
+                    name="checkmark-done-outline"
+                    size={18}
+                    color={colors.appHeading}
+                  />
+
                   <Text style={styles.link}>
-                    {isSaving ? 'Guardando…' : 'Marcar todos como leídos'}
+                    {isSaving
+                      ? 'Guardando…'
+                      : 'Marcar todos como leídos'}
                   </Text>
                 </Pressable>
               </View>
+
               {saveError && (
                 <Text accessibilityRole="alert" style={styles.error}>
                   {saveError}
@@ -127,25 +246,58 @@ export default function NotificationsScreen({ navigation }: Props) {
           }
           renderSectionHeader={({ section }) => (
             <View style={styles.sectionHeading}>
-              <Text style={styles.sectionDate}>{section.title}</Text>
+              <Text style={styles.sectionDate}>
+                {section.title}
+              </Text>
               <View style={styles.rule} />
             </View>
           )}
           keyExtractor={(item) => item.id}
           refreshing={isLoading}
-          onRefresh={refetch}
-          contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 24 }]}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          onRefresh={refresh}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={
+            hasMore ? (
+              <View style={styles.paginationFooter}>
+                <Text style={styles.demoDescription}>
+                  Mostrando {visible.length} de {filtered.length} avisos
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={loadMore}
+                  style={styles.loadMoreButton}
+                >
+                  <Text style={styles.link}>Cargar más avisos</Text>
+                </Pressable>
+              </View>
+            ) : null
+          }
+          contentContainerStyle={[
+            styles.list,
+            { paddingBottom: insets.bottom + 24 },
+          ]}
+          ItemSeparatorComponent={() => (
+            <View style={styles.separator} />
+          )}
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons
-                name={filter === 'unread' ? 'checkmark-done-outline' : 'notifications-outline'}
+                name={
+                  filter === 'unread'
+                    ? 'checkmark-done-outline'
+                    : 'notifications-outline'
+                }
                 size={40}
                 color={colors.appHeading}
               />
+
               <Text style={styles.emptyTitle}>
-                {filter === 'unread' ? 'Estás al día' : 'No hay avisos todavía'}
+                {filter === 'unread'
+                  ? 'Estás al día'
+                  : 'No hay avisos todavía'}
               </Text>
+
               <Text style={styles.description}>
                 {filter === 'unread'
                   ? 'Puedes consultar los avisos leídos en Todos.'
@@ -158,18 +310,26 @@ export default function NotificationsScreen({ navigation }: Props) {
               onPress={() => void open(item)}
               disabled={isSaving}
               accessibilityRole="button"
-              accessibilityLabel={`${item.read ? 'Leído' : 'Sin leer'}. ${item.title}. ${item.body}`}
+              accessibilityLabel={`${
+                item.read ? 'Leído' : 'Sin leer'
+              }. ${item.title}. ${item.body}`}
               accessibilityHint={
-                item.target?.screen === 'appointment' ? 'Abre la cita' : 'Abre el carnet'
+                item.target?.screen === 'appointment'
+                  ? 'Abre la cita'
+                  : 'Abre el carnet'
               }
               android_ripple={{ color: colors.tintPurple }}
-              style={[styles.card, !item.read && styles.unread]}
+              style={[
+                styles.card,
+                !item.read && styles.unread,
+              ]}
             >
               <View style={styles.cardHeader}>
                 <View
                   style={[
                     styles.icon,
-                    item.target?.screen === 'appointment' && styles.appointmentIcon,
+                    item.target?.screen === 'appointment' &&
+                      styles.appointmentIcon,
                   ]}
                 >
                   <Ionicons
@@ -180,19 +340,23 @@ export default function NotificationsScreen({ navigation }: Props) {
                     }
                     size={22}
                     color={
-                      item.target?.screen === 'appointment' ? colors.cardOrange : colors.appHeading
+                      item.target?.screen === 'appointment'
+                        ? colors.cardOrange
+                        : colors.appHeading
                     }
                   />
                 </View>
+
                 <View style={styles.texts}>
-                  <Text style={styles.title}>{item.title}</Text>
+                  <Text style={styles.title}>
+                    {item.title}
+                  </Text>
+
                   <Text style={styles.date}>
-                    {new Date(item.date).toLocaleTimeString('es-CL', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                    {elapsedLabel(item.date)}
                   </Text>
                 </View>
+
                 {!item.read && (
                   <View style={styles.newBadge}>
                     <View style={styles.dot} />
@@ -200,16 +364,45 @@ export default function NotificationsScreen({ navigation }: Props) {
                   </View>
                 )}
               </View>
-              <Text style={styles.body}>{item.body}</Text>
+
+              <Text style={styles.body}>
+                {item.body}
+              </Text>
+
+              <Text style={styles.petName}>
+                Mascota:{' '}
+                {pets.find(
+                  (pet) =>
+                    pet.id ===
+                    (item.petId ??
+                      (item.target?.screen === 'health'
+                        ? item.target.petId
+                        : null)),
+                )?.name ??
+                  (item.petId
+                    ? 'Mascota registrada'
+                    : 'Aviso general')}
+              </Text>
+
               <View style={styles.cardFooter}>
                 <Text style={styles.category}>
-                  {item.target?.screen === 'appointment' ? 'Citas' : 'Carnet de salud'}
+                  {item.target?.screen === 'appointment'
+                    ? 'Citas'
+                    : 'Carnet de salud'}
                 </Text>
+
                 <View style={styles.openAction}>
                   <Text style={styles.link}>
-                    {item.target?.screen === 'appointment' ? 'Ver cita' : 'Ver carnet'}
+                    {item.target?.screen === 'appointment'
+                      ? 'Ver cita'
+                      : 'Ver carnet'}
                   </Text>
-                  <Ionicons name="chevron-forward" size={16} color={colors.appHeading} />
+
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color={colors.appHeading}
+                  />
                 </View>
               </View>
             </Pressable>
@@ -221,7 +414,10 @@ export default function NotificationsScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.appBackground },
+  container: {
+    flex: 1,
+    backgroundColor: colors.appBackground,
+  },
   topBar: {
     paddingHorizontal: 20,
     paddingBottom: 16,
@@ -235,9 +431,20 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
   },
-  demoText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.appMuted },
-  header: { gap: 12 },
-  intro: { flexDirection: 'row', gap: 16, alignItems: 'center', paddingVertical: 20 },
+  demoText: {
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+    color: colors.appMuted,
+  },
+  header: {
+    gap: 12,
+  },
+  intro: {
+    flexDirection: 'row',
+    gap: 16,
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
   introIcon: {
     width: 60,
     height: 60,
@@ -266,9 +473,22 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 12,
   },
-  sectionDate: { fontFamily: fonts.semibold, fontSize: 12, color: colors.appMuted },
-  rule: { height: 1, flex: 1, backgroundColor: colors.appDivider },
-  description: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 22, color: colors.appMuted },
+  sectionDate: {
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+    color: colors.appMuted,
+  },
+  rule: {
+    height: 1,
+    flex: 1,
+    backgroundColor: colors.appDivider,
+  },
+  description: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 22,
+    color: colors.appMuted,
+  },
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -276,7 +496,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 4,
   },
-  count: { fontFamily: fonts.medium, fontSize: 13, color: colors.appMuted },
+  count: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.appMuted,
+  },
   markAll: {
     minHeight: 48,
     flexDirection: 'row',
@@ -285,10 +509,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 4,
   },
-  disabled: { opacity: 0.45 },
-  link: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 20, color: colors.appHeading },
-  list: { paddingHorizontal: 20, flexGrow: 1 },
-  separator: { height: 12 },
+  disabled: {
+    opacity: 0.45,
+  },
+  link: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    lineHeight: 20,
+    color: colors.appHeading,
+  },
+  list: {
+    paddingHorizontal: 20,
+    flexGrow: 1,
+  },
+  paginationFooter: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    gap: 8,
+  },
+  loadMoreButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  separator: {
+    height: 12,
+  },
   card: {
     backgroundColor: colors.appSurface,
     borderWidth: 1,
@@ -298,9 +543,19 @@ const styles = StyleSheet.create({
     gap: 12,
     overflow: 'hidden',
   },
-  unread: { borderColor: '#D7C5EE', backgroundColor: colors.appSurface },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
-  appointmentIcon: { backgroundColor: colors.tintOrange },
+  unread: {
+    borderColor: '#D7C5EE',
+    backgroundColor: colors.appSurface,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flexWrap: 'wrap',
+  },
+  appointmentIcon: {
+    backgroundColor: colors.tintOrange,
+  },
   newBadge: {
     flexDirection: 'row',
     gap: 5,
@@ -310,7 +565,11 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
   },
-  newLabel: { fontFamily: fonts.semibold, fontSize: 11, color: colors.appHeading },
+  newLabel: {
+    fontFamily: fonts.semibold,
+    fontSize: 11,
+    color: colors.appHeading,
+  },
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -321,8 +580,17 @@ const styles = StyleSheet.create({
     borderTopColor: colors.appDivider,
     paddingTop: 12,
   },
-  category: { fontFamily: fonts.medium, fontSize: 12, color: colors.appMuted },
-  openAction: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 32 },
+  category: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.appMuted,
+  },
+  openAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    minHeight: 32,
+  },
   icon: {
     width: 44,
     height: 44,
@@ -331,12 +599,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  texts: { flex: 1 },
-  title: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 24, color: colors.appTitle },
-  date: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 20, color: colors.appMuted },
-  body: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 22, color: colors.appMuted },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.appHeading },
-  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, gap: 16 },
-  emptyTitle: { fontFamily: fonts.bold, fontSize: 22, color: colors.appTitle },
-  error: { fontFamily: fonts.medium, fontSize: 14, color: colors.danger },
+  texts: {
+    flex: 1,
+  },
+  title: {
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    lineHeight: 24,
+    color: colors.appTitle,
+  },
+  date: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 20,
+    color: colors.appMuted,
+  },
+  body: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 22,
+    color: colors.appMuted,
+  },
+  petName: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.appHeading,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.appHeading,
+  },
+  empty: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    gap: 16,
+  },
+  emptyTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 22,
+    color: colors.appTitle,
+  },
+  error: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.danger,
+  },
 });
