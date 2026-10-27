@@ -1,3 +1,4 @@
+
 // Responsabilidad: pantalla de inicio (feature TRANSVERSAL home).
 // home NO posee entidad propia: solo AGREGA datos de varios dominios,
 // consumiéndolos por su superficie pública (los barrels), nunca por sus data/.
@@ -13,6 +14,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthSession } from '../../../auth';
 import { usePets, petsRepository } from '../../../pets';
 import { useAppointments, appointmentsRepository } from '../../../appointments';
+import { useNotificationsSession } from '../../../notifications';
+
 import { ActionCard } from '../../../../shared/components/ActionCard';
 import { ActivePetSwitcher } from '../../../../shared/components/ActivePetSwitcher';
 import { EmergencyCard } from '../../../../shared/components/EmergencyCard';
@@ -50,6 +53,7 @@ export default function HomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
 
   const { user, logout } = useAuthSession();
+
   const {
     pets,
     isLoading: petsLoading,
@@ -66,6 +70,21 @@ export default function HomeScreen({ navigation }: Props) {
 
   const { activePetId, activePet } = useActivePet();
 
+  // E3: compartir el estado de avisos con la pestaña Notificaciones.
+  const { notifications } = useNotificationsSession();
+
+  // El punto rojo solo aparece cuando la mascota activa tiene avisos
+  // sin leer. Los avisos generales también se consideran.
+  const hasUnreadNotifications = notifications.some((item) => {
+    if (item.read) return false;
+
+    const petId =
+      item.petId ??
+      (item.target?.screen === 'health' ? item.target.petId : null);
+
+    return !petId || (activePetId !== null && petId === activePetId);
+  });
+
   const [now] = useState(() => Date.now());
 
   // La próxima cita es la de la mascota activa (F1); sin mascota activa, la
@@ -80,11 +99,13 @@ export default function HomeScreen({ navigation }: Props) {
   );
 
   const nextAppointmentPet = pets.find((pet) => pet.id === nextAppointment?.petId);
+
   // Solo el recordatorio de la mascota activa; el mock aún se relaciona por
   // nombre porque los tratamientos no tienen dominio propio.
   const reminder = medicationRemindersMock.find(
     (item) => !activePet || item.petName === activePet.name,
   );
+
   const featuredPetId = activePetId ?? pets[0]?.id;
 
   // Estado combinado de las dos lecturas: carga si cualquiera carga, error el
@@ -117,9 +138,13 @@ export default function HomeScreen({ navigation }: Props) {
         <ScreenHeader
           eyebrow="Hola,"
           title={displayName(user?.email)}
-          hasUnread
+          hasUnread={hasUnreadNotifications}
           onBellPress={() => navigation.navigate('Notificaciones')}
-          extraAction={{ icon: 'log-out-outline', label: 'Cerrar sesión', onPress: confirmLogout }}
+          extraAction={{
+            icon: 'log-out-outline',
+            label: 'Cerrar sesión',
+            onPress: confirmLogout,
+          }}
         />
 
         <ActivePetSwitcher />
