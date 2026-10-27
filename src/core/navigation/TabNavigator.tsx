@@ -1,4 +1,3 @@
-
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,10 +28,7 @@ const Tab = createBottomTabNavigator<TabParamList>();
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
-const TAB_ICONS: Record<
-  keyof TabParamList,
-  { active: IconName; inactive: IconName }
-> = {
+const TAB_ICONS: Record<keyof TabParamList, { active: IconName; inactive: IconName }> = {
   Inicio: {
     active: 'home',
     inactive: 'home-outline',
@@ -63,9 +59,7 @@ function TabsContent() {
       return false;
     }
 
-    const petId =
-      item.petId ??
-      (item.target?.screen === 'health' ? item.target.petId : null);
+    const petId = item.petId ?? (item.target?.screen === 'health' ? item.target.petId : null);
 
     return !petId || (activePetId !== null && petId === activePetId);
   }).length;
@@ -91,34 +85,18 @@ function TabsContent() {
         },
         tabBarIcon: ({ color, size, focused }) => (
           <Ionicons
-            name={
-              focused
-                ? TAB_ICONS[route.name].active
-                : TAB_ICONS[route.name].inactive
-            }
+            name={focused ? TAB_ICONS[route.name].active : TAB_ICONS[route.name].inactive}
             size={size ?? 22}
             color={color}
           />
         ),
       })}
     >
-      <Tab.Screen
-        name="Inicio"
-        component={HomeScreen}
-        options={{ title: 'Inicio' }}
-      />
+      <Tab.Screen name="Inicio" component={HomeScreen} options={{ title: 'Inicio' }} />
 
-      <Tab.Screen
-        name="MisMascotas"
-        component={MyPetsScreen}
-        options={{ title: 'Mascotas' }}
-      />
+      <Tab.Screen name="MisMascotas" component={MyPetsScreen} options={{ title: 'Mascotas' }} />
 
-      <Tab.Screen
-        name="Citas"
-        component={AppointmentsScreen}
-        options={{ title: 'Citas' }}
-      />
+      <Tab.Screen name="Citas" component={AppointmentsScreen} options={{ title: 'Citas' }} />
 
       <Tab.Screen
         name="Notificaciones"

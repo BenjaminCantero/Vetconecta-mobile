@@ -1,4 +1,3 @@
-
 // Responsabilidad: acceso a datos de notificaciones.
 // E3 / G1: persistencia de lecturas y caché offline por cuenta.
 
@@ -45,45 +44,29 @@ function getAccountId(user: StoredSessionUser | null): string | null {
 }
 
 async function getCurrentAccountId(): Promise<string | null> {
-  const user = await asyncStorage.getItem<StoredSessionUser>(
-    StorageKeys.AUTH_USER,
-  );
+  const user = await asyncStorage.getItem<StoredSessionUser>(StorageKeys.AUTH_USER);
 
   return getAccountId(user);
 }
 
-async function saveCache(
-  userId: string,
-  notifications: Notification[],
-): Promise<void> {
+async function saveCache(userId: string, notifications: Notification[]): Promise<void> {
   const cache: NotificationsCache = {
     userId,
     notifications,
     savedAt: new Date().toISOString(),
   };
 
-  const saved = await asyncStorage.setItem(
-    StorageKeys.NOTIFICATIONS_CACHE,
-    cache,
-  );
+  const saved = await asyncStorage.setItem(StorageKeys.NOTIFICATIONS_CACHE, cache);
 
   if (!saved) {
     throw new Error('No se pudo guardar el caché de notificaciones.');
   }
 }
 
-async function readCache(
-  userId: string,
-): Promise<Notification[] | null> {
-  const cache = await asyncStorage.getItem<NotificationsCache>(
-    StorageKeys.NOTIFICATIONS_CACHE,
-  );
+async function readCache(userId: string): Promise<Notification[] | null> {
+  const cache = await asyncStorage.getItem<NotificationsCache>(StorageKeys.NOTIFICATIONS_CACHE);
 
-  if (
-    !cache ||
-    cache.userId !== userId ||
-    !Array.isArray(cache.notifications)
-  ) {
+  if (!cache || cache.userId !== userId || !Array.isArray(cache.notifications)) {
     return null;
   }
 
@@ -91,10 +74,7 @@ async function readCache(
 }
 
 async function readStateStore(): Promise<ReadStateStore> {
-  const stored = await asyncStorage.getItem<unknown>(
-    StorageKeys.MOCK_NOTIFICATION_READ_IDS,
-    true,
-  );
+  const stored = await asyncStorage.getItem<unknown>(StorageKeys.MOCK_NOTIFICATION_READ_IDS, true);
 
   if (stored === null) {
     return { accounts: [] };
@@ -105,9 +85,7 @@ async function readStateStore(): Promise<ReadStateStore> {
   // a ninguna cuenta para evitar mezclar lecturas.
   if (Array.isArray(stored)) {
     if (!stored.every((id) => typeof id === 'string')) {
-      throw new Error(
-        'No se pudo leer el estado de tus avisos. Intenta nuevamente.',
-      );
+      throw new Error('No se pudo leer el estado de tus avisos. Intenta nuevamente.');
     }
 
     return { accounts: [] };
@@ -119,9 +97,7 @@ async function readStateStore(): Promise<ReadStateStore> {
     !('accounts' in stored) ||
     !Array.isArray(stored.accounts)
   ) {
-    throw new Error(
-      'No se pudo leer el estado de tus avisos. Intenta nuevamente.',
-    );
+    throw new Error('No se pudo leer el estado de tus avisos. Intenta nuevamente.');
   }
 
   const accounts = stored.accounts as unknown[];
@@ -138,9 +114,7 @@ async function readStateStore(): Promise<ReadStateStore> {
         account.ids.every((id: unknown) => typeof id === 'string'),
     )
   ) {
-    throw new Error(
-      'No se pudo leer el estado de tus avisos. Intenta nuevamente.',
-    );
+    throw new Error('No se pudo leer el estado de tus avisos. Intenta nuevamente.');
   }
 
   return { accounts };
@@ -149,22 +123,14 @@ async function readStateStore(): Promise<ReadStateStore> {
 async function readIds(userId: string): Promise<string[]> {
   const store = await readStateStore();
 
-  return store.accounts.find(
-    (account) => account.userId === userId,
-  )?.ids ?? [];
+  return store.accounts.find((account) => account.userId === userId)?.ids ?? [];
 }
 
-function sortNotifications(
-  notifications: Notification[],
-): Notification[] {
-  return [...notifications].sort(
-    (a, b) => Date.parse(b.date) - Date.parse(a.date),
-  );
+function sortNotifications(notifications: Notification[]): Notification[] {
+  return [...notifications].sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
 }
 
-async function fetchNotifications(
-  userId: string,
-): Promise<Notification[]> {
+async function fetchNotifications(userId: string): Promise<Notification[]> {
   const ids = await readIds(userId);
 
   return sortNotifications(
@@ -223,38 +189,26 @@ export const notificationsRepository = {
       .catch(() => undefined)
       .then(async () => {
         if (!ENV.USE_MOCKS) {
-          throw new Error(
-            'El centro de avisos aún no está disponible.',
-          );
+          throw new Error('El centro de avisos aún no está disponible.');
         }
 
         const userId = await getCurrentAccountId();
 
         if (!userId) {
-          throw new Error(
-            'Debes iniciar sesión para actualizar tus avisos.',
-          );
+          throw new Error('Debes iniciar sesión para actualizar tus avisos.');
         }
 
         const store = await readStateStore();
 
-        const previous = store.accounts.find(
-          (account) => account.userId === userId,
-        )?.ids ?? [];
+        const previous = store.accounts.find((account) => account.userId === userId)?.ids ?? [];
 
-        const validIds = ids.filter((id) =>
-          notificationsMock.some((item) => item.id === id),
-        );
+        const validIds = ids.filter((id) => notificationsMock.some((item) => item.id === id));
 
-        const updatedIds = [
-          ...new Set([...previous, ...validIds]),
-        ];
+        const updatedIds = [...new Set([...previous, ...validIds])];
 
         const updatedStore: ReadStateStore = {
           accounts: [
-            ...store.accounts.filter(
-              (account) => account.userId !== userId,
-            ),
+            ...store.accounts.filter((account) => account.userId !== userId),
             {
               userId,
               ids: updatedIds,
@@ -268,9 +222,7 @@ export const notificationsRepository = {
         );
 
         if (!saved) {
-          throw new Error(
-            'No se pudo guardar la lectura. Intenta nuevamente.',
-          );
+          throw new Error('No se pudo guardar la lectura. Intenta nuevamente.');
         }
 
         // Actualizar también el caché offline de esta cuenta.

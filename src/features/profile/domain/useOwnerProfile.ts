@@ -49,5 +49,12 @@ export function useOwnerProfile(repository: OwnerProfileRepository) {
     [repository],
   );
 
-  return { profile, isLoading, error, reload: load, updateContact, changePassword: repository.changePassword };
+  return {
+    profile,
+    isLoading,
+    error,
+    reload: load,
+    updateContact,
+    changePassword: repository.changePassword,
+  };
 }

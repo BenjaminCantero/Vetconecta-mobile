@@ -1,8 +1,4 @@
-import {
-  hasValidPasswordFormat,
-  isValidChileanMobile,
-  isValidEmail,
-} from '../validators';
+import { hasValidPasswordFormat, isValidChileanMobile, isValidEmail } from '../validators';
 
 describe('profile validators', () => {
   it('accepts valid email and Chilean mobile contact formats', () => {

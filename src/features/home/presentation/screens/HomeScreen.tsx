@@ -1,4 +1,3 @@
-
 // Responsabilidad: pantalla de inicio (feature TRANSVERSAL home).
 // home NO posee entidad propia: solo AGREGA datos de varios dominios,
 // consumiéndolos por su superficie pública (los barrels), nunca por sus data/.
@@ -77,9 +76,7 @@ export default function HomeScreen({ navigation }: Props) {
   const hasUnreadNotifications = notifications.some((item) => {
     if (item.read) return false;
 
-    const petId =
-      item.petId ??
-      (item.target?.screen === 'health' ? item.target.petId : null);
+    const petId = item.petId ?? (item.target?.screen === 'health' ? item.target.petId : null);
 
     return !petId || (activePetId !== null && petId === activePetId);
   });

@@ -5,7 +5,11 @@ import { toHttpError } from '../../../core/api/httpError';
 import { httpClient } from '../../../core/api/httpClient';
 import { ENV } from '../../../core/config/env';
 import { EmailAlreadyInUseError, IncorrectCurrentPasswordError } from '../domain/profileErrors';
-import type { ContactUpdate, OwnerProfileRepository, PasswordChange } from '../domain/useOwnerProfile';
+import type {
+  ContactUpdate,
+  OwnerProfileRepository,
+  PasswordChange,
+} from '../domain/useOwnerProfile';
 import type { OwnerProfile } from '../domain/OwnerProfile';
 import type { ChangePasswordDto, OwnerProfileDto, UpdateContactDto } from './profileDto';
 import { MOCK_CURRENT_PASSWORD, ownerProfileMock } from './profileMock';
@@ -26,7 +30,8 @@ function toProfile(dto: OwnerProfileDto): OwnerProfile {
 
 function toProfileError(error: unknown, operation: 'contact' | 'password'): Error {
   if (isAxiosError(error)) {
-    if (operation === 'contact' && error.response?.status === 409) return new EmailAlreadyInUseError();
+    if (operation === 'contact' && error.response?.status === 409)
+      return new EmailAlreadyInUseError();
     if (operation === 'password' && [400, 401].includes(error.response?.status ?? 0)) {
       return new IncorrectCurrentPasswordError();
     }
@@ -48,7 +53,8 @@ export const profileRepository: OwnerProfileRepository = {
   async updateContact(contact: ContactUpdate) {
     const request: UpdateContactDto = { email: contact.email, telefono: contact.phone };
     if (ENV.USE_MOCKS) {
-      if (request.email.toLowerCase() === 'ocupado@vetconecta.cl') throw new EmailAlreadyInUseError();
+      if (request.email.toLowerCase() === 'ocupado@vetconecta.cl')
+        throw new EmailAlreadyInUseError();
       ownerProfileMock.email = request.email;
       ownerProfileMock.telefono = request.telefono;
       return toProfile(ownerProfileMock);
@@ -67,7 +73,8 @@ export const profileRepository: OwnerProfileRepository = {
       password_nueva: change.newPassword,
     };
     if (ENV.USE_MOCKS) {
-      if (request.password_actual !== MOCK_CURRENT_PASSWORD) throw new IncorrectCurrentPasswordError();
+      if (request.password_actual !== MOCK_CURRENT_PASSWORD)
+        throw new IncorrectCurrentPasswordError();
       return;
     }
     try {

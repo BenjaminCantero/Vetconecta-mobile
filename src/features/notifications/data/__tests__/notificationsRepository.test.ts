@@ -1,4 +1,3 @@
-
 import { asyncStorage, StorageKeys } from '../../../../core/storage/asyncStorage';
 import { ENV } from '../../../../core/config/env';
 import { isOnline } from '../../../../core/network/connectivity';
@@ -45,19 +44,20 @@ beforeEach(() => {
     async (key: string) => stored[key] ?? null,
   );
 
-  (asyncStorage.setItem as jest.Mock).mockImplementation(
-    async (key: string, value: unknown) => {
-      stored[key] = value;
-      return true;
-    },
-  );
+  (asyncStorage.setItem as jest.Mock).mockImplementation(async (key: string, value: unknown) => {
+    stored[key] = value;
+    return true;
+  });
 });
 
 it('orders notices and persists individual and bulk reads across fetches', async () => {
   const initial = await notificationsRepository.getNotifications();
 
   expect(initial.map((item) => item.date)).toEqual(
-    initial.map((item) => item.date).sort().reverse(),
+    initial
+      .map((item) => item.date)
+      .sort()
+      .reverse(),
   );
 
   await notificationsRepository.markAsRead([initial[0].id]);
@@ -66,9 +66,7 @@ it('orders notices and persists individual and bulk reads across fetches', async
 
   expect(updated[0].read).toBe(true);
 
-  await notificationsRepository.markAsRead(
-    initial.map((item) => item.id),
-  );
+  await notificationsRepository.markAsRead(initial.map((item) => item.id));
 
   const allRead = await notificationsRepository.getNotifications();
 
@@ -78,11 +76,7 @@ it('orders notices and persists individual and bulk reads across fetches', async
 it('preserves concurrent read updates', async () => {
   const initial = await notificationsRepository.getNotifications();
 
-  await Promise.all(
-    initial.map((item) =>
-      notificationsRepository.markAsRead([item.id]),
-    ),
-  );
+  await Promise.all(initial.map((item) => notificationsRepository.markAsRead([item.id])));
 
   const updated = await notificationsRepository.getNotifications();
 
@@ -95,50 +89,38 @@ it('reports failed read-state saves without marking the notice read', async () =
 
   expect(notificationId).toBeDefined();
 
-  (asyncStorage.setItem as jest.Mock).mockImplementation(
-    async (key: string, value: unknown) => {
-      if (key === StorageKeys.MOCK_NOTIFICATION_READ_IDS) {
-        return false;
-      }
+  (asyncStorage.setItem as jest.Mock).mockImplementation(async (key: string, value: unknown) => {
+    if (key === StorageKeys.MOCK_NOTIFICATION_READ_IDS) {
+      return false;
+    }
 
-      stored[key] = value;
-      return true;
-    },
+    stored[key] = value;
+    return true;
+  });
+
+  await expect(notificationsRepository.markAsRead([notificationId!])).rejects.toThrow(
+    'No se pudo guardar la lectura',
   );
-
-  await expect(
-    notificationsRepository.markAsRead([notificationId!]),
-  ).rejects.toThrow('No se pudo guardar la lectura');
 
   const updated = await notificationsRepository.getNotifications();
 
-  expect(
-    updated.find((item) => item.id === notificationId)?.read,
-  ).toBe(false);
+  expect(updated.find((item) => item.id === notificationId)?.read).toBe(false);
 });
 
 it('rejects invalid stored data and storage read failures', async () => {
   stored[StorageKeys.MOCK_NOTIFICATION_READ_IDS] = { bad: true };
 
-  await expect(
-    notificationsRepository.getNotifications(),
-  ).rejects.toThrow();
+  await expect(notificationsRepository.getNotifications()).rejects.toThrow();
 
-  (asyncStorage.getItem as jest.Mock).mockRejectedValue(
-    new Error('storage unavailable'),
-  );
+  (asyncStorage.getItem as jest.Mock).mockRejectedValue(new Error('storage unavailable'));
 
-  await expect(
-    notificationsRepository.getNotifications(),
-  ).rejects.toThrow('storage unavailable');
+  await expect(notificationsRepository.getNotifications()).rejects.toThrow('storage unavailable');
 });
 
 it('never presents mock notices outside mock mode', async () => {
   ENV.USE_MOCKS = false;
 
-  expect(
-    await notificationsRepository.getNotifications(),
-  ).toEqual([]);
+  expect(await notificationsRepository.getNotifications()).toEqual([]);
 
   expect(asyncStorage.getItem).not.toHaveBeenCalled();
 });
@@ -159,13 +141,11 @@ it('saves the latest notification list in the cache', async () => {
 });
 
 it('loads cached notifications when the device is offline', async () => {
-  const onlineNotifications =
-    await notificationsRepository.getNotifications();
+  const onlineNotifications = await notificationsRepository.getNotifications();
 
   (isOnline as jest.Mock).mockResolvedValue(false);
 
-  const offlineNotifications =
-    await notificationsRepository.getNotifications();
+  const offlineNotifications = await notificationsRepository.getNotifications();
 
   expect(offlineNotifications).toEqual(onlineNotifications);
 });
@@ -178,13 +158,10 @@ it('does not expose cached notifications to another user', async () => {
   setUser('user-002', 'usuario2@example.com');
   (isOnline as jest.Mock).mockResolvedValue(false);
 
-  const notifications =
-    await notificationsRepository.getNotifications();
+  const notifications = await notificationsRepository.getNotifications();
 
   expect(notifications.length).toBeGreaterThan(0);
-  expect(stored[StorageKeys.NOTIFICATIONS_CACHE]).toBe(
-    firstUserCache,
-  );
+  expect(stored[StorageKeys.NOTIFICATIONS_CACHE]).toBe(firstUserCache);
 });
 
 it('keeps read notifications marked as read in the offline cache', async () => {
@@ -195,29 +172,22 @@ it('keeps read notifications marked as read in the offline cache', async () => {
 
   (isOnline as jest.Mock).mockResolvedValue(false);
 
-  const offlineNotifications =
-    await notificationsRepository.getNotifications();
+  const offlineNotifications = await notificationsRepository.getNotifications();
 
-  expect(
-    offlineNotifications.find(
-      (item) => item.id === notificationId,
-    )?.read,
-  ).toBe(true);
+  expect(offlineNotifications.find((item) => item.id === notificationId)?.read).toBe(true);
 });
 
 it('does not show notifications without a saved user', async () => {
   delete stored[StorageKeys.AUTH_USER];
 
-  const notifications =
-    await notificationsRepository.getNotifications();
+  const notifications = await notificationsRepository.getNotifications();
 
   expect(notifications).toEqual([]);
   expect(stored[StorageKeys.NOTIFICATIONS_CACHE]).toBeUndefined();
 });
 
 it('keeps read states separated between different users', async () => {
-  const firstUserNotifications =
-    await notificationsRepository.getNotifications();
+  const firstUserNotifications = await notificationsRepository.getNotifications();
 
   const notificationId = firstUserNotifications[0].id;
 
@@ -225,25 +195,15 @@ it('keeps read states separated between different users', async () => {
 
   setUser('user-002', 'usuario2@example.com');
 
-  const secondUserNotifications =
-    await notificationsRepository.getNotifications();
+  const secondUserNotifications = await notificationsRepository.getNotifications();
 
-  expect(
-    secondUserNotifications.find(
-      (item) => item.id === notificationId,
-    )?.read,
-  ).toBe(false);
+  expect(secondUserNotifications.find((item) => item.id === notificationId)?.read).toBe(false);
 
   setUser('user-001', 'usuario1@example.com');
 
-  const firstUserAgain =
-    await notificationsRepository.getNotifications();
+  const firstUserAgain = await notificationsRepository.getNotifications();
 
-  expect(
-    firstUserAgain.find(
-      (item) => item.id === notificationId,
-    )?.read,
-  ).toBe(true);
+  expect(firstUserAgain.find((item) => item.id === notificationId)?.read).toBe(true);
 });
 
 it('separates demo accounts even when their user IDs are identical', async () => {
@@ -256,25 +216,15 @@ it('separates demo accounts even when their user IDs are identical', async () =>
 
   setUser('mock-user-id', 'segundo@example.com');
 
-  const secondAccount =
-    await notificationsRepository.getNotifications();
+  const secondAccount = await notificationsRepository.getNotifications();
 
-  expect(
-    secondAccount.find(
-      (item) => item.id === notificationId,
-    )?.read,
-  ).toBe(false);
+  expect(secondAccount.find((item) => item.id === notificationId)?.read).toBe(false);
 
   setUser('mock-user-id', 'primero@EXAMPLE.com');
 
-  const firstAccountAgain =
-    await notificationsRepository.getNotifications();
+  const firstAccountAgain = await notificationsRepository.getNotifications();
 
-  expect(
-    firstAccountAgain.find(
-      (item) => item.id === notificationId,
-    )?.read,
-  ).toBe(true);
+  expect(firstAccountAgain.find((item) => item.id === notificationId)?.read).toBe(true);
 });
 
 it('rejects malformed per-account read states', async () => {
@@ -287,34 +237,23 @@ it('rejects malformed per-account read states', async () => {
     ],
   };
 
-  await expect(
-    notificationsRepository.getNotifications(),
-  ).rejects.toThrow(
+  await expect(notificationsRepository.getNotifications()).rejects.toThrow(
     'No se pudo leer el estado de tus avisos',
   );
 });
 
 it('handles legacy read IDs without assigning them to another account', async () => {
-  stored[StorageKeys.MOCK_NOTIFICATION_READ_IDS] = [
-    'demo-appointment-005',
-  ];
+  stored[StorageKeys.MOCK_NOTIFICATION_READ_IDS] = ['demo-appointment-005'];
 
-  const notifications =
-    await notificationsRepository.getNotifications();
+  const notifications = await notificationsRepository.getNotifications();
 
-  expect(
-    notifications.find(
-      (item) => item.id === 'demo-appointment-005',
-    )?.read,
-  ).toBe(false);
+  expect(notifications.find((item) => item.id === 'demo-appointment-005')?.read).toBe(false);
 });
 
 it('reports cache write failures', async () => {
   (asyncStorage.setItem as jest.Mock).mockResolvedValue(false);
 
-  await expect(
-    notificationsRepository.getNotifications(),
-  ).rejects.toThrow(
+  await expect(notificationsRepository.getNotifications()).rejects.toThrow(
     'No se pudo guardar el caché de notificaciones',
   );
 });

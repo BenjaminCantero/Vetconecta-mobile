@@ -57,9 +57,8 @@ function Field({
 export default function ProfileScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { logout } = useAuthSession();
-  const { profile, isLoading, error, reload, updateContact, changePassword } = useOwnerProfile(
-    profileRepository,
-  );
+  const { profile, isLoading, error, reload, updateContact, changePassword } =
+    useOwnerProfile(profileRepository);
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [contactErrors, setContactErrors] = useState<ContactErrors>({});
@@ -95,7 +94,9 @@ export default function ProfileScreen({ navigation }: Props) {
       setContactMessage('Tus datos de contacto se guardaron correctamente.');
     } catch (reason) {
       setContactMessage(
-        reason instanceof Error ? reason.message : 'No pudimos guardar tus cambios. Inténtalo nuevamente.',
+        reason instanceof Error
+          ? reason.message
+          : 'No pudimos guardar tus cambios. Inténtalo nuevamente.',
       );
     } finally {
       setContactSaving(false);
@@ -123,7 +124,9 @@ export default function ProfileScreen({ navigation }: Props) {
       );
     } catch (reason) {
       setPasswordMessage(
-        reason instanceof Error ? reason.message : 'No pudimos cambiar tu contraseña. Inténtalo nuevamente.',
+        reason instanceof Error
+          ? reason.message
+          : 'No pudimos cambiar tu contraseña. Inténtalo nuevamente.',
       );
     } finally {
       setPasswordSaving(false);
@@ -269,19 +272,33 @@ export default function ProfileScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.appBackground },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingBottom: 12, backgroundColor: colors.appBackground,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    backgroundColor: colors.appBackground,
   },
   backButton: {
-    width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 22,
-    backgroundColor: colors.appSurface, borderWidth: 1, borderColor: colors.appDivider,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
+    backgroundColor: colors.appSurface,
+    borderWidth: 1,
+    borderColor: colors.appDivider,
   },
   headerSpacer: { width: 44 },
   title: { fontFamily: fonts.extrabold, fontSize: 22, color: colors.appTitle },
   content: { paddingHorizontal: 20, gap: 20 },
   identity: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 8 },
   avatar: {
-    width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: colors.tintPurple,
   },
   name: { fontFamily: fonts.bold, fontSize: 18, color: colors.appTitle },
@@ -291,8 +308,14 @@ const styles = StyleSheet.create({
   fieldGroup: { gap: 6 },
   label: { fontFamily: fonts.semibold, fontSize: 13, color: colors.appMuted },
   input: {
-    minHeight: 50, borderWidth: 1, borderColor: colors.appDivider, borderRadius: 12,
-    paddingHorizontal: 14, fontFamily: fonts.medium, fontSize: 15, color: colors.appTitle,
+    minHeight: 50,
+    borderWidth: 1,
+    borderColor: colors.appDivider,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.appTitle,
     backgroundColor: colors.appSurface,
   },
   readonlyInput: { color: colors.appMuted, backgroundColor: colors.statSurface },

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { SectionList, Pressable, Text, View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -52,24 +52,24 @@ export default function NotificationsScreen({ navigation }: Props) {
   const { pets, activePetId } = useActivePet();
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const paginationKey = `${activePetId ?? 'none'}:${filter}`;
+  const [previousPaginationKey, setPreviousPaginationKey] = useState(paginationKey);
+
+  // Al cambiar de mascota o filtro, reiniciar la paginación durante el render
+  // para evitar una actualización de estado síncrona dentro de un efecto.
+  if (paginationKey !== previousPaginationKey) {
+    setPreviousPaginationKey(paginationKey);
+    setVisibleCount(PAGE_SIZE);
+  }
 
   // E3: la pantalla y el contador comparten el mismo estado.
-  const {
-    notifications,
-    isLoading,
-    error,
-    refetch,
-    isSaving,
-    saveError,
-    markAsRead,
-  } = useNotificationsSession();
+  const { notifications, isLoading, error, refetch, isSaving, saveError, markAsRead } =
+    useNotificationsSession();
 
   // Sin mascota activa, no se muestran avisos de otra mascota.
   // Los avisos globales (petId null/undefined) se muestran siempre.
   const forActivePet = notifications.filter((item) => {
-    const petId =
-      item.petId ??
-      (item.target?.screen === 'health' ? item.target.petId : null);
+    const petId = item.petId ?? (item.target?.screen === 'health' ? item.target.petId : null);
 
     return !petId || (activePetId !== null && petId === activePetId);
   });
@@ -78,11 +78,6 @@ export default function NotificationsScreen({ navigation }: Props) {
   const filtered = filter === 'unread' ? unread : forActivePet;
   const visible = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
-
-  // Al cambiar de mascota o filtro, comenzar desde la primera página.
-  useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [activePetId, filter]);
 
   function loadMore() {
     if (!isLoading && hasMore) {
@@ -95,9 +90,7 @@ export default function NotificationsScreen({ navigation }: Props) {
     refetch();
   }
 
-  const sections = visible.reduce<
-    { title: string; data: Notification[] }[]
-  >((groups, item) => {
+  const sections = visible.reduce<{ title: string; data: Notification[] }[]>((groups, item) => {
     const title = new Date(item.date).toLocaleDateString('es-CL', {
       day: 'numeric',
       month: 'long',
@@ -147,11 +140,7 @@ export default function NotificationsScreen({ navigation }: Props) {
 
       <QueryState
         isLoading={isLoading}
-        error={
-          error
-            ? new Error('No se pudieron cargar tus avisos. Intenta nuevamente.')
-            : null
-        }
+        error={error ? new Error('No se pudieron cargar tus avisos. Intenta nuevamente.') : null}
         onRetry={refetch}
       >
         <SectionList
@@ -161,11 +150,7 @@ export default function NotificationsScreen({ navigation }: Props) {
             <View style={styles.header}>
               <View style={styles.intro}>
                 <View style={styles.introIcon}>
-                  <Ionicons
-                    name="notifications-outline"
-                    size={28}
-                    color={colors.appHeading}
-                  />
+                  <Ionicons name="notifications-outline" size={28} color={colors.appHeading} />
                 </View>
 
                 <View style={styles.texts}>
@@ -200,10 +185,7 @@ export default function NotificationsScreen({ navigation }: Props) {
               />
 
               <View style={styles.toolbar}>
-                <Text
-                  style={styles.count}
-                  accessibilityLiveRegion="polite"
-                >
+                <Text style={styles.count} accessibilityLiveRegion="polite">
                   {unread.length ? 'Por revisar' : 'Todo revisado'}
                 </Text>
 
@@ -214,25 +196,16 @@ export default function NotificationsScreen({ navigation }: Props) {
                     disabled: !unread.length || isSaving || isLoading,
                     busy: isSaving,
                   }}
-                  onPress={() =>
-                    void markAsRead(unread.map((item) => item.id))
-                  }
+                  onPress={() => void markAsRead(unread.map((item) => item.id))}
                   style={[
                     styles.markAll,
-                    (!unread.length || isSaving || isLoading) &&
-                      styles.disabled,
+                    (!unread.length || isSaving || isLoading) && styles.disabled,
                   ]}
                 >
-                  <Ionicons
-                    name="checkmark-done-outline"
-                    size={18}
-                    color={colors.appHeading}
-                  />
+                  <Ionicons name="checkmark-done-outline" size={18} color={colors.appHeading} />
 
                   <Text style={styles.link}>
-                    {isSaving
-                      ? 'Guardando…'
-                      : 'Marcar todos como leídos'}
+                    {isSaving ? 'Guardando…' : 'Marcar todos como leídos'}
                   </Text>
                 </Pressable>
               </View>
@@ -246,9 +219,7 @@ export default function NotificationsScreen({ navigation }: Props) {
           }
           renderSectionHeader={({ section }) => (
             <View style={styles.sectionHeading}>
-              <Text style={styles.sectionDate}>
-                {section.title}
-              </Text>
+              <Text style={styles.sectionDate}>{section.title}</Text>
               <View style={styles.rule} />
             </View>
           )}
@@ -273,29 +244,18 @@ export default function NotificationsScreen({ navigation }: Props) {
               </View>
             ) : null
           }
-          contentContainerStyle={[
-            styles.list,
-            { paddingBottom: insets.bottom + 24 },
-          ]}
-          ItemSeparatorComponent={() => (
-            <View style={styles.separator} />
-          )}
+          contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 24 }]}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons
-                name={
-                  filter === 'unread'
-                    ? 'checkmark-done-outline'
-                    : 'notifications-outline'
-                }
+                name={filter === 'unread' ? 'checkmark-done-outline' : 'notifications-outline'}
                 size={40}
                 color={colors.appHeading}
               />
 
               <Text style={styles.emptyTitle}>
-                {filter === 'unread'
-                  ? 'Estás al día'
-                  : 'No hay avisos todavía'}
+                {filter === 'unread' ? 'Estás al día' : 'No hay avisos todavía'}
               </Text>
 
               <Text style={styles.description}>
@@ -314,22 +274,16 @@ export default function NotificationsScreen({ navigation }: Props) {
                 item.read ? 'Leído' : 'Sin leer'
               }. ${item.title}. ${item.body}`}
               accessibilityHint={
-                item.target?.screen === 'appointment'
-                  ? 'Abre la cita'
-                  : 'Abre el carnet'
+                item.target?.screen === 'appointment' ? 'Abre la cita' : 'Abre el carnet'
               }
               android_ripple={{ color: colors.tintPurple }}
-              style={[
-                styles.card,
-                !item.read && styles.unread,
-              ]}
+              style={[styles.card, !item.read && styles.unread]}
             >
               <View style={styles.cardHeader}>
                 <View
                   style={[
                     styles.icon,
-                    item.target?.screen === 'appointment' &&
-                      styles.appointmentIcon,
+                    item.target?.screen === 'appointment' && styles.appointmentIcon,
                   ]}
                 >
                   <Ionicons
@@ -340,21 +294,15 @@ export default function NotificationsScreen({ navigation }: Props) {
                     }
                     size={22}
                     color={
-                      item.target?.screen === 'appointment'
-                        ? colors.cardOrange
-                        : colors.appHeading
+                      item.target?.screen === 'appointment' ? colors.cardOrange : colors.appHeading
                     }
                   />
                 </View>
 
                 <View style={styles.texts}>
-                  <Text style={styles.title}>
-                    {item.title}
-                  </Text>
+                  <Text style={styles.title}>{item.title}</Text>
 
-                  <Text style={styles.date}>
-                    {elapsedLabel(item.date)}
-                  </Text>
+                  <Text style={styles.date}>{elapsedLabel(item.date)}</Text>
                 </View>
 
                 {!item.read && (
@@ -365,44 +313,28 @@ export default function NotificationsScreen({ navigation }: Props) {
                 )}
               </View>
 
-              <Text style={styles.body}>
-                {item.body}
-              </Text>
+              <Text style={styles.body}>{item.body}</Text>
 
               <Text style={styles.petName}>
                 Mascota:{' '}
                 {pets.find(
                   (pet) =>
                     pet.id ===
-                    (item.petId ??
-                      (item.target?.screen === 'health'
-                        ? item.target.petId
-                        : null)),
-                )?.name ??
-                  (item.petId
-                    ? 'Mascota registrada'
-                    : 'Aviso general')}
+                    (item.petId ?? (item.target?.screen === 'health' ? item.target.petId : null)),
+                )?.name ?? (item.petId ? 'Mascota registrada' : 'Aviso general')}
               </Text>
 
               <View style={styles.cardFooter}>
                 <Text style={styles.category}>
-                  {item.target?.screen === 'appointment'
-                    ? 'Citas'
-                    : 'Carnet de salud'}
+                  {item.target?.screen === 'appointment' ? 'Citas' : 'Carnet de salud'}
                 </Text>
 
                 <View style={styles.openAction}>
                   <Text style={styles.link}>
-                    {item.target?.screen === 'appointment'
-                      ? 'Ver cita'
-                      : 'Ver carnet'}
+                    {item.target?.screen === 'appointment' ? 'Ver cita' : 'Ver carnet'}
                   </Text>
 
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={colors.appHeading}
-                  />
+                  <Ionicons name="chevron-forward" size={16} color={colors.appHeading} />
                 </View>
               </View>
             </Pressable>
