@@ -1,4 +1,3 @@
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const StorageKeys = {
@@ -15,10 +14,7 @@ export const StorageKeys = {
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys];
 
-async function getItem<T>(
-  key: StorageKey,
-  throwOnError = false,
-): Promise<T | null> {
+async function getItem<T>(key: StorageKey, throwOnError = false): Promise<T | null> {
   try {
     const raw = await AsyncStorage.getItem(key);
     return raw ? (JSON.parse(raw) as T) : null;
@@ -33,10 +29,7 @@ async function getItem<T>(
   }
 }
 
-async function setItem<T>(
-  key: StorageKey,
-  value: T,
-): Promise<boolean> {
+async function setItem<T>(key: StorageKey, value: T): Promise<boolean> {
   try {
     await AsyncStorage.setItem(key, JSON.stringify(value));
     return true;

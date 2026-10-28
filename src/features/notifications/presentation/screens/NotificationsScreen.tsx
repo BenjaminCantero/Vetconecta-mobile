@@ -51,7 +51,16 @@ export default function NotificationsScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { pets, activePetId } = useActivePet();
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
-  const [pagination, setPagination] = useState({ key: '', count: PAGE_SIZE });
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const paginationKey = `${activePetId ?? 'none'}:${filter}`;
+  const [previousPaginationKey, setPreviousPaginationKey] = useState(paginationKey);
+
+  // Al cambiar de mascota o filtro, reiniciar la paginación durante el render
+  // para evitar una actualización de estado síncrona dentro de un efecto.
+  if (paginationKey !== previousPaginationKey) {
+    setPreviousPaginationKey(paginationKey);
+    setVisibleCount(PAGE_SIZE);
+  }
 
   // E3: la pantalla y el contador comparten el mismo estado.
   const { notifications, isLoading, error, refetch, isSaving, saveError, markAsRead } =
@@ -67,24 +76,17 @@ export default function NotificationsScreen({ navigation }: Props) {
 
   const unread = forActivePet.filter((item) => !item.read);
   const filtered = filter === 'unread' ? unread : forActivePet;
-  // Cada combinación de mascota y filtro tiene su propia primera página.
-  // Esto evita reiniciar el estado dentro de un useEffect.
-  const paginationKey = `${activePetId ?? 'sin-mascota'}:${filter}`;
-  const visibleCount = pagination.key === paginationKey ? pagination.count : PAGE_SIZE;
   const visible = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
 
   function loadMore() {
     if (!isLoading && hasMore) {
-      setPagination({
-        key: paginationKey,
-        count: Math.min(visibleCount + PAGE_SIZE, filtered.length),
-      });
+      setVisibleCount((count) => Math.min(count + PAGE_SIZE, filtered.length));
     }
   }
 
   function refresh() {
-    setPagination({ key: paginationKey, count: PAGE_SIZE });
+    setVisibleCount(PAGE_SIZE);
     refetch();
   }
 

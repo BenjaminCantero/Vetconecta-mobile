@@ -1,5 +1,4 @@
-
- // Superficie pública del dominio notifications
+// Superficie pública del dominio notifications
 export { notificationsRepository } from './data/notificationsRepository';
 export type { Notification } from './domain/Notification';
 export { useNotifications } from './domain/useNotifications';

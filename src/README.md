@@ -14,19 +14,19 @@ Para que `domain` pueda invocar operaciones de `data` sin depender de ella, cada
 
 ## Dónde va cada tipo de código
 
-| Carpeta | Contenido |
-|---|---|
-| `core/api` | Cliente HTTP (Axios) y constantes de endpoints |
-| `core/storage` | Wrapper tipado sobre AsyncStorage |
-| `core/config` | Variables de entorno (baseURL, timeouts) |
-| `core/navigation` | Stack raíz y tabs, compartidos por toda la app |
-| `core/theme` | Colores y tipografía |
-| `features/<feature>/data` | Repositorios (llaman `core/api/httpClient`) y DTOs |
-| `features/<feature>/domain` | Entidades y casos de uso (hooks `useX`) |
-| `features/<feature>/presentation` | Pantallas y componentes de esa feature |
-| `shared/components` | Componentes de UI genéricos, sin lógica de negocio |
-| `shared/hooks` | Hooks reutilizables no atados a un feature (ej. `useFetch`) |
-| `shared/utils` | Funciones puras reutilizables (formateo, validación) |
+| Carpeta                           | Contenido                                                   |
+| --------------------------------- | ----------------------------------------------------------- |
+| `core/api`                        | Cliente HTTP (Axios) y constantes de endpoints              |
+| `core/storage`                    | Wrapper tipado sobre AsyncStorage                           |
+| `core/config`                     | Variables de entorno (baseURL, timeouts)                    |
+| `core/navigation`                 | Stack raíz y tabs, compartidos por toda la app              |
+| `core/theme`                      | Colores y tipografía                                        |
+| `features/<feature>/data`         | Repositorios (llaman `core/api/httpClient`) y DTOs          |
+| `features/<feature>/domain`       | Entidades y casos de uso (hooks `useX`)                     |
+| `features/<feature>/presentation` | Pantallas y componentes de esa feature                      |
+| `shared/components`               | Componentes de UI genéricos, sin lógica de negocio          |
+| `shared/hooks`                    | Hooks reutilizables no atados a un feature (ej. `useFetch`) |
+| `shared/utils`                    | Funciones puras reutilizables (formateo, validación)        |
 
 ## Etapa actual
 

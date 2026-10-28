@@ -5,6 +5,10 @@ export const ENDPOINTS = {
   AUTH: {
     LOGIN: '/auth/login',
   },
+  CLIENTS: {
+    ME: '/clientes/me',
+    PASSWORD: '/clientes/me/password',
+  },
   PETS: {
     LIST: '/mascotas',
     HEALTH_CARD: (petId: string) => `/mascotas/${petId}/carnet`,

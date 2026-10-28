@@ -17,6 +17,7 @@ import {
 
 import { PetDetailScreen, HealthCardScreen } from '../../features/pets';
 import { BookAppointmentScreen } from '../../features/appointments';
+import { ProfileScreen } from '../../features/profile';
 
 import { TabNavigator } from './TabNavigator';
 import type { TabParamList } from './TabNavigator';
@@ -38,6 +39,7 @@ export type RootStackParamList = {
   };
 
   BookAppointment: undefined;
+  Profile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -85,6 +87,8 @@ export function RootNavigator() {
             component={BookAppointmentScreen}
             options={{ headerShown: false }}
           />
+
+          <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
         </>
       ) : (
         <>
