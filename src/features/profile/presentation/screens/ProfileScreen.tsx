@@ -72,6 +72,17 @@ export default function ProfileScreen({ navigation }: Props) {
   const [passwordErrors, setPasswordErrors] = useState<PasswordErrors>({});
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
   const [passwordSaving, setPasswordSaving] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const closeSession = async () => {
+    setLoggingOut(true);
+    try {
+      await logout();
+    } catch {
+      setLoggingOut(false);
+      Alert.alert('No pudimos cerrar sesión', 'Inténtalo nuevamente.');
+    }
+  };
 
   useEffect(() => {
     if (profile) {
@@ -260,6 +271,12 @@ export default function ProfileScreen({ navigation }: Props) {
               </View>
             ) : null}
           </View>
+          <Button
+            label={loggingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}
+            onPress={() => void closeSession()}
+            disabled={loggingOut || contactSaving || passwordSaving}
+            style={styles.logoutButton}
+          />
         </ScrollView>
       </QueryState>
     </KeyboardAvoidingView>
@@ -303,4 +320,5 @@ const styles = StyleSheet.create({
   passwordToggle: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   passwordForm: { gap: 12 },
   passwordHint: { fontFamily: fonts.regular, fontSize: 12, color: colors.appMuted },
+  logoutButton: { backgroundColor: colors.danger },
 });

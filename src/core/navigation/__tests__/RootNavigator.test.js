@@ -62,6 +62,7 @@ jest.mock('../../../features/auth', () => {
 jest.mock('../../../features/pets', () => ({}));
 jest.mock('../../../features/appointments', () => ({}));
 jest.mock('../../../features/profile', () => ({}));
+jest.mock('../../../features/medications', () => ({}));
 jest.mock('../TabNavigator', () => ({}));
 
 // Captura el estado del mismo hook que usa RootNavigator, sin montar pantallas reales.

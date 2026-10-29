@@ -1,14 +1,9 @@
-// Responsabilidad: tarjeta de recordatorio de medicamentos (feature home).
-// Dibuja los datos de ejemplo de `home/data`; no hay dominio de tratamientos.
-// Superficie blanca con el verde de la maqueta como acento: es información de
-// seguimiento, no una alerta, así que no compite con la próxima cita.
-
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { colors } from '../../../../core/theme/colors';
 import { fonts } from '../../../../core/theme/typography';
-import type { MedicationReminder } from '../../data/medicationRemindersMock';
+import type { MedicationReminder } from '../../domain/MedicationReminder';
 
 interface MedicationReminderCardProps {
   reminder: MedicationReminder;

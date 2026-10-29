@@ -155,10 +155,10 @@ export default function MyPetsScreen({ navigation }: Props) {
                     <ActionCard
                       title="Medicamentos"
                       subtitle="Pauta y dosis del día"
-                      actionLabel="Abre la pauta en el inicio"
+                      actionLabel="Abre el panel de medicamentos"
                       color={colors.cardLeaf}
                       icon="medical-outline"
-                      onPress={() => navigation.navigate('Inicio')}
+                      onPress={() => navigation.navigate('Medications', { petId: selectedPet.id })}
                       tone="soft"
                     />
 
