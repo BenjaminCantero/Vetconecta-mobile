@@ -3,18 +3,23 @@
 //
 // Implementa el contrato AuthRepository definido en el dominio.
 //
-// Actualmente usa respuestas mock porque los endpoints reales
-// todavía no están disponibles.
-//
-// Cuando el backend esté operativo, los mocks serán reemplazados por:
+// Login real:
 //
 // POST /v1/auth/login
-// POST /v1/auth/register
-// POST /v1/auth/password-reset
-// POST /v1/auth/logout
-// POST /v1/auth/refresh
+//
+// auth-service identifica al usuario con `identifier` (correo o RUT) y
+// responde con los datos del usuario en la raíz más `accessToken`.
+//
+// Registro y recuperación de contraseña siguen simulados: sus endpoints
+// todavía no están implementados en el backend.
 
+import { isAxiosError } from 'axios';
+
+import { ENDPOINTS } from '../../../core/api/endpoints';
+import { toHttpError } from '../../../core/api/httpError';
+import { httpClient } from '../../../core/api/httpClient';
 import { onSessionExpired } from '../../../core/api/sessionEvents';
+import { ENV } from '../../../core/config/env';
 import { StorageKeys, asyncStorage } from '../../../core/storage/asyncStorage';
 
 import type {
@@ -32,12 +37,55 @@ import type { LoginResponseDto, RegisterRequestDto, PasswordResetRequestDto } fr
 // MAPPERS
 // -----------------------------------------------------------------------------
 
-function toUser(dto: LoginResponseDto['user']): User {
+const LOGIN_ERROR_MESSAGES = {
+  network: 'No hay conexión con el servidor. Revisa tu red e inténtalo de nuevo.',
+  fallback: 'No pudimos iniciar sesión. Inténtalo de nuevo más tarde.',
+};
+
+function toUser(dto: LoginResponseDto): User {
   return {
     id: dto.id,
     email: dto.email,
     role: dto.role,
     clientId: dto.clientId,
+  };
+}
+
+function toLoginError(error: unknown): Error {
+  if (isAxiosError(error) && error.response) {
+    const { status } = error.response;
+
+    if (status === 401) {
+      return new Error('Correo o contraseña incorrectos.');
+    }
+
+    if (status === 400) {
+      return new Error('Revisa el correo y la contraseña ingresados.');
+    }
+
+    if (status === 403) {
+      return new Error('Tu cuenta no tiene permiso para ingresar.');
+    }
+  }
+
+  return toHttpError(error, LOGIN_ERROR_MESSAGES);
+}
+
+// Guarda la sesión local a partir de la respuesta del backend.
+// El backend aún no emite refresh token, así que se limpia cualquier valor
+// previo (por ejemplo, el de una sesión mock anterior).
+async function persistSession(dto: LoginResponseDto) {
+  const user = toUser(dto);
+
+  await asyncStorage.setItem(StorageKeys.AUTH_ACCESS_TOKEN, dto.accessToken);
+
+  await asyncStorage.removeItem(StorageKeys.AUTH_REFRESH_TOKEN);
+
+  await asyncStorage.setItem(StorageKeys.AUTH_USER, user);
+
+  return {
+    user,
+    accessToken: dto.accessToken,
   };
 }
 
@@ -51,23 +99,8 @@ export const authRepository: AuthRepository = {
   // ---------------------------------------------------------------------------
 
   async login(credentials: Credentials) {
-    // MOCK TEMPORAL
-    //
-    // En producción:
-    //
-    // POST /v1/auth/login
-    //
-    // {
-    //   email,
-    //   password
-    // }
-
-    const mockResponse: LoginResponseDto = {
-      accessToken: 'mock-access-token',
-
-      refreshToken: 'mock-refresh-token',
-
-      user: {
+    if (ENV.AUTH_USE_MOCKS) {
+      const mockResponse: LoginResponseDto = {
         id: 'mock-user-id',
 
         email: credentials.email,
@@ -75,29 +108,32 @@ export const authRepository: AuthRepository = {
         role: 'owner',
 
         clientId: 'mock-client-id',
-      },
-    };
 
-    const user = toUser(mockResponse.user);
+        accessToken: 'mock-access-token',
+      };
 
-    await asyncStorage.setItem(StorageKeys.AUTH_ACCESS_TOKEN, mockResponse.accessToken);
+      return persistSession(mockResponse);
+    }
 
-    await asyncStorage.setItem(StorageKeys.AUTH_REFRESH_TOKEN, mockResponse.refreshToken);
+    try {
+      const { data } = await httpClient.post<LoginResponseDto>(ENDPOINTS.AUTH.LOGIN, {
+        identifier: credentials.email,
 
-    await asyncStorage.setItem(StorageKeys.AUTH_USER, user);
+        password: credentials.password,
+      });
 
-    return {
-      user,
-
-      accessToken: mockResponse.accessToken,
-
-      refreshToken: mockResponse.refreshToken,
-    };
+      return await persistSession(data);
+    } catch (error) {
+      throw toLoginError(error);
+    }
   },
 
   // ---------------------------------------------------------------------------
   // REGISTRO
   // ---------------------------------------------------------------------------
+  //
+  // Pendiente de backend: /v1/auth/register todavía responde con un ejemplo y
+  // no crea la cuenta ni el perfil del cliente.
 
   async register(data: RegisterData) {
     const request: RegisterRequestDto = {
@@ -115,14 +151,6 @@ export const authRepository: AuthRepository = {
     };
 
     // MOCK TEMPORAL
-    //
-    // En producción:
-    //
-    // POST /v1/auth/register
-    //
-    // auth-service creará la identidad del usuario
-    // y coordinará internamente la creación del
-    // perfil con clients-pets-service.
 
     console.log('Registro simulado:', request);
 
@@ -132,6 +160,8 @@ export const authRepository: AuthRepository = {
   // ---------------------------------------------------------------------------
   // RECUPERACIÓN DE CONTRASEÑA
   // ---------------------------------------------------------------------------
+  //
+  // Pendiente de backend: /v1/auth/password-reset no existe todavía.
 
   async requestPasswordReset(data: PasswordResetData) {
     const request: PasswordResetRequestDto = {
@@ -139,16 +169,6 @@ export const authRepository: AuthRepository = {
     };
 
     // MOCK TEMPORAL
-    //
-    // En producción:
-    //
-    // POST /v1/auth/password-reset
-    //
-    // auth-service recibe el correo y coordina
-    // internamente el proceso de recuperación.
-    //
-    // notifications-service será responsable
-    // del envío del correo.
 
     console.log('Recuperación de contraseña simulada:', request);
 

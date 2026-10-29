@@ -33,9 +33,31 @@ EXPO_PUBLIC_API_BASE_URL=https://url-del-backend
 | Variable | Por defecto | Uso |
 |---|---|---|
 | `EXPO_PUBLIC_USE_MOCKS` | activo | `false` para usar la API real en vez de los mocks |
+| `EXPO_PUBLIC_AUTH_USE_MOCKS` | hereda `EXPO_PUBLIC_USE_MOCKS` | `false` para conectar el login independientemente de los demás módulos |
 | `EXPO_PUBLIC_API_BASE_URL` | `https://api.vetconecta.com` | URL base del backend |
 
 Después de cambiar estas variables hay que reiniciar el servidor con `npx expo start --clear`.
+
+### Conectar el login con el backend local
+
+Actualmente **solo el login** está adaptado al backend. Registro y recuperación de contraseña siguen simulados porque sus endpoints todavía no están implementados en el backend. Para probar el login real manteniendo mascotas, citas y perfil con datos simulados, configura los interruptores por separado:
+
+La URL base debe apuntar al **api-gateway** (puerto `3000`), no directamente a auth-service. El prefijo `/v1` ya está incluido en `ENDPOINTS.AUTH.LOGIN`.
+
+```bash
+# .env.local
+EXPO_PUBLIC_USE_MOCKS=true
+EXPO_PUBLIC_AUTH_USE_MOCKS=false
+EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:3000
+```
+
+| Dónde corre la app | URL base |
+|---|---|
+| Emulador Android | `http://10.0.2.2:3000` |
+| Simulador iOS | `http://localhost:3000` |
+| Dispositivo físico | `http://IP-LAN-DE-TU-PC:3000` |
+
+Antes de probar, levanta en el backend el `api-gateway` y `auth-service`, y usa un usuario que ya exista en la base de datos. Ambos servicios deben compartir el mismo `JWT_SECRET`. El login envía `{ identifier, password }` y espera `{ id, email, role, accessToken }`.
 
 ## Iniciar el proyecto
 

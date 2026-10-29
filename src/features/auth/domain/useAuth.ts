@@ -53,7 +53,8 @@ export interface AuthRepository {
   login: (credentials: Credentials) => Promise<{
     user: User;
     accessToken: string;
-    refreshToken: string;
+    // El backend todavía no emite refresh token.
+    refreshToken?: string;
   }>;
 
   register: (data: RegisterData) => Promise<void>;
@@ -77,6 +78,7 @@ export function useAuth(authRepository: AuthRepository) {
   const [user, setUser] = useState<User | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   // ---------------------------------------------------------------------------
   // RECUPERAR SESIÓN GUARDADA
@@ -95,6 +97,7 @@ export function useAuth(authRepository: AuthRepository) {
       .finally(() => {
         if (!cancelled) {
           setIsLoading(false);
+          setIsInitializing(false);
         }
       });
 
@@ -187,6 +190,8 @@ export function useAuth(authRepository: AuthRepository) {
     user,
 
     isLoading,
+
+    isInitializing,
 
     isAuthenticated: !!user,
 

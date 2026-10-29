@@ -45,7 +45,7 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
-  const { isAuthenticated, isLoading } = useAuthSession();
+  const { isAuthenticated, isInitializing } = useAuthSession();
 
   // Tras cerrar sesión se vuelve al login.
   const [hasSignedIn, setHasSignedIn] = useState(false);
@@ -54,7 +54,7 @@ export function RootNavigator() {
     setHasSignedIn(true);
   }
 
-  if (isLoading) {
+  if (isInitializing) {
     return null;
   }
 
