@@ -2,19 +2,14 @@
 // Permite consultar citas con conexión y recuperar datos
 // guardados cuando no existe conectividad (G1).
 
-import { isAxiosError } from 'axios';
-
 import { httpClient } from '../../../core/api/httpClient';
 import { ENDPOINTS } from '../../../core/api/endpoints';
 import { toHttpError } from '../../../core/api/httpError';
 import { ENV } from '../../../core/config/env';
-import { isOnline } from '../../../core/network/connectivity';
-
-import { StorageKeys, asyncStorage } from '../../../core/storage/asyncStorage';
+import { cachedRead } from '../../../core/network/cachedRead';
 
 import type { Appointment, AppointmentStatus } from '../domain/Appointment';
 
-import { SinConexionError } from '../domain/bookingErrors';
 import type { AppointmentDto } from './appointmentsDto';
 import { appointmentsMock } from './appointmentsMock';
 
@@ -26,19 +21,10 @@ const APPOINTMENT_STATUSES: AppointmentStatus[] = [
   'completada',
 ];
 
-interface AppointmentsCache {
-  userId: string;
-  appointments: Appointment[];
-  savedAt: string;
-}
-
-interface StoredSessionUser {
-  id: string;
-}
-
 export interface AppointmentsSnapshot {
   appointments: Appointment[];
   isOffline: boolean;
+  updatedAt: string | null;
 }
 
 const APPOINTMENTS_ERROR_MESSAGES = {
@@ -63,33 +49,6 @@ export function toAppointment(dto: AppointmentDto): Appointment {
   };
 }
 
-async function getCurrentUserId(): Promise<string | null> {
-  const user = await asyncStorage.getItem<StoredSessionUser>(StorageKeys.AUTH_USER);
-
-  return user?.id ?? null;
-}
-
-async function saveCache(userId: string, appointments: Appointment[]): Promise<void> {
-  const cache: AppointmentsCache = {
-    userId,
-    appointments,
-    savedAt: new Date().toISOString(),
-  };
-
-  await asyncStorage.setItem(StorageKeys.APPOINTMENTS_CACHE, cache);
-}
-
-async function readCache(userId: string): Promise<Appointment[] | null> {
-  const cache = await asyncStorage.getItem<AppointmentsCache>(StorageKeys.APPOINTMENTS_CACHE);
-
-  // Nunca se muestran citas guardadas de otro usuario.
-  if (!cache || cache.userId !== userId || !Array.isArray(cache.appointments)) {
-    return null;
-  }
-
-  return cache.appointments;
-}
-
 async function fetchAppointments(): Promise<Appointment[]> {
   if (ENV.USE_MOCKS) {
     return appointmentsMock.map(toAppointment);
@@ -106,52 +65,15 @@ async function fetchAppointments(): Promise<Appointment[]> {
 
 export const appointmentsRepository = {
   async getAppointmentsSnapshot(): Promise<AppointmentsSnapshot> {
-    const userId = await getCurrentUserId();
-
-    if (!userId) {
-      throw new Error('No se encontró una sesión activa para consultar tus citas.');
-    }
-
-    const online = await isOnline();
-
-    if (!online) {
-      const cached = await readCache(userId);
-
-      if (cached !== null) {
-        return {
-          appointments: cached,
-          isOffline: true,
-        };
-      }
-
-      throw new SinConexionError('Sin conexión. No hay citas guardadas para mostrar.');
-    }
-
     try {
-      const appointments = await fetchAppointments();
+      const { data, fromCache, updatedAt } = await cachedRead({
+        resource: 'citas',
+        fetcher: fetchAppointments,
+        offlineMessage: 'Sin conexión. No hay citas guardadas para mostrar.',
+      });
 
-      await saveCache(userId, appointments);
-
-      return {
-        appointments,
-        isOffline: false,
-      };
+      return { appointments: data, isOffline: fromCache, updatedAt };
     } catch (error) {
-      // Solo se usa caché como respaldo ante fallos de red.
-      // No se ocultan errores HTTP como 401, 403 o 500.
-      const networkFailure = isAxiosError(error) && !error.response;
-
-      if (networkFailure) {
-        const cached = await readCache(userId);
-
-        if (cached !== null) {
-          return {
-            appointments: cached,
-            isOffline: true,
-          };
-        }
-      }
-
       throw toHttpError(error, APPOINTMENTS_ERROR_MESSAGES);
     }
   },

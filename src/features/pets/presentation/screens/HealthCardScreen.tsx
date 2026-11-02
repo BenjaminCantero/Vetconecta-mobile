@@ -11,6 +11,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActivePetSwitcher } from '../../../../shared/components/ActivePetSwitcher';
+import { OfflineBanner } from '../../../../shared/components/OfflineBanner';
 import { QueryState } from '../../../../shared/components/QueryState';
 import { useFetch } from '../../../../shared/hooks/useFetch';
 import { colors } from '../../../../core/theme/colors';
@@ -35,11 +36,13 @@ export default function HealthCardScreen({ route, navigation }: Props) {
   const pet = pets.find((item) => item.id === petId);
 
   const {
-    data: events,
+    data: snapshot,
     isLoading,
     error,
     refetch,
-  } = useFetch(() => petsRepository.getHealthCard(petId), [petId]);
+  } = useFetch(() => petsRepository.getHealthCardSnapshot(petId), [petId]);
+
+  const events = snapshot?.data;
 
   const [now] = useState(() => Date.now());
 
@@ -114,6 +117,10 @@ export default function HealthCardScreen({ route, navigation }: Props) {
         onChange={(id) => navigation.setParams({ petId: id })}
       />
 
+      {snapshot?.fromCache && !isLoading && (
+        <OfflineBanner updatedAt={snapshot.updatedAt} style={styles.offlineBanner} />
+      )}
+
       <QueryState
         isLoading={isLoading}
         error={error}
@@ -177,6 +184,11 @@ export default function HealthCardScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  offlineBanner: {
+    marginHorizontal: 20,
+    marginBottom: 12,
+  },
+
   container: {
     flex: 1,
     backgroundColor: colors.appBackground,

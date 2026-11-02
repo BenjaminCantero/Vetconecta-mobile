@@ -1,19 +1,21 @@
 // Responsabilidad: caso de uso de notificaciones (capa DOMAIN).
 
 import { useRef, useState } from 'react';
+import type { CachedResult } from '../../../core/network/cachedRead';
 import { useFetch } from '../../../shared/hooks/useFetch';
 
 import type { Notification } from './Notification';
 
 export interface NotificationsRepository {
-  getNotifications: () => Promise<Notification[]>;
+  getNotificationsSnapshot: () => Promise<CachedResult<Notification[]>>;
   markAsRead: (ids: string[]) => Promise<void>;
 }
 
 export function useNotifications(notificationsRepository: NotificationsRepository) {
-  const { data, isLoading, error, refetch } = useFetch(notificationsRepository.getNotifications, [
-    notificationsRepository,
-  ]);
+  const { data, isLoading, error, refetch } = useFetch(
+    notificationsRepository.getNotificationsSnapshot,
+    [notificationsRepository],
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const busy = useRef(false);
@@ -34,5 +36,15 @@ export function useNotifications(notificationsRepository: NotificationsRepositor
       setIsSaving(false);
     }
   }
-  return { notifications: data ?? [], isLoading, error, refetch, isSaving, saveError, markAsRead };
+  return {
+    notifications: data?.data ?? [],
+    fromCache: data?.fromCache ?? false,
+    updatedAt: data?.updatedAt ?? null,
+    isLoading,
+    error,
+    refetch,
+    isSaving,
+    saveError,
+    markAsRead,
+  };
 }

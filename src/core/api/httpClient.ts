@@ -14,7 +14,8 @@
 import { create } from 'axios';
 
 import { ENV } from '../config/env';
-import { StorageKeys, asyncStorage } from '../storage/asyncStorage';
+import { secureStorage } from '../storage/secureStorage';
+import { clearSessionData } from '../storage/sessionStorage';
 import { ENDPOINTS } from './endpoints';
 import { notifySessionExpired } from './sessionEvents';
 
@@ -25,7 +26,7 @@ export const httpClient = create({
 
 // Request: adjunta el token JWT en cada petición saliente
 httpClient.interceptors.request.use(async (config) => {
-  const token = await asyncStorage.getItem<string>(StorageKeys.AUTH_ACCESS_TOKEN);
+  const token = await secureStorage.getAccessToken();
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -45,9 +46,7 @@ httpClient.interceptors.response.use(
     // campo y conservar la sesión del dueño.
     const isPasswordValidation = error.config?.url === ENDPOINTS.CLIENTS.PASSWORD;
     if (error.response?.status === 401 && !isPasswordValidation) {
-      await asyncStorage.removeItem(StorageKeys.AUTH_ACCESS_TOKEN);
-      await asyncStorage.removeItem(StorageKeys.AUTH_REFRESH_TOKEN);
-      await asyncStorage.removeItem(StorageKeys.AUTH_USER);
+      await clearSessionData();
       notifySessionExpired();
     }
 

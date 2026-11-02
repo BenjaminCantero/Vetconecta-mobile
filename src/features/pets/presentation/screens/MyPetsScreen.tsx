@@ -18,6 +18,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActionCard } from '../../../../shared/components/ActionCard';
+import { OfflineBanner } from '../../../../shared/components/OfflineBanner';
 import { QueryState } from '../../../../shared/components/QueryState';
 import { ScreenHeader } from '../../../../shared/components/ScreenHeader';
 import { useActivePet } from '../../../../shared/context/ActivePetContext';
@@ -46,7 +47,7 @@ export default function MyPetsScreen({ navigation }: Props) {
   // MASCOTAS
   // ---------------------------------------------------------------------------
 
-  const { pets, isLoading, error, refetch } = usePets(petsRepository);
+  const { pets, fromCache, updatedAt, isLoading, error, refetch } = usePets(petsRepository);
 
   // ---------------------------------------------------------------------------
   // MASCOTA ACTIVA
@@ -106,6 +107,8 @@ export default function MyPetsScreen({ navigation }: Props) {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
+          {fromCache && <OfflineBanner updatedAt={updatedAt} />}
+
           <View style={styles.selector}>
             <PetSelector
               pets={pets}

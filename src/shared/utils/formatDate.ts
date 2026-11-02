@@ -24,6 +24,14 @@ export function formatDate(isoDate: string, locale: string = 'es-CL'): string {
   });
 }
 
+// "28/10 14:05", para indicar cuándo se descargaron los datos en caché.
+export function formatDayMonthTime(isoDate: string): string {
+  const date = new Date(isoDate);
+  const pad = (value: number) => String(value).padStart(2, '0');
+
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 // "hoy a las 09:30", "mañana a las 09:30" o "el 22 de sep. a las 09:30".
 export function formatRelativeDateTime(
   isoDate: string,

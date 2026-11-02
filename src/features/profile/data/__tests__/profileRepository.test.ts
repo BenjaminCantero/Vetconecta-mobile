@@ -1,14 +1,42 @@
+import { isOnline } from '../../../../core/network/connectivity';
 import { EmailAlreadyInUseError, IncorrectCurrentPasswordError } from '../../domain/profileErrors';
 import { MOCK_CURRENT_PASSWORD, ownerProfileMock } from '../profileMock';
 import { profileRepository } from '../profileRepository';
+
+jest.mock('../../../../core/network/connectivity', () => ({
+  isOnline: jest.fn(),
+}));
+
+const online = isOnline as jest.Mock;
 
 describe('profileRepository mock contract', () => {
   const originalEmail = ownerProfileMock.email;
   const originalPhone = ownerProfileMock.telefono;
 
+  beforeEach(() => {
+    online.mockResolvedValue(true);
+  });
+
   afterEach(() => {
     ownerProfileMock.email = originalEmail;
     ownerProfileMock.telefono = originalPhone;
+  });
+
+  it('blocks contact and password changes without a connection', async () => {
+    online.mockResolvedValue(false);
+
+    await expect(
+      profileRepository.updateContact({ email: 'nuevo@correo.cl', phone: '+56 9 1111 2222' }),
+    ).rejects.toThrow('Sin conexión');
+
+    await expect(
+      profileRepository.changePassword({
+        currentPassword: MOCK_CURRENT_PASSWORD,
+        newPassword: 'Nueva123',
+      }),
+    ).rejects.toThrow('Sin conexión');
+
+    expect(ownerProfileMock.email).toBe(originalEmail);
   });
 
   it('updates only contact fields', async () => {

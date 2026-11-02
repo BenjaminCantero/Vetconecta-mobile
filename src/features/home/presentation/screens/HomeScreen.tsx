@@ -19,6 +19,7 @@ import { ActionCard } from '../../../../shared/components/ActionCard';
 import { ActivePetSwitcher } from '../../../../shared/components/ActivePetSwitcher';
 import { EmergencyCard } from '../../../../shared/components/EmergencyCard';
 import { QueryState } from '../../../../shared/components/QueryState';
+import { OfflineBanner } from '../../../../shared/components/OfflineBanner';
 import { ScreenHeader } from '../../../../shared/components/ScreenHeader';
 import { useActivePet } from '../../../../shared/context/ActivePetContext';
 import { colors } from '../../../../core/theme/colors';
@@ -54,6 +55,8 @@ export default function HomeScreen({ navigation }: Props) {
   const { user } = useAuthSession();
   const {
     pets,
+    fromCache: petsFromCache,
+    updatedAt: petsUpdatedAt,
     isLoading: petsLoading,
     error: petsError,
     refetch: refetchPets,
@@ -61,6 +64,8 @@ export default function HomeScreen({ navigation }: Props) {
 
   const {
     appointments,
+    isOffline: appointmentsOffline,
+    updatedAt: appointmentsUpdatedAt,
     isLoading: appointmentsLoading,
     error: appointmentsError,
     refetch: refetchAppointments,
@@ -148,6 +153,12 @@ export default function HomeScreen({ navigation }: Props) {
           contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
           showsVerticalScrollIndicator={false}
         >
+          {(petsFromCache || appointmentsOffline) && (
+            <OfflineBanner
+              updatedAt={appointmentsOffline ? appointmentsUpdatedAt : petsUpdatedAt}
+            />
+          )}
+
           {nextAppointment ? (
             <HeroAppointmentCard
               date={nextAppointment.date}

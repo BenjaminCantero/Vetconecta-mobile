@@ -4,6 +4,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import { useRefetchOnReconnect } from './useRefetchOnReconnect';
+
 export function useFetch<T>(fetcher: () => Promise<T>, deps: unknown[] = []) {
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,6 +36,8 @@ export function useFetch<T>(fetcher: () => Promise<T>, deps: unknown[] = []) {
   }, [...deps, reloadIndex]);
 
   const refetch = useCallback(() => setReloadIndex((index) => index + 1), []);
+  // G1: al recuperar la red, los datos en pantalla se actualizan solos.
+  useRefetchOnReconnect(refetch);
 
   return { data, isLoading, error, refetch };
 }
