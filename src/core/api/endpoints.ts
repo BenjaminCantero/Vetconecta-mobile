@@ -3,7 +3,8 @@
 
 export const ENDPOINTS = {
   AUTH: {
-    LOGIN: '/auth/login',
+    // El api-gateway expone auth-service bajo el prefijo /v1.
+    LOGIN: '/v1/auth/login',
   },
   CLIENTS: {
     ME: '/clientes/me',

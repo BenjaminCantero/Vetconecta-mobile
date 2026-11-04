@@ -33,7 +33,8 @@ Para que `domain` pueda invocar operaciones de `data` sin depender de ella, cada
 La API externa solo expone lectura (GET). Por eso:
 
 - `petsRepository` y `appointmentsRepository` solo tienen métodos GET.
-- `authRepository.login` resuelve la sesión localmente (mock) hasta que el backend habilite `POST /auth/login`.
+- `authRepository.login` usa `POST /v1/auth/login` (auth-service vía api-gateway); `EXPO_PUBLIC_AUTH_USE_MOCKS` controla sus mocks y, si no se define, hereda `EXPO_PUBLIC_USE_MOCKS`. Para conectar solo el login, usa `EXPO_PUBLIC_AUTH_USE_MOCKS=false` y `EXPO_PUBLIC_USE_MOCKS=true`.
+- `authRepository.register` y `requestPasswordReset` siguen simulados: sus endpoints aún no están implementados en el backend.
 - `features/notifications` está scaffoldeado pero sin repositorio real: pendiente de endpoint.
 
 ## Ejemplo de flujo: "ver mis mascotas"

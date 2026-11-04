@@ -26,8 +26,12 @@ import { colors } from '../../../../core/theme/colors';
 import { fonts } from '../../../../core/theme/typography';
 import type { RootStackParamList } from '../../../../core/navigation/RootNavigator';
 import type { TabParamList } from '../../../../core/navigation/TabNavigator';
-import { medicationRemindersMock } from '../../data/medicationRemindersMock';
-import { HeroAppointmentCard, MedicationReminderCard } from '../components';
+import {
+  MedicationReminderCard,
+  medicationsRepository,
+  useMedicationReminders,
+} from '../../../medications';
+import { HeroAppointmentCard } from '../components';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<TabParamList, 'Inicio'>,
@@ -101,11 +105,8 @@ export default function HomeScreen({ navigation }: Props) {
 
   const nextAppointmentPet = pets.find((pet) => pet.id === nextAppointment?.petId);
 
-  // Solo el recordatorio de la mascota activa; el mock aún se relaciona por
-  // nombre porque los tratamientos no tienen dominio propio.
-  const reminder = medicationRemindersMock.find(
-    (item) => !activePet || item.petName === activePet.name,
-  );
+  const { reminders } = useMedicationReminders(medicationsRepository, activePetId);
+  const reminder = reminders[0];
 
   const featuredPetId = activePetId ?? pets[0]?.id;
 
@@ -191,8 +192,24 @@ export default function HomeScreen({ navigation }: Props) {
           {reminder && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Para hoy</Text>
-              <MedicationReminderCard reminder={reminder} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Ver todos los medicamentos de la mascota activa"
+                onPress={() => navigation.navigate('Medications', { petId: reminder.petId })}
+              >
+                <MedicationReminderCard reminder={reminder} />
+              </Pressable>
             </View>
+          )}
+
+          {featuredPetId && (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => navigation.navigate('Medications', { petId: featuredPetId })}
+              style={styles.medicationsLink}
+            >
+              <Text style={styles.medicationsLinkLabel}>Ver medicamentos</Text>
+            </Pressable>
           )}
 
           <View style={styles.row}>
@@ -248,6 +265,9 @@ const styles = StyleSheet.create({
   section: {
     gap: 10,
   },
+
+  medicationsLink: { minHeight: 48, justifyContent: 'center', alignSelf: 'flex-start' },
+  medicationsLinkLabel: { fontFamily: fonts.bold, fontSize: 14, color: colors.appHeading },
 
   sectionTitle: {
     fontFamily: fonts.bold,

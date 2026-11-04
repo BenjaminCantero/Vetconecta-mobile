@@ -18,6 +18,7 @@ import {
 import { PetDetailScreen, HealthCardScreen } from '../../features/pets';
 import { BookAppointmentScreen } from '../../features/appointments';
 import { ProfileScreen } from '../../features/profile';
+import { MedicationsScreen } from '../../features/medications';
 
 import { TabNavigator } from './TabNavigator';
 import type { TabParamList } from './TabNavigator';
@@ -40,12 +41,13 @@ export type RootStackParamList = {
 
   BookAppointment: undefined;
   Profile: undefined;
+  Medications: { petId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
-  const { isAuthenticated, isLoading } = useAuthSession();
+  const { isAuthenticated, isInitializing } = useAuthSession();
 
   // Tras cerrar sesión se vuelve al login.
   const [hasSignedIn, setHasSignedIn] = useState(false);
@@ -54,7 +56,7 @@ export function RootNavigator() {
     setHasSignedIn(true);
   }
 
-  if (isLoading) {
+  if (isInitializing) {
     return null;
   }
 
@@ -89,6 +91,11 @@ export function RootNavigator() {
           />
 
           <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
+          <Stack.Screen
+            name="Medications"
+            component={MedicationsScreen}
+            options={{ headerShown: false }}
+          />
         </>
       ) : (
         <>
