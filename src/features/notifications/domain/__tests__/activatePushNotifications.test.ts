@@ -9,6 +9,7 @@ const TOKEN: DeviceToken = { token: 'token-fcm-123', platform: 'android' };
 
 interface FakeOptions {
   permission: PushPermission;
+  available?: boolean;
   afterRequest?: PushPermission;
   token?: DeviceToken | null;
   registerFails?: boolean;
@@ -18,6 +19,7 @@ function fakeRepository(options: FakeOptions) {
   const calls: string[] = [];
 
   const repository: PushRepository = {
+    isAvailable: () => options.available ?? true,
     prepareChannels: async () => {
       calls.push('prepareChannels');
     },
@@ -48,6 +50,15 @@ const UNDETERMINED = { granted: false, canAskAgain: true };
 const BLOCKED = { granted: false, canAskAgain: false };
 
 describe('activatePushNotifications', () => {
+  it('no usa APIs push remotas cuando el entorno no las soporta', async () => {
+    const { repository, calls } = fakeRepository({ permission: GRANTED, available: false });
+
+    const status = await activatePushNotifications(repository, async () => true);
+
+    expect(status).toBe('disabled');
+    expect(calls).toEqual([]);
+  });
+
   it('con permiso ya concedido registra el token sin preguntar', async () => {
     const { repository, calls } = fakeRepository({ permission: GRANTED });
     let explained = false;

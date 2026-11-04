@@ -22,6 +22,7 @@ export interface PushPermission {
 }
 
 export interface PushRepository {
+  isAvailable: () => boolean;
   prepareChannels: () => Promise<void>;
   getPermission: () => Promise<PushPermission>;
   requestPermission: () => Promise<PushPermission>;
@@ -40,6 +41,8 @@ export async function activatePushNotifications(
   explainPermission: () => Promise<boolean>,
   isCancelled: () => boolean = () => false,
 ): Promise<PushRegistrationStatus> {
+  if (!pushRepository.isAvailable()) return 'disabled';
+
   try {
     await pushRepository.prepareChannels();
 
@@ -76,9 +79,13 @@ export function usePushRegistration(
   // Muestra la explicación previa y resuelve true si el dueño quiere activar los recordatorios.
   explainPermission: () => Promise<boolean>,
 ) {
-  const [status, setStatus] = useState<PushRegistrationStatus>('pending');
+  const [status, setStatus] = useState<PushRegistrationStatus>(() =>
+    pushRepository.isAvailable() ? 'pending' : 'disabled',
+  );
 
   useEffect(() => {
+    if (!pushRepository.isAvailable()) return;
+
     let cancelled = false;
 
     activatePushNotifications(pushRepository, explainPermission, () => cancelled).then((result) => {

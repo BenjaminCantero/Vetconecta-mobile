@@ -8,6 +8,8 @@
 import { ENDPOINTS } from '../../../core/api/endpoints';
 import { httpClient } from '../../../core/api/httpClient';
 import { ENV } from '../../../core/config/env';
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import {
   createRemindersChannel,
   getNativePushToken,
@@ -28,6 +30,10 @@ function toRegisterDeviceRequestDto(device: DeviceToken): RegisterDeviceRequestD
 }
 
 export const pushRepository: PushRepository = {
+  // Expo Go para Android no incluye soporte para push remoto desde SDK 53.
+  // Los development builds y las builds de producción sí lo incluyen.
+  isAvailable: () => Platform.OS !== 'android' || Constants.expoGoConfig === null,
+
   prepareChannels: createRemindersChannel,
 
   getPermission: getPushPermission,

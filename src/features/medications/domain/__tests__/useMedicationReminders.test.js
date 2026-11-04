@@ -3,6 +3,12 @@ import React from 'react';
 import { act, create } from 'react-test-renderer';
 import { useMedicationReminders } from '../useMedicationReminders';
 
+// useFetch se suscribe a la reconexión; NetInfo no existe en Jest.
+jest.mock('../../../../core/network/connectivity', () => ({
+  isOnline: jest.fn().mockResolvedValue(true),
+  subscribeToReconnect: jest.fn(() => () => {}),
+}));
+
 it('separa las pautas por id incluso cuando las mascotas tienen el mismo nombre', async () => {
   const first = { id: 'pauta-1', petId: 'mascota-1', petName: 'Luna' };
   const second = { id: 'pauta-2', petId: 'mascota-2', petName: 'Luna' };

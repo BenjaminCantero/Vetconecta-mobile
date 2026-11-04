@@ -256,7 +256,7 @@ export default function NotificationsScreen({ navigation }: Props) {
                   <Text style={styles.link}>Cargar más avisos</Text>
                 </Pressable>
               </View>
-            ) : null
+            ) : undefined
           }
           contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 24 }]}
           ItemSeparatorComponent={() => <View style={styles.separator} />}

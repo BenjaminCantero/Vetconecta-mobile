@@ -11,6 +11,7 @@
 import { useMemo } from 'react';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { AndroidImportance, IosAuthorizationStatus } from 'expo-notifications';
 
 // Debe coincidir con 'defaultChannel' del plugin expo-notifications en app.json.
 export const REMINDERS_CHANNEL_ID = 'recordatorios';
@@ -57,7 +58,7 @@ export async function createRemindersChannel(): Promise<void> {
   await Notifications.setNotificationChannelAsync(REMINDERS_CHANNEL_ID, {
     name: 'Recordatorios',
     description: 'Avisos de citas y controles de tus mascotas',
-    importance: Notifications.AndroidImportance.HIGH,
+    importance: AndroidImportance.HIGH,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: '#7A22E0',
   });
@@ -67,7 +68,7 @@ function toPermissionState(
   response: Notifications.NotificationPermissionsStatus,
 ): PushPermissionState {
   // En iOS el permiso "provisional" (avisos silenciosos) tambien permite recibir notificaciones.
-  const provisional = response.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
+  const provisional = response.ios?.status === IosAuthorizationStatus.PROVISIONAL;
 
   return {
     granted: response.granted || provisional,

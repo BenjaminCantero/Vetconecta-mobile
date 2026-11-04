@@ -4,6 +4,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AxiosError, type AxiosResponse } from 'axios';
+import * as SecureStore from 'expo-secure-store';
 
 import { httpClient } from '../../../../core/api/httpClient';
 import { StorageKeys } from '../../../../core/storage/asyncStorage';
@@ -78,11 +79,8 @@ describe('authRepository.login', () => {
     });
   });
 
-  it('guarda el token y el usuario, y descarta un refresh token previo', async () => {
-    await AsyncStorage.setItem(
-      StorageKeys.AUTH_REFRESH_TOKEN,
-      JSON.stringify('mock-refresh-token'),
-    );
+  it('guarda el token en SecureStore y el usuario, y descarta un refresh token previo', async () => {
+    await SecureStore.setItemAsync('vetconecta.auth_refresh_token', 'mock-refresh-token');
     post.mockResolvedValue({ status: 201, data: loginResponse });
 
     await authRepository.login({
@@ -90,10 +88,8 @@ describe('authRepository.login', () => {
       password: 'contrasena123',
     });
 
-    expect(JSON.parse((await AsyncStorage.getItem(StorageKeys.AUTH_ACCESS_TOKEN))!)).toBe(
-      'jwt-real',
-    );
-    expect(await AsyncStorage.getItem(StorageKeys.AUTH_REFRESH_TOKEN)).toBeNull();
+    expect(await SecureStore.getItemAsync('vetconecta.auth_access_token')).toBe('jwt-real');
+    expect(await SecureStore.getItemAsync('vetconecta.auth_refresh_token')).toBeNull();
     expect(JSON.parse((await AsyncStorage.getItem(StorageKeys.AUTH_USER))!)).toMatchObject({
       id: 'user-1',
       email: 'dueno@vetconecta.cl',
