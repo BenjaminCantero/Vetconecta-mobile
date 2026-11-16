@@ -13,6 +13,7 @@ export const ENDPOINTS = {
   PETS: {
     LIST: '/mascotas',
     HEALTH_CARD: (petId: string) => `/mascotas/${petId}/carnet`,
+    TREATMENTS: (petId: string) => `/mascotas/${petId}/tratamientos`,
   },
   APPOINTMENTS: {
     LIST: '/citas',
