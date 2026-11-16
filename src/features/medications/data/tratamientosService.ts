@@ -15,7 +15,7 @@ import type { Tratamiento } from '../domain/Tratamiento';
 import type { TratamientosRepository } from '../domain/usePautaTratamiento';
 import type { TratamientoDto } from './tratamientoDto';
 import { toTratamiento } from './tratamientoMapper';
-import { tratamientosMock } from './tratamientosMock';
+import { getTratamientosMock } from './tratamientosMock';
 
 const PAUTA_ERROR_MESSAGES = {
   unauthorized: 'Tu sesión expiró. Vuelve a iniciar sesión para ver los tratamientos.',
@@ -25,7 +25,9 @@ const PAUTA_ERROR_MESSAGES = {
 
 async function fetchPauta(mascotaId: string): Promise<Tratamiento[]> {
   if (ENV.USE_MOCKS) {
-    return tratamientosMock.filter((dto) => dto.id_mascota === mascotaId).map(toTratamiento);
+    return getTratamientosMock()
+      .filter((dto) => dto.id_mascota === mascotaId)
+      .map(toTratamiento);
   }
 
   const { data } = await httpClient.get<TratamientoDto[]>(ENDPOINTS.PETS.TREATMENTS(mascotaId));

@@ -20,7 +20,10 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.vetconectamobile",
-      "permissions": ["android.permission.POST_NOTIFICATIONS"]
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.SCHEDULE_EXACT_ALARM"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

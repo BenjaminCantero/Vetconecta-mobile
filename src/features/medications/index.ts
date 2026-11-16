@@ -8,3 +8,6 @@ export { usePautaTratamiento } from './domain/usePautaTratamiento';
 export type { TratamientosRepository } from './domain/usePautaTratamiento';
 export { calcularDosisProgramadas, construirPauta } from './domain/calcularDosisProgramadas';
 export type { PautaTratamiento, Tratamiento } from './domain/Tratamiento';
+// H2: recordatorios locales de dosis y checklist de cumplimiento (solo en el dispositivo).
+export { MedicationRemindersBridge } from './presentation/components/MedicationRemindersBridge';
+export { registerMedicationReminderActions } from './presentation/registerMedicationReminderActions';

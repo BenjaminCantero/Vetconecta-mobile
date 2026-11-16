@@ -1,5 +1,5 @@
 // Responsabilidad: envoltorio de expo-notifications.
-// unico archivo de la app que importa expo-notifications
+// Junto con localNotifications.ts (recordatorios locales), único archivo que importa expo-notifications.
 // Como llega una notificacion push segun el estado de la app:
 //  - Abierta (primer plano): FCM se la entrega a la app y se muestra como banner del sistema
 //    según `configureForegroundPresentation`.

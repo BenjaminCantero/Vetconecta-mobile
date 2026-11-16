@@ -5,6 +5,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ENV } from '../config/env';
+import { cancelAllLocalNotifications } from '../notifications/localNotifications';
 import { StorageKeys, asyncStorage } from './asyncStorage';
 import { clearOfflineCache } from './offlineCache';
 import { secureStorage } from './secureStorage';
@@ -42,6 +43,8 @@ export async function getCurrentAccountId(): Promise<string | null> {
 }
 
 export async function clearSessionData(): Promise<void> {
+  // H2: los recordatorios de medicamentos del usuario no deben seguir sonando.
+  await cancelAllLocalNotifications();
   await clearOfflineCache();
   await secureStorage.clearTokens();
   await asyncStorage.removeItem(StorageKeys.AUTH_USER);

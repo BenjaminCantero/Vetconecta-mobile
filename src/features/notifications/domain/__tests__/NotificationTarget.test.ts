@@ -24,6 +24,13 @@ describe('resolveNotificationTarget', () => {
     });
   });
 
+  it('un recordatorio de dosis abre el tratamiento de la mascota', () => {
+    expect(resolveNotificationTarget({ tipo: 'dosis', petId: 'mascota-002' })).toEqual({
+      screen: 'treatment',
+      petId: 'mascota-002',
+    });
+  });
+
   it('sin citaId abre el centro de notificaciones', () => {
     expect(resolveNotificationTarget({ tipo: 'control' })).toEqual({ screen: 'center' });
   });

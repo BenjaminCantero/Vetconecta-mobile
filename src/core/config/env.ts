@@ -13,6 +13,9 @@ export const ENV = {
   // Sin un valor explícito, conserva la configuración global anterior.
   AUTH_USE_MOCKS:
     (process.env.EXPO_PUBLIC_AUTH_USE_MOCKS ?? process.env.EXPO_PUBLIC_USE_MOCKS) !== 'false',
+  // H2: agrega a los datos mock una pauta "cada 2 minutos" que empieza al abrir
+  // la app, para probar los recordatorios locales sin esperar horas.
+  DEMO_FAST_TREATMENT: process.env.EXPO_PUBLIC_DEMO_PAUTA_RAPIDA === 'true',
   // Teléfono de urgencias que abre la tarjeta de emergencia del inicio.
   EMERGENCY_PHONE: process.env.EXPO_PUBLIC_EMERGENCY_PHONE ?? '+56912345678',
 };

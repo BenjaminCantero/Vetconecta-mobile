@@ -1,7 +1,8 @@
 // Responsabilidad: conectar las notificaciones push con la app (capa PRESENTATION de notifications).
 // No dibuja nada. Se monta en TabNavigator, es decir, solo con la sesión iniciada, y:
 //  1. Activa los recordatorios: explica el permiso, lo pide y registra el token (usePushRegistration).
-//  2. Al tocar una notificación, navega a la cita (citaId) o al centro de notificaciones.
+//  2. Al tocar una notificación, navega a la cita (citaId), al tratamiento (recordatorio de dosis)
+//     o al centro de notificaciones.
 //
 // Actúa como composition root: inyecta pushRepository y el diálogo de explicación.
 
@@ -27,8 +28,8 @@ function explainPermission(): Promise<boolean> {
   return new Promise((resolve) => {
     Alert.alert(
       'Activa los recordatorios',
-      'VetConecta te avisará 24 horas antes de cada cita y cuando se acerque un control o una ' +
-        'vacuna de tu mascota.',
+      'VetConecta te avisará 24 horas antes de cada cita, cuando se acerque un control o una ' +
+        'vacuna y a la hora de dar cada medicamento a tu mascota.',
       [
         { text: 'Ahora no', style: 'cancel', onPress: () => resolve(false) },
         { text: 'Activar', onPress: () => resolve(true) },
@@ -56,6 +57,11 @@ export function PushNotificationsBridge() {
         screen: 'Citas',
         params: { citaId: target.appointmentId },
       });
+      return;
+    }
+
+    if (target.screen === 'treatment') {
+      navigation.navigate('Medications', { petId: target.petId });
       return;
     }
 

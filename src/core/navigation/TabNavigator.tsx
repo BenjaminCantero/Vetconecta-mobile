@@ -8,6 +8,7 @@ import { fonts } from '../theme/typography';
 import { HomeScreen } from '../../features/home';
 import { ActivePetSync, MyPetsScreen } from '../../features/pets';
 import { AppointmentsScreen } from '../../features/appointments';
+import { MedicationRemindersBridge } from '../../features/medications';
 import {
   NotificationsProvider,
   NotificationsScreen,
@@ -116,6 +117,7 @@ export function TabNavigator() {
       <ActivePetSync />
       <TabsContent />
       <PushNotificationsBridge />
+      <MedicationRemindersBridge />
     </NotificationsProvider>
   );
 }
