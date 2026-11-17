@@ -10,8 +10,11 @@ export interface HttpErrorMessages {
   fallback: string;
   network?: string;
   unauthorized?: string;
-  // Si se omite, un 404 se trata con `fallback`.
+
+  // Si se omiten, estos errores se tratan con fallback.
   notFound?: string;
+  conflict?: string;
+  unprocessableEntity?: string;
 }
 
 const DEFAULT_NETWORK_MESSAGE =
@@ -32,6 +35,14 @@ export function toHttpError(error: unknown, messages: HttpErrorMessages): Error 
 
     if (status === 404 && messages.notFound) {
       return new Error(messages.notFound);
+    }
+
+    if (status === 409 && messages.conflict) {
+      return new Error(messages.conflict);
+    }
+
+    if (status === 422 && messages.unprocessableEntity) {
+      return new Error(messages.unprocessableEntity);
     }
 
     return new Error(messages.fallback);

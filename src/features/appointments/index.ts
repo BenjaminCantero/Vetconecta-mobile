@@ -3,9 +3,14 @@
 export { useAppointments } from './domain/useAppointments';
 export type { AppointmentsRepository } from './domain/useAppointments';
 
-export type { Appointment, AppointmentStatus } from './domain/Appointment';
+export type { Appointment, AppointmentStatus, AppointmentRating } from './domain/Appointment';
 
-export { appointmentsRepository } from './data/appointmentsRepository';
+export {
+  appointmentsRepository,
+  canRateAppointment,
+  isCompletedAppointment,
+  AppointmentAlreadyRatedError,
+} from './data/appointmentsRepository';
 
 export { default as AppointmentsScreen } from './presentation/screens/AppointmentsScreen';
 
@@ -28,3 +33,8 @@ export {
 } from './domain/bookingErrors';
 
 export { bookingRepository } from './data/bookingRepository';
+
+// H3: componentes públicos para la calificación post-consulta.
+export { AppointmentCard } from './presentation/components/AppointmentCard';
+
+export { AppointmentRatingModal } from './presentation/components/AppointmentRatingModal';

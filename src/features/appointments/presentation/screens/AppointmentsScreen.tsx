@@ -2,6 +2,7 @@
 // Lista citas, filtra por mascota activa y permite cancelar reservas.
 // Soporta consulta de datos guardados sin conexión (G1).
 // D3: permite navegar al flujo de agendamiento.
+// H3: permite calificar consultas realizadas.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -30,15 +31,20 @@ import { fonts } from '../../../../core/theme/typography';
 import type { RootStackParamList } from '../../../../core/navigation/RootNavigator';
 import type { TabParamList } from '../../../../core/navigation/TabNavigator';
 
-import { appointmentsRepository } from '../../data/appointmentsRepository';
+import {
+  AppointmentAlreadyRatedError,
+  appointmentsRepository,
+  canRateAppointment,
+} from '../../data/appointmentsRepository';
 import { bookingRepository } from '../../data/bookingRepository';
 
 import { useAppointments } from '../../domain/useAppointments';
 import { useBookAppointment } from '../../domain/useBookAppointment';
 import { SinConexionError } from '../../domain/bookingErrors';
-import type { Appointment } from '../../domain/Appointment';
+import type { Appointment, AppointmentRating } from '../../domain/Appointment';
 
 import { AppointmentCard } from '../components';
+import { AppointmentRatingModal } from '../components/AppointmentRatingModal';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<TabParamList, 'Citas'>,
@@ -53,10 +59,18 @@ const FOCUS_HIGHLIGHT_MS = 4000;
 export default function AppointmentsScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
 
-  const { appointments, isLoading, isRefreshing, isOffline, updatedAt, error, refetch } =
-    useAppointments(appointmentsRepository);
+  const {
+    appointments,
+    isLoading,
+    isRefreshing,
+    isOffline,
+    updatedAt,
+    error,
+    refetch,
+    updateAppointment,
+  } = useAppointments(appointmentsRepository);
 
-  const { activePetId, activePet, setActivePetId } = useActivePet();
+  const { activePetId, activePet, setActivePetId, pets } = useActivePet();
 
   const { cancel, isSubmitting } = useBookAppointment(bookingRepository);
 
@@ -64,6 +78,9 @@ export default function AppointmentsScreen({ navigation, route }: Props) {
   const [chosenSection, setChosenSection] = useState<Section>('upcoming');
 
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [ratingAppointment, setRatingAppointment] = useState<Appointment | null>(null);
+
+  const ratingPetName = pets.find((pet) => pet.id === ratingAppointment?.petId)?.name ?? 'Mascota';
 
   // Recarga las citas al regresar desde el flujo de reserva.
   // Así, una nueva cita puede aparecer en Mis citas.
@@ -199,6 +216,28 @@ export default function AppointmentsScreen({ navigation, route }: Props) {
     ]);
   };
 
+  // H3: envía la calificación y actualiza la cita sin esperar otra lectura.
+  const handleRatingSubmit = async (rating: AppointmentRating) => {
+    if (!ratingAppointment || isOffline) {
+      throw new Error('Necesitas conexión a internet para calificar.');
+    }
+
+    try {
+      const updated = await appointmentsRepository.createRating(ratingAppointment, rating);
+      updateAppointment(updated);
+      refetch();
+      Alert.alert('Calificación enviada', 'Gracias por compartir tu experiencia.');
+    } catch (ratingError) {
+      if (ratingError instanceof AppointmentAlreadyRatedError) {
+        updateAppointment({ ...ratingAppointment, calificada: true });
+        refetch();
+        Alert.alert('Atención calificada', ratingError.message);
+        return;
+      }
+      throw ratingError;
+    }
+  };
+
   // D3: abre la nueva pantalla de reserva.
   const handleSchedule = () => {
     if (isOffline) {
@@ -287,6 +326,11 @@ export default function AppointmentsScreen({ navigation, route }: Props) {
                     key={appointment.id}
                     appointment={appointment}
                     highlighted={appointment.id === focusedAppointment?.id}
+                    onRate={
+                      section === 'past' && !isOffline && canRateAppointment(appointment)
+                        ? () => setRatingAppointment(appointment)
+                        : undefined
+                    }
                     onCancel={
                       canCancelAppointment(appointment)
                         ? () => handleCancel(appointment.id)
@@ -314,6 +358,16 @@ export default function AppointmentsScreen({ navigation, route }: Props) {
           <EmergencyCard />
         </ScrollView>
       </QueryState>
+
+      {ratingAppointment && (
+        <AppointmentRatingModal
+          key={ratingAppointment.id}
+          petName={ratingPetName}
+          visible
+          onClose={() => setRatingAppointment(null)}
+          onSubmit={handleRatingSubmit}
+        />
+      )}
     </View>
   );
 }

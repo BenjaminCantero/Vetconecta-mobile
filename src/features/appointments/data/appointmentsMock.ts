@@ -2,7 +2,7 @@
 // Mantiene la estructura esperada de GET /citas.
 //
 // Los datos pueden modificarse en memoria mientras la aplicación
-// está ejecutándose, para simular reservas y cancelaciones.
+// está ejecutándose, para simular reservas, cancelaciones y calificaciones.
 
 import type { AppointmentDto } from './appointmentsDto';
 
@@ -14,6 +14,7 @@ export const appointmentsMock: AppointmentDto[] = [
     motivo: 'Control anual',
     estado: 'confirmada',
     veterinario: 'Dra. Carla Rojas',
+    calificada: false,
   },
   {
     id: 'cita-002',
@@ -22,6 +23,7 @@ export const appointmentsMock: AppointmentDto[] = [
     motivo: 'Vacuna antirrábica',
     estado: 'pendiente',
     veterinario: 'Dr. Manuel Soto',
+    calificada: false,
   },
   {
     id: 'cita-003',
@@ -30,6 +32,7 @@ export const appointmentsMock: AppointmentDto[] = [
     motivo: 'Limpieza dental',
     estado: 'completada',
     veterinario: 'Dra. Carla Rojas',
+    calificada: false,
   },
   {
     id: 'cita-004',
@@ -38,6 +41,7 @@ export const appointmentsMock: AppointmentDto[] = [
     motivo: 'Revisión por cojera',
     estado: 'cancelada',
     veterinario: 'Dr. Ignacio Pérez',
+    calificada: false,
   },
   {
     // Cita futura reservada para probar D4.
@@ -47,5 +51,30 @@ export const appointmentsMock: AppointmentDto[] = [
     motivo: 'Desparasitación',
     estado: 'reservada',
     veterinario: 'Dr. Manuel Soto',
+    calificada: false,
+  },
+  {
+    // Cita realizada pendiente de calificación (H3).
+    id: 'cita-006',
+    id_mascota: 'mascota-001',
+    fecha: '2026-08-10T11:00:00.000Z',
+    motivo: 'Control veterinario',
+    estado: 'realizada',
+    veterinario: 'Dra. Carla Rojas',
+    calificada: false,
+  },
+  {
+    // Cita realizada y calificada (H3).
+    id: 'cita-007',
+    id_mascota: 'mascota-001',
+    fecha: '2026-07-15T10:00:00.000Z',
+    motivo: 'Consulta general',
+    estado: 'realizada',
+    veterinario: 'Dr. Manuel Soto',
+    calificada: true,
+    calificacion: {
+      estrellas: 5,
+      comentario: 'Excelente atención veterinaria.',
+    },
   },
 ];

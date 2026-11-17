@@ -19,6 +19,9 @@ export const ENDPOINTS = {
     BOOK: '/citas',
     CANCEL: (appointmentId: string) => `/citas/${appointmentId}/cancelar`,
   },
+  RATINGS: {
+    CREATE: '/calificaciones',
+  },
   NOTIFICATIONS: {
     REGISTER_DEVICE: '/dispositivos', // pendiente de acordar con equipo web
   },
