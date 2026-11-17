@@ -6,11 +6,13 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import { useRefetchOnReconnect } from '../../../shared/hooks/useRefetchOnReconnect';
 import type { Appointment } from './Appointment';
 
 export interface AppointmentsSnapshot {
   appointments: Appointment[];
   isOffline: boolean;
+  updatedAt: string | null;
 }
 
 export interface AppointmentsRepository {
@@ -24,6 +26,7 @@ export function useAppointments(appointmentsRepository: AppointmentsRepository) 
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [reloadIndex, setReloadIndex] = useState(0);
 
@@ -37,11 +40,13 @@ export function useAppointments(appointmentsRepository: AppointmentsRepository) 
           : {
               appointments: await appointmentsRepository.getAppointments(),
               isOffline: false,
+              updatedAt: null,
             };
 
         if (!cancelled) {
           setAppointments(snapshot.appointments);
           setIsOffline(snapshot.isOffline);
+          setUpdatedAt(snapshot.updatedAt);
         }
       } catch (err) {
         if (!cancelled) {
@@ -67,12 +72,14 @@ export function useAppointments(appointmentsRepository: AppointmentsRepository) 
     setIsRefreshing(true);
     setReloadIndex((index) => index + 1);
   }, []);
+  useRefetchOnReconnect(refetch);
 
   return {
     appointments,
     isLoading,
     isRefreshing,
     isOffline,
+    updatedAt,
     error,
     refetch,
   };

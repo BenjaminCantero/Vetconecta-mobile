@@ -4,6 +4,7 @@ import { ENDPOINTS } from '../../../core/api/endpoints';
 import { toHttpError } from '../../../core/api/httpError';
 import { httpClient } from '../../../core/api/httpClient';
 import { ENV } from '../../../core/config/env';
+import { isOnline } from '../../../core/network/connectivity';
 import { EmailAlreadyInUseError, IncorrectCurrentPasswordError } from '../domain/profileErrors';
 import type {
   ContactUpdate,
@@ -18,6 +19,13 @@ const PROFILE_ERROR_MESSAGES = {
   unauthorized: 'Tu sesión expiró. Vuelve a iniciar sesión para editar tu perfil.',
   fallback: 'No pudimos guardar tus cambios. Inténtalo nuevamente.',
 };
+
+// Las escrituras no se dejan en cola: sin red se bloquean con un mensaje (G1).
+async function ensureOnline(): Promise<void> {
+  if (!(await isOnline())) {
+    throw new Error('Sin conexión. Conéctate a internet para guardar tus cambios.');
+  }
+}
 
 function toProfile(dto: OwnerProfileDto): OwnerProfile {
   return {
@@ -51,6 +59,7 @@ export const profileRepository: OwnerProfileRepository = {
   },
 
   async updateContact(contact: ContactUpdate) {
+    await ensureOnline();
     const request: UpdateContactDto = { email: contact.email, telefono: contact.phone };
     if (ENV.USE_MOCKS) {
       if (request.email.toLowerCase() === 'ocupado@vetconecta.cl')
@@ -68,6 +77,7 @@ export const profileRepository: OwnerProfileRepository = {
   },
 
   async changePassword(change: PasswordChange) {
+    await ensureOnline();
     const request: ChangePasswordDto = {
       password_actual: change.currentPassword,
       password_nueva: change.newPassword,

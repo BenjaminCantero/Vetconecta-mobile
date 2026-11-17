@@ -16,6 +16,8 @@
 
 import { onSessionExpired } from '../../../core/api/sessionEvents';
 import { StorageKeys, asyncStorage } from '../../../core/storage/asyncStorage';
+import { secureStorage } from '../../../core/storage/secureStorage';
+import { clearSessionData, removeLegacySessionData } from '../../../core/storage/sessionStorage';
 
 import type {
   AuthRepository,
@@ -80,9 +82,7 @@ export const authRepository: AuthRepository = {
 
     const user = toUser(mockResponse.user);
 
-    await asyncStorage.setItem(StorageKeys.AUTH_ACCESS_TOKEN, mockResponse.accessToken);
-
-    await asyncStorage.setItem(StorageKeys.AUTH_REFRESH_TOKEN, mockResponse.refreshToken);
+    await secureStorage.saveTokens(mockResponse.accessToken, mockResponse.refreshToken);
 
     await asyncStorage.setItem(StorageKeys.AUTH_USER, user);
 
@@ -160,6 +160,8 @@ export const authRepository: AuthRepository = {
   // ---------------------------------------------------------------------------
 
   async getStoredUser() {
+    await removeLegacySessionData();
+
     return asyncStorage.getItem<User>(StorageKeys.AUTH_USER);
   },
 
@@ -168,20 +170,14 @@ export const authRepository: AuthRepository = {
   // ---------------------------------------------------------------------------
 
   async clearSession() {
-    await asyncStorage.removeItem(StorageKeys.AUTH_ACCESS_TOKEN);
-
-    await asyncStorage.removeItem(StorageKeys.AUTH_REFRESH_TOKEN);
-
-    await asyncStorage.removeItem(StorageKeys.AUTH_USER);
-
-    await asyncStorage.removeItem(StorageKeys.ACTIVE_PET_ID);
+    await clearSessionData();
   },
 
   // ---------------------------------------------------------------------------
   // SESIÓN EXPIRADA
   // ---------------------------------------------------------------------------
   //
-  // httpClient ya borró los tokens al recibir un 401; aquí solo se reenvía el
+  // httpClient ya borró la sesión y la caché al recibir un 401; aquí solo se reenvía el
   // aviso para que el dominio cierre la sesión en memoria.
 
   onSessionExpired(listener: () => void) {

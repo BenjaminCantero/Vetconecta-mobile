@@ -3,20 +3,11 @@
 
 import type { Notification } from '../domain/Notification';
 import { ENV } from '../../../core/config/env';
-import { isOnline } from '../../../core/network/connectivity';
+import { cachedRead, type CachedResult } from '../../../core/network/cachedRead';
 import { asyncStorage, StorageKeys } from '../../../core/storage/asyncStorage';
+import { buildCacheKey, readCache, writeCache } from '../../../core/storage/offlineCache';
+import { getCurrentAccountId } from '../../../core/storage/sessionStorage';
 import { notificationsMock } from './notificationsMock';
-
-interface StoredSessionUser {
-  id: string;
-  email?: string;
-}
-
-interface NotificationsCache {
-  userId: string;
-  notifications: Notification[];
-  savedAt: string;
-}
 
 interface ReadState {
   userId: string;
@@ -27,51 +18,7 @@ interface ReadStateStore {
   accounts: ReadState[];
 }
 
-function getAccountId(user: StoredSessionUser | null): string | null {
-  if (!user) {
-    return null;
-  }
-
-  const email = user.email?.trim().toLowerCase();
-
-  // El login mock utiliza el mismo ID para distintas cuentas.
-  // En ese caso, diferenciamos las cuentas mediante su correo.
-  if (ENV.USE_MOCKS && user.id === 'mock-user-id' && email) {
-    return `mock:${email}`;
-  }
-
-  return user.id || null;
-}
-
-async function getCurrentAccountId(): Promise<string | null> {
-  const user = await asyncStorage.getItem<StoredSessionUser>(StorageKeys.AUTH_USER);
-
-  return getAccountId(user);
-}
-
-async function saveCache(userId: string, notifications: Notification[]): Promise<void> {
-  const cache: NotificationsCache = {
-    userId,
-    notifications,
-    savedAt: new Date().toISOString(),
-  };
-
-  const saved = await asyncStorage.setItem(StorageKeys.NOTIFICATIONS_CACHE, cache);
-
-  if (!saved) {
-    throw new Error('No se pudo guardar el caché de notificaciones.');
-  }
-}
-
-async function readCache(userId: string): Promise<Notification[] | null> {
-  const cache = await asyncStorage.getItem<NotificationsCache>(StorageKeys.NOTIFICATIONS_CACHE);
-
-  if (!cache || cache.userId !== userId || !Array.isArray(cache.notifications)) {
-    return null;
-  }
-
-  return cache.notifications;
-}
+const NOTIFICATIONS_RESOURCE = 'notificaciones';
 
 async function readStateStore(): Promise<ReadStateStore> {
   const stored = await asyncStorage.getItem<unknown>(StorageKeys.MOCK_NOTIFICATION_READ_IDS, true);
@@ -143,45 +90,33 @@ async function fetchNotifications(userId: string): Promise<Notification[]> {
 
 let pendingWrite: Promise<void> = Promise.resolve();
 
+async function getNotificationsSnapshot(): Promise<CachedResult<Notification[]>> {
+  const empty = { data: [], fromCache: false, updatedAt: null };
+
+  if (!ENV.USE_MOCKS) {
+    return empty;
+  }
+
+  const accountId = await getCurrentAccountId();
+
+  if (!accountId) {
+    return empty;
+  }
+
+  const result = await cachedRead({
+    resource: NOTIFICATIONS_RESOURCE,
+    fetcher: () => fetchNotifications(accountId),
+    offlineMessage: 'Sin conexión. Aún no hay avisos guardados en este dispositivo.',
+  });
+
+  return { ...result, data: sortNotifications(result.data) };
+}
+
 export const notificationsRepository = {
+  getNotificationsSnapshot,
+
   async getNotifications(): Promise<Notification[]> {
-    if (!ENV.USE_MOCKS) {
-      return [];
-    }
-
-    const userId = await getCurrentAccountId();
-
-    if (!userId) {
-      return [];
-    }
-
-    const online = await isOnline();
-
-    if (!online) {
-      const cached = await readCache(userId);
-
-      if (cached !== null) {
-        return sortNotifications(cached);
-      }
-
-      return fetchNotifications(userId);
-    }
-
-    try {
-      const notifications = await fetchNotifications(userId);
-
-      await saveCache(userId, notifications);
-
-      return notifications;
-    } catch (error) {
-      const cached = await readCache(userId);
-
-      if (cached !== null) {
-        return sortNotifications(cached);
-      }
-
-      throw error;
-    }
+    return (await getNotificationsSnapshot()).data;
   },
 
   markAsRead(ids: string[]): Promise<void> {
@@ -226,17 +161,19 @@ export const notificationsRepository = {
         }
 
         // Actualizar también el caché offline de esta cuenta.
-        const cached = await readCache(userId);
+        const cacheKey = buildCacheKey(userId, NOTIFICATIONS_RESOURCE);
+        const cached = await readCache<Notification[]>(cacheKey);
 
         if (cached !== null) {
           const readIds = new Set(validIds);
 
-          await saveCache(
-            userId,
-            cached.map((item) => ({
+          await writeCache(
+            cacheKey,
+            cached.data.map((item) => ({
               ...item,
               read: item.read || readIds.has(item.id),
             })),
+            cached.updatedAt,
           );
         }
       });

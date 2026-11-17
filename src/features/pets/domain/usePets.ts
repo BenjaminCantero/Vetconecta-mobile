@@ -6,19 +6,27 @@
 // barrel del dominio: el carnet (UC-02) parte de esta lista para llegar a
 // GET /mascotas/:id/carnet, y home muestra el total de mascotas.
 
+import type { CachedResult } from '../../../core/network/cachedRead';
 import { useFetch } from '../../../shared/hooks/useFetch';
 import type { Pet } from './Pet';
 
 export interface PetsRepository {
-  getMyPets: () => Promise<Pet[]>;
+  getMyPetsSnapshot: () => Promise<CachedResult<Pet[]>>;
 }
 
 export function usePets(petsRepository: PetsRepository) {
   const { data, isLoading, error, refetch } = useFetch(
-    () => petsRepository.getMyPets(),
+    () => petsRepository.getMyPetsSnapshot(),
     [petsRepository],
   );
 
   // La UI siempre recibe una lista: mientras carga o si falla, es vacía.
-  return { pets: data ?? [], isLoading, error, refetch };
+  return {
+    pets: data?.data ?? [],
+    fromCache: data?.fromCache ?? false,
+    updatedAt: data?.updatedAt ?? null,
+    isLoading,
+    error,
+    refetch,
+  };
 }

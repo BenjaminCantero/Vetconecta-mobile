@@ -14,6 +14,7 @@ import { httpClient } from '../../../core/api/httpClient';
 import { ENDPOINTS } from '../../../core/api/endpoints';
 import { toHttpError } from '../../../core/api/httpError';
 import { ENV } from '../../../core/config/env';
+import { cachedRead, type CachedResult } from '../../../core/network/cachedRead';
 import type { Pet, PetSex, PetSpecies } from '../domain/Pet';
 import type { ClinicalEvent, ClinicalEventType } from '../domain/ClinicalEvent';
 import type { ClinicalEventDto, PetDto } from './petsDto';
@@ -81,32 +82,60 @@ function toClinicalEvent(dto: ClinicalEventDto): ClinicalEvent {
   };
 }
 
-export const petsRepository = {
-  async getMyPets(): Promise<Pet[]> {
-    if (ENV.USE_MOCKS) {
-      return petsMock.map(toPet);
-    }
+async function fetchMyPets(): Promise<Pet[]> {
+  if (ENV.USE_MOCKS) {
+    return petsMock.map(toPet);
+  }
 
-    try {
-      const { data } = await httpClient.get<PetDto[]>(ENDPOINTS.PETS.LIST);
-      // Defensa mínima: si la API devuelve algo que no es una lista, se trata
-      // como "sin mascotas" en lugar de reventar al mapear.
-      return Array.isArray(data) ? data.map(toPet) : [];
-    } catch (error) {
-      throw toHttpError(error, PETS_ERROR_MESSAGES);
-    }
+  const { data } = await httpClient.get<PetDto[]>(ENDPOINTS.PETS.LIST);
+  // Defensa mínima: si la API devuelve algo que no es una lista, se trata
+  // como "sin mascotas" en lugar de reventar al mapear.
+  return Array.isArray(data) ? data.map(toPet) : [];
+}
+
+async function fetchHealthCard(petId: string): Promise<ClinicalEvent[]> {
+  if (ENV.USE_MOCKS) {
+    return clinicalEventsMock.filter((event) => event.id_mascota === petId).map(toClinicalEvent);
+  }
+
+  const { data } = await httpClient.get<ClinicalEventDto[]>(ENDPOINTS.PETS.HEALTH_CARD(petId));
+  return Array.isArray(data) ? data.map(toClinicalEvent) : [];
+}
+
+async function getMyPetsSnapshot(): Promise<CachedResult<Pet[]>> {
+  try {
+    return await cachedRead({
+      resource: 'mascotas',
+      fetcher: fetchMyPets,
+      offlineMessage: 'Sin conexión. Aún no hay mascotas guardadas en este dispositivo.',
+    });
+  } catch (error) {
+    throw toHttpError(error, PETS_ERROR_MESSAGES);
+  }
+}
+
+async function getHealthCardSnapshot(petId: string): Promise<CachedResult<ClinicalEvent[]>> {
+  try {
+    return await cachedRead({
+      resource: 'carnet',
+      resourceId: petId,
+      fetcher: () => fetchHealthCard(petId),
+      offlineMessage: 'Sin conexión. Este carnet aún no está guardado en el dispositivo.',
+    });
+  } catch (error) {
+    throw toHttpError(error, HEALTH_CARD_ERROR_MESSAGES);
+  }
+}
+
+export const petsRepository = {
+  getMyPetsSnapshot,
+  getHealthCardSnapshot,
+
+  async getMyPets(): Promise<Pet[]> {
+    return (await getMyPetsSnapshot()).data;
   },
 
   async getHealthCard(petId: string): Promise<ClinicalEvent[]> {
-    if (ENV.USE_MOCKS) {
-      return clinicalEventsMock.filter((event) => event.id_mascota === petId).map(toClinicalEvent);
-    }
-
-    try {
-      const { data } = await httpClient.get<ClinicalEventDto[]>(ENDPOINTS.PETS.HEALTH_CARD(petId));
-      return Array.isArray(data) ? data.map(toClinicalEvent) : [];
-    } catch (error) {
-      throw toHttpError(error, HEALTH_CARD_ERROR_MESSAGES);
-    }
+    return (await getHealthCardSnapshot(petId)).data;
   },
 };

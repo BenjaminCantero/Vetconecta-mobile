@@ -1,4 +1,5 @@
 import { asyncStorage, StorageKeys } from '../../../../core/storage/asyncStorage';
+import { readCache, writeCache } from '../../../../core/storage/offlineCache';
 import { ENV } from '../../../../core/config/env';
 import { isOnline } from '../../../../core/network/connectivity';
 import { notificationsRepository } from '../notificationsRepository';
@@ -7,12 +8,19 @@ jest.mock('../../../../core/storage/asyncStorage', () => ({
   StorageKeys: {
     AUTH_USER: 'auth-user',
     MOCK_NOTIFICATION_READ_IDS: 'read-ids',
-    NOTIFICATIONS_CACHE: 'notifications-cache',
   },
   asyncStorage: {
     getItem: jest.fn(),
     setItem: jest.fn(),
   },
+}));
+
+jest.mock('../../../../core/storage/offlineCache', () => ({
+  buildCacheKey: (accountId: string, resource: string) => `cache:${accountId}:${resource}`,
+  getCacheGeneration: () => 0,
+  readCache: jest.fn(),
+  writeCache: jest.fn(),
+  clearOfflineCache: jest.fn(),
 }));
 
 jest.mock('../../../../core/config/env', () => ({
@@ -24,6 +32,8 @@ jest.mock('../../../../core/network/connectivity', () => ({
 }));
 
 type StoredValues = Record<string, unknown>;
+
+const USER_001_CACHE = 'cache:user-001:notificaciones';
 
 let stored: StoredValues;
 
@@ -48,6 +58,14 @@ beforeEach(() => {
     stored[key] = value;
     return true;
   });
+
+  (readCache as jest.Mock).mockImplementation(async (key: string) => stored[key] ?? null);
+
+  (writeCache as jest.Mock).mockImplementation(
+    async (key: string, data: unknown, updatedAt: string) => {
+      stored[key] = { data, updatedAt };
+    },
+  );
 });
 
 it('orders notices and persists individual and bulk reads across fetches', async () => {
@@ -128,16 +146,10 @@ it('never presents mock notices outside mock mode', async () => {
 it('saves the latest notification list in the cache', async () => {
   const notifications = await notificationsRepository.getNotifications();
 
-  const cache = stored[StorageKeys.NOTIFICATIONS_CACHE] as {
-    userId: string;
-    notifications: typeof notifications;
-    savedAt: string;
-  };
-
-  expect(cache).toBeDefined();
-  expect(cache.userId).toBe('user-001');
-  expect(cache.notifications).toEqual(notifications);
-  expect(cache.savedAt).toEqual(expect.any(String));
+  expect(stored[USER_001_CACHE]).toEqual({
+    data: notifications,
+    updatedAt: expect.any(String),
+  });
 });
 
 it('loads cached notifications when the device is offline', async () => {
@@ -145,23 +157,20 @@ it('loads cached notifications when the device is offline', async () => {
 
   (isOnline as jest.Mock).mockResolvedValue(false);
 
-  const offlineNotifications = await notificationsRepository.getNotifications();
+  const snapshot = await notificationsRepository.getNotificationsSnapshot();
 
-  expect(offlineNotifications).toEqual(onlineNotifications);
+  expect(snapshot.data).toEqual(onlineNotifications);
+  expect(snapshot.fromCache).toBe(true);
+  expect(snapshot.updatedAt).toEqual(expect.any(String));
 });
 
 it('does not expose cached notifications to another user', async () => {
   await notificationsRepository.getNotifications();
 
-  const firstUserCache = stored[StorageKeys.NOTIFICATIONS_CACHE];
-
   setUser('user-002', 'usuario2@example.com');
   (isOnline as jest.Mock).mockResolvedValue(false);
 
-  const notifications = await notificationsRepository.getNotifications();
-
-  expect(notifications.length).toBeGreaterThan(0);
-  expect(stored[StorageKeys.NOTIFICATIONS_CACHE]).toBe(firstUserCache);
+  await expect(notificationsRepository.getNotifications()).rejects.toThrow('Sin conexión');
 });
 
 it('keeps read notifications marked as read in the offline cache', async () => {
@@ -183,7 +192,7 @@ it('does not show notifications without a saved user', async () => {
   const notifications = await notificationsRepository.getNotifications();
 
   expect(notifications).toEqual([]);
-  expect(stored[StorageKeys.NOTIFICATIONS_CACHE]).toBeUndefined();
+  expect(writeCache).not.toHaveBeenCalled();
 });
 
 it('keeps read states separated between different users', async () => {
@@ -248,12 +257,4 @@ it('handles legacy read IDs without assigning them to another account', async ()
   const notifications = await notificationsRepository.getNotifications();
 
   expect(notifications.find((item) => item.id === 'demo-appointment-005')?.read).toBe(false);
-});
-
-it('reports cache write failures', async () => {
-  (asyncStorage.setItem as jest.Mock).mockResolvedValue(false);
-
-  await expect(notificationsRepository.getNotifications()).rejects.toThrow(
-    'No se pudo guardar el caché de notificaciones',
-  );
 });

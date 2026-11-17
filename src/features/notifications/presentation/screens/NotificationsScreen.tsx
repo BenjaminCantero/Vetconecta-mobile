@@ -12,6 +12,7 @@ import { fonts } from '../../../../core/theme/typography';
 import { ENV } from '../../../../core/config/env';
 import { ScreenHeader } from '../../../../shared/components/ScreenHeader';
 import { SegmentedTabs } from '../../../../shared/components/SegmentedTabs';
+import { OfflineBanner } from '../../../../shared/components/OfflineBanner';
 import { QueryState } from '../../../../shared/components/QueryState';
 import { ActivePetSwitcher } from '../../../../shared/components/ActivePetSwitcher';
 import { useActivePet } from '../../../../shared/context/ActivePetContext';
@@ -63,8 +64,17 @@ export default function NotificationsScreen({ navigation }: Props) {
   }
 
   // E3: la pantalla y el contador comparten el mismo estado.
-  const { notifications, isLoading, error, refetch, isSaving, saveError, markAsRead } =
-    useNotificationsSession();
+  const {
+    notifications,
+    fromCache,
+    updatedAt,
+    isLoading,
+    error,
+    refetch,
+    isSaving,
+    saveError,
+    markAsRead,
+  } = useNotificationsSession();
 
   // Sin mascota activa, no se muestran avisos de otra mascota.
   // Los avisos globales (petId null/undefined) se muestran siempre.
@@ -137,6 +147,10 @@ export default function NotificationsScreen({ navigation }: Props) {
           </View>
         )}
       </View>
+
+      {fromCache && !isLoading && (
+        <OfflineBanner updatedAt={updatedAt} style={styles.offlineBanner} />
+      )}
 
       <QueryState
         isLoading={isLoading}
@@ -346,6 +360,11 @@ export default function NotificationsScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  offlineBanner: {
+    marginHorizontal: 20,
+    marginBottom: 12,
+  },
+
   container: {
     flex: 1,
     backgroundColor: colors.appBackground,

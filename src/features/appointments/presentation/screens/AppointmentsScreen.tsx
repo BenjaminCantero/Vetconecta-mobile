@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActivePetSwitcher } from '../../../../shared/components/ActivePetSwitcher';
 import { EmergencyCard } from '../../../../shared/components/EmergencyCard';
+import { OfflineBanner } from '../../../../shared/components/OfflineBanner';
 import { QueryState } from '../../../../shared/components/QueryState';
 import { ScreenHeader } from '../../../../shared/components/ScreenHeader';
 import { SegmentedTabs } from '../../../../shared/components/SegmentedTabs';
@@ -52,7 +53,7 @@ const FOCUS_HIGHLIGHT_MS = 4000;
 export default function AppointmentsScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
 
-  const { appointments, isLoading, isRefreshing, isOffline, error, refetch } =
+  const { appointments, isLoading, isRefreshing, isOffline, updatedAt, error, refetch } =
     useAppointments(appointmentsRepository);
 
   const { activePetId, activePet, setActivePetId } = useActivePet();
@@ -242,20 +243,7 @@ export default function AppointmentsScreen({ navigation, route }: Props) {
             />
           }
         >
-          {isOffline && (
-            <View style={styles.offlineBanner}>
-              <Ionicons name="cloud-offline-outline" size={21} color={colors.statusPending} />
-
-              <View style={styles.offlineTexts}>
-                <Text style={styles.offlineTitle}>Datos sin conexión</Text>
-
-                <Text style={styles.offlineDescription}>
-                  Estás viendo las últimas citas guardadas. Desliza hacia abajo cuando recuperes la
-                  conexión.
-                </Text>
-              </View>
-            </View>
-          )}
+          {isOffline && <OfflineBanner updatedAt={updatedAt} />}
 
           {visible.length === 0 ? (
             <View style={styles.emptyCard}>
@@ -358,33 +346,6 @@ const styles = StyleSheet.create({
   groupTitle: {
     fontFamily: fonts.bold,
     fontSize: 15,
-    color: colors.appTitle,
-  },
-
-  offlineBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    borderRadius: 16,
-    padding: 15,
-    backgroundColor: colors.tintOrange,
-  },
-
-  offlineTexts: {
-    flex: 1,
-    gap: 4,
-  },
-
-  offlineTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 14,
-    color: colors.statusPending,
-  },
-
-  offlineDescription: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    lineHeight: 18,
     color: colors.appTitle,
   },
 
