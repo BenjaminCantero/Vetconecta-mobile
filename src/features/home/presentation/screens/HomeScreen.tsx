@@ -2,17 +2,31 @@
 // home NO posee entidad propia: solo AGREGA datos de varios dominios,
 // consumiéndolos por su superficie pública (los barrels), nunca por sus data/.
 // Regla de oro (A2): home depende de los dominios; ningún dominio depende de home.
+// H3: permite calificar consultas veterinarias realizadas.
 
-import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuthSession } from '../../../auth';
 import { usePets, petsRepository } from '../../../pets';
-import { useAppointments, appointmentsRepository } from '../../../appointments';
+
+import {
+  useAppointments,
+  appointmentsRepository,
+  canRateAppointment,
+  isCompletedAppointment,
+  AppointmentAlreadyRatedError,
+  AppointmentCard,
+  AppointmentRatingModal,
+} from '../../../appointments';
+
+import type { Appointment, AppointmentRating } from '../../../appointments';
+
 import { useNotificationsSession } from '../../../notifications';
 
 import { ActionCard } from '../../../../shared/components/ActionCard';
@@ -53,6 +67,7 @@ export default function HomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
 
   const { user } = useAuthSession();
+
   const {
     pets,
     fromCache: petsFromCache,
@@ -69,9 +84,20 @@ export default function HomeScreen({ navigation }: Props) {
     isLoading: appointmentsLoading,
     error: appointmentsError,
     refetch: refetchAppointments,
+    updateAppointment,
   } = useAppointments(appointmentsRepository);
 
   const { activePetId, activePet } = useActivePet();
+
+  // H3: cita seleccionada para calificar.
+  const [ratingAppointment, setRatingAppointment] = useState<Appointment | null>(null);
+
+  // H3: recarga las citas al regresar desde otras pantallas.
+  useFocusEffect(
+    useCallback(() => {
+      refetchAppointments();
+    }, [refetchAppointments]),
+  );
 
   // E3: compartir el estado de avisos con la pestaña Notificaciones.
   const { notifications } = useNotificationsSession();
@@ -100,6 +126,84 @@ export default function HomeScreen({ navigation }: Props) {
   );
 
   const nextAppointmentPet = pets.find((pet) => pet.id === nextAppointment?.petId);
+
+  // H3: consultas realizadas pendientes de calificación.
+  const pendingRatings = useMemo(
+    () =>
+      appointments
+        .filter((appointment) => !activePetId || appointment.petId === activePetId)
+        .filter(canRateAppointment)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+    [appointments, activePetId],
+  );
+
+  // H3: muestra la última consulta calificada en modo solo lectura.
+  const latestRatedAppointment = useMemo(
+    () =>
+      appointments
+        .filter((appointment) => !activePetId || appointment.petId === activePetId)
+        .filter(
+          (appointment) =>
+            isCompletedAppointment(appointment.status) &&
+            (appointment.calificada === true || Boolean(appointment.calificacion)),
+        )
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0],
+    [appointments, activePetId],
+  );
+
+  const ratingPetName =
+    pets.find((pet) => pet.id === ratingAppointment?.petId)?.name ?? 'tu mascota';
+
+  // H3: abre el formulario únicamente si la cita puede ser calificada.
+  const openRating = (appointment: Appointment) => {
+    if (appointmentsOffline) {
+      Alert.alert('Sin conexión', 'Necesitas conexión a internet para calificar una consulta.');
+      return;
+    }
+
+    if (!canRateAppointment(appointment)) {
+      return;
+    }
+
+    setRatingAppointment(appointment);
+  };
+
+  // H3: registra la calificación y actualiza la interfaz.
+  const handleRatingSubmit = async (rating: AppointmentRating): Promise<void> => {
+    if (!ratingAppointment) {
+      throw new Error('No se encontró la cita seleccionada.');
+    }
+
+    if (appointmentsOffline) {
+      throw new Error('Necesitas conexión a internet para enviar la calificación.');
+    }
+
+    try {
+      const updatedAppointment = await appointmentsRepository.createRating(
+        ratingAppointment,
+        rating,
+      );
+
+      updateAppointment(updatedAppointment);
+
+      Alert.alert('Calificación enviada', 'Gracias por compartir tu experiencia.');
+    } catch (ratingError) {
+      if (ratingError instanceof AppointmentAlreadyRatedError) {
+        updateAppointment({
+          ...ratingAppointment,
+          calificada: true,
+        });
+
+        refetchAppointments();
+
+        Alert.alert('Atención calificada', 'Esta consulta ya fue calificada anteriormente.');
+
+        return;
+      }
+
+      throw ratingError;
+    }
+  };
 
   // Solo el recordatorio de la mascota activa; el mock aún se relaciona por
   // nombre porque los tratamientos no tienen dominio propio.
@@ -174,9 +278,11 @@ export default function HomeScreen({ navigation }: Props) {
                   ? `${activePet.name} no tiene horas agendadas`
                   : 'No tienes horas agendadas'}
               </Text>
+
               <Text style={styles.emptyText}>
                 Reserva una hora para su próximo control o vacuna.
               </Text>
+
               <Pressable
                 onPress={() => navigation.navigate('Citas')}
                 accessibilityRole="button"
@@ -185,6 +291,30 @@ export default function HomeScreen({ navigation }: Props) {
               >
                 <Text style={styles.emptyButtonLabel}>Agendar hora</Text>
               </Pressable>
+            </View>
+          )}
+
+          {/* H3: invitaciones pendientes de calificación. */}
+          {!appointmentsOffline && pendingRatings.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Califica tu atención</Text>
+
+              {pendingRatings.map((appointment) => (
+                <AppointmentCard
+                  key={appointment.id}
+                  appointment={appointment}
+                  onRate={() => openRating(appointment)}
+                />
+              ))}
+            </View>
+          )}
+
+          {/* H3: última calificación registrada, en modo solo lectura. */}
+          {latestRatedAppointment && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Última atención calificada</Text>
+
+              <AppointmentCard appointment={latestRatedAppointment} />
             </View>
           )}
 
@@ -220,6 +350,17 @@ export default function HomeScreen({ navigation }: Props) {
           <EmergencyCard />
         </ScrollView>
       </QueryState>
+
+      {/* H3: formulario reutilizable de calificación. */}
+      {ratingAppointment && (
+        <AppointmentRatingModal
+          key={ratingAppointment.id}
+          visible
+          petName={ratingPetName}
+          onClose={() => setRatingAppointment(null)}
+          onSubmit={handleRatingSubmit}
+        />
+      )}
     </View>
   );
 }

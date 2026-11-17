@@ -3,6 +3,7 @@
 //
 // Expone citas, carga, errores, actualización y estado offline.
 // No conoce Axios ni AsyncStorage.
+// H3: permite actualizar una cita después de calificarla.
 
 import { useCallback, useEffect, useState } from 'react';
 
@@ -72,6 +73,16 @@ export function useAppointments(appointmentsRepository: AppointmentsRepository) 
     setIsRefreshing(true);
     setReloadIndex((index) => index + 1);
   }, []);
+
+  // H3: actualiza únicamente la cita que fue calificada.
+  const updateAppointment = useCallback((updatedAppointment: Appointment) => {
+    setAppointments((currentAppointments) =>
+      currentAppointments.map((appointment) =>
+        appointment.id === updatedAppointment.id ? updatedAppointment : appointment,
+      ),
+    );
+  }, []);
+
   useRefetchOnReconnect(refetch);
 
   return {
@@ -82,5 +93,6 @@ export function useAppointments(appointmentsRepository: AppointmentsRepository) 
     updatedAt,
     error,
     refetch,
+    updateAppointment,
   };
 }

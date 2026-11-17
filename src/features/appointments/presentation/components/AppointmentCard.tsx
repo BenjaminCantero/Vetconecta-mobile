@@ -5,6 +5,7 @@
 // veterinario y hora.
 //
 // Mantiene las acciones de reprogramación y cancelación.
+// Permite mostrar y solicitar calificaciones post-consulta (H3).
 
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -18,6 +19,7 @@ import { colors } from '../../../../core/theme/colors';
 import { fonts } from '../../../../core/theme/typography';
 
 import type { Appointment, AppointmentStatus } from '../../domain/Appointment';
+import { canRateAppointment } from '../../data/appointmentsRepository';
 
 const STATUS_STYLE: Record<
   AppointmentStatus,
@@ -56,14 +58,23 @@ const STATUS_STYLE: Record<
     tint: colors.tintGray,
     label: 'Realizada',
   },
+
+  realizada: {
+    color: colors.statusDone,
+    tint: colors.tintGray,
+    label: 'Realizada',
+  },
 };
 
 interface AppointmentCardProps {
   appointment: Appointment;
-  // true cuando se llega a esta cita desde una notificacion push
+  // true cuando se llega a esta cita desde una notificación push.
   highlighted?: boolean;
   onReschedule?: () => void;
   onCancel?: () => void;
+
+  // H3: abre el formulario de calificación.
+  onRate?: () => void;
 }
 
 export function AppointmentCard({
@@ -71,6 +82,7 @@ export function AppointmentCard({
   highlighted = false,
   onReschedule,
   onCancel,
+  onRate,
 }: AppointmentCardProps) {
   const { pets } = useActivePet();
 
@@ -89,6 +101,10 @@ export function AppointmentCard({
   const petName = appointmentPet?.name ?? 'Mascota';
 
   const specialty = appointment.specialty?.trim();
+
+  const rating = appointment.calificacion;
+
+  const showRatingInvitation = Boolean(onRate && canRateAppointment(appointment));
 
   return (
     <View style={[styles.card, highlighted && styles.cardHighlighted]}>
@@ -145,6 +161,64 @@ export function AppointmentCard({
           </View>
         </View>
       </View>
+
+      {/* H3: invitación para calificar una consulta realizada */}
+      {showRatingInvitation && (
+        <View style={styles.ratingSection}>
+          <Text style={styles.ratingTitle}>¿Cómo fue la atención de {petName}?</Text>
+
+          <Text style={styles.ratingDescription}>
+            Comparte tu experiencia con la atención veterinaria.
+          </Text>
+
+          <Pressable
+            onPress={onRate}
+            accessibilityRole="button"
+            accessibilityLabel={`Calificar atención de ${petName}`}
+            style={styles.rateButton}
+          >
+            <Ionicons name="star-outline" size={18} color={colors.appHeading} />
+
+            <Text style={styles.rateButtonLabel}>Calificar atención</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {/* H3: calificación registrada de solo lectura */}
+      {rating ? (
+        <View style={styles.ratingSection}>
+          <View style={styles.ratingHeader}>
+            <Ionicons name="checkmark-circle" size={18} color={colors.statusConfirmed} />
+
+            <Text style={styles.ratingTitle}>Tu calificación</Text>
+          </View>
+
+          <View
+            style={styles.stars}
+            accessible
+            accessibilityLabel={`${rating.estrellas} de 5 estrellas`}
+          >
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Ionicons
+                key={star}
+                name={star <= rating.estrellas ? 'star' : 'star-outline'}
+                size={23}
+                color={star <= rating.estrellas ? '#E8A317' : colors.appMuted}
+              />
+            ))}
+          </View>
+
+          {rating.comentario ? <Text style={styles.ratingComment}>{rating.comentario}</Text> : null}
+        </View>
+      ) : appointment.calificada ? (
+        <View style={styles.ratingSection}>
+          <View style={styles.ratingHeader}>
+            <Ionicons name="checkmark-circle" size={18} color={colors.statusConfirmed} />
+
+            <Text style={styles.ratingTitle}>Atención calificada</Text>
+          </View>
+        </View>
+      ) : null}
 
       {/* Acciones disponibles */}
       {showActions && (
@@ -285,5 +359,59 @@ const styles = StyleSheet.create({
   actionLabel: {
     fontFamily: fonts.bold,
     fontSize: 14,
+  },
+
+  ratingSection: {
+    padding: 14,
+    gap: 9,
+    borderTopWidth: 1,
+    borderTopColor: colors.appDivider,
+  },
+
+  ratingTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 14,
+    color: colors.appTitle,
+  },
+
+  ratingDescription: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.appMuted,
+  },
+
+  rateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.tintPurple,
+    borderRadius: 12,
+    minHeight: 44,
+    gap: 8,
+  },
+
+  rateButtonLabel: {
+    fontFamily: fonts.bold,
+    fontSize: 14,
+    color: colors.appHeading,
+  },
+
+  ratingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+
+  stars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+
+  ratingComment: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.appMuted,
   },
 });
