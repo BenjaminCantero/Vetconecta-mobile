@@ -101,6 +101,17 @@ GitHub Actions automatiza las comprobaciones y los builds de Expo:
 
 Los builds terminados y sus enlaces de instalación se consultan en el dashboard de Expo. La subida a Google Play o App Store queda separada y debe hacerse tras aprobar un build de producción, usando `eas submit`; así no se publica una versión por cada merge.
 
+## Sesión y manejo de errores HTTP
+
+Todo pasa por `src/core/api`: los repositorios no manejan tokens ni códigos de estado.
+
+- **401 de una petición con token:** `httpClient` intenta renovar el access token con el refresh token y repite la petición una vez. Si llegan varios 401 a la vez, se hace una sola renovación. Si no hay refresh token o el backend lo rechaza, se borra la sesión local y la app vuelve al login. Si la renovación falla por falta de red, la sesión se conserva (los datos guardados siguen visibles). Las reglas están en `sessionRenewal.ts`.
+- **401 sin token** (por ejemplo, login con contraseña incorrecta) y **401 del cambio de contraseña:** no cierran la sesión; los maneja el repositorio.
+- **403:** el dueño tiene sesión, pero no permiso. No cierra la sesión ni dice "tu sesión expiró".
+- **`toHttpError`** devuelve un `HttpError` con `kind` (`network`, `timeout`, `unauthorized`, `forbidden`, `notFound`, `conflict`, `unprocessableEntity`, `server`, `unknown`) e `isRetryable`, para que la pantalla pueda ofrecer "Reintentar" solo cuando tiene sentido.
+
+**Pendiente de acordar con el equipo Web:** el endpoint de renovación. La app asume `POST /v1/auth/refresh` con `{ refreshToken }`, que responde `{ accessToken, refreshToken? }` (ver `tokenRefresh.ts`). Mientras no exista, un 401 cierra la sesión, igual que antes.
+
 ## Problemas comunes
 
 - **`Cannot find module 'babel-preset-expo'`** o módulos faltantes tras `npm install`: algunas versiones de npm no instalan todas las dependencias transitivas. Borrar `node_modules` y `package-lock.json` y volver a correr `npm install`, o instalar el paquete faltante con `npx expo install <paquete>`.

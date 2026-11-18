@@ -8,13 +8,21 @@ import * as SecureStore from 'expo-secure-store';
 const ACCESS_TOKEN_KEY = 'vetconecta.auth_access_token';
 const REFRESH_TOKEN_KEY = 'vetconecta.auth_refresh_token';
 
-async function getAccessToken(): Promise<string | null> {
+async function readToken(key: string): Promise<string | null> {
   try {
-    return await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+    return await SecureStore.getItemAsync(key);
   } catch (error) {
-    console.error('[secureStorage] error leyendo el token:', error);
+    console.error(`[secureStorage] error leyendo "${key}":`, error);
     return null;
   }
+}
+
+async function getAccessToken(): Promise<string | null> {
+  return readToken(ACCESS_TOKEN_KEY);
+}
+
+async function getRefreshToken(): Promise<string | null> {
+  return readToken(REFRESH_TOKEN_KEY);
 }
 
 // El error no se captura: si el token no se pudo guardar, el login debe fallar.
@@ -39,6 +47,7 @@ async function clearTokens(): Promise<void> {
 
 export const secureStorage = {
   getAccessToken,
+  getRefreshToken,
   saveTokens,
   clearTokens,
 };

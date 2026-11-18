@@ -25,4 +25,8 @@ export const ENDPOINTS = {
   NOTIFICATIONS: {
     REGISTER_DEVICE: '/dispositivos', // pendiente de acordar con equipo web
   },
+  // El api-gateway expone auth-service bajo /v1.
+  SESSION: {
+    REFRESH: '/v1/auth/refresh', // pendiente de acordar con equipo web
+  },
 } as const;
