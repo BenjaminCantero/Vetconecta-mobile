@@ -120,17 +120,13 @@ export function AppointmentCard({
           </View>
 
           {/* Motivo de la consulta */}
-          <Text style={[styles.reason, muted && styles.reasonMuted]} numberOfLines={2}>
-            {appointment.reason}
-          </Text>
+          <Text style={[styles.reason, muted && styles.reasonMuted]}>{appointment.reason}</Text>
 
           {/* Mascota asociada */}
           <View style={styles.detailRow}>
             <Ionicons name="paw-outline" size={15} color={colors.appMuted} />
 
-            <Text style={styles.detail} numberOfLines={1}>
-              {petName}
-            </Text>
+            <Text style={styles.detail}>{petName}</Text>
           </View>
 
           {/* Especialidad, cuando exista */}
@@ -138,9 +134,7 @@ export function AppointmentCard({
             <View style={styles.detailRow}>
               <Ionicons name="medkit-outline" size={15} color={colors.appMuted} />
 
-              <Text style={styles.detail} numberOfLines={1}>
-                {specialty}
-              </Text>
+              <Text style={styles.detail}>{specialty}</Text>
             </View>
           ) : null}
 
@@ -148,9 +142,7 @@ export function AppointmentCard({
           <View style={styles.detailRow}>
             <Ionicons name="person-outline" size={15} color={colors.appMuted} />
 
-            <Text style={styles.detail} numberOfLines={1}>
-              {appointment.veterinarian}
-            </Text>
+            <Text style={styles.detail}>{appointment.veterinarian}</Text>
           </View>
 
           {/* Hora de la cita */}
@@ -203,7 +195,7 @@ export function AppointmentCard({
                 key={star}
                 name={star <= rating.estrellas ? 'star' : 'star-outline'}
                 size={23}
-                color={star <= rating.estrellas ? '#E8A317' : colors.appMuted}
+                color={star <= rating.estrellas ? '#B77900' : colors.appMuted}
               />
             ))}
           </View>
@@ -227,6 +219,7 @@ export function AppointmentCard({
             <Pressable
               onPress={onReschedule}
               accessibilityRole="button"
+              accessibilityLabel={`Reprogramar cita de ${petName}`}
               android_ripple={{
                 color: colors.tintPurple,
               }}
@@ -242,6 +235,7 @@ export function AppointmentCard({
             <Pressable
               onPress={onCancel}
               accessibilityRole="button"
+              accessibilityLabel={`Cancelar cita de ${petName}`}
               android_ripple={{
                 color: colors.tintRed,
               }}

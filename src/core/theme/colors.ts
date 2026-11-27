@@ -16,18 +16,18 @@ export const colors = {
   textLight: '#FFFFFF',
 
   // Elementos de interfaz
-  border: '#E5ECF4',
+  border: '#81778F',
 
   // Estados
-  danger: '#DC2626',
-  success: '#16A34A',
+  danger: '#B91C1C',
+  success: '#166534',
 
   // Paleta auxiliar
   lavender: '#C3BEF7',
   aliceBlue: '#E5ECF4',
   mintCream: '#EFFFFA',
 
-  // Flujo de autenticación (maqueta Bienvenida / Iniciar sesión / Recuperar acceso)
+  // Flujo de autenticación
   gradientStart: '#8150AF',
   gradientEnd: '#51317F',
   authBackground: '#F8F7FB',
@@ -37,13 +37,13 @@ export const colors = {
   authMuted: '#625D70',
   authLabel: '#6E6880',
   authLink: '#226A9C',
-  authCheckboxBorder: '#CFC3E3',
-  brandHeart: '#FF2B2B', // rojo del logo (assets/images/logo.png)
+  authCheckboxBorder: '#81778F',
+  brandHeart: '#FF2B2B',
   infoBackground: '#E3F4E9',
   infoIcon: '#1E9E57',
   infoText: '#2E5A43',
 
-  // App autenticada (maqueta Inicio / Mis mascotas / Citas)
+  // App autenticada
   appBackground: '#F8F7FB',
   appSurface: '#FFFFFF',
   appHeading: '#6936B8',
@@ -56,24 +56,23 @@ export const colors = {
   cardPinkStart: '#943A67',
   cardPinkEnd: '#793557',
   cardOrange: '#995018',
-  cardPurple: '#9B51E0',
-  cardRed: '#CD3A2A',
+  cardPurple: '#8543BD',
+  cardRed: '#C02F24',
   cardGreen: '#24764C',
-  cardBlue: '#2C7FB8',
+  cardBlue: '#246D9F',
 
-  // Mis mascotas (maqueta con hoja inferior y grilla de tarjetas)
-  petSelectedRing: '#F59AD6',
+  // Mis mascotas
+  petSelectedRing: '#B64A91',
   addPetSurface: '#F0EEF2',
   sheetSurface: '#FFFFFF',
   sheetHandle: '#6F7775',
   statValueSurface: '#E4E4E6',
-  cardSky: '#5AAFD6',
-  cardViolet: '#A864E8',
-  cardLeaf: '#1DB95B',
-  cardCoral: '#EB8A57',
+  cardSky: '#24749A',
+  cardViolet: '#8543BD',
+  cardLeaf: '#24764C',
+  cardCoral: '#AC542D',
 
-  // Tintes suaves de los colores de la maqueta: fondos de íconos, bloques de
-  // fecha y etiquetas sobre superficies blancas.
+  // Tintes suaves de los colores de la maqueta
   tintPink: '#FCE4EE',
   tintOrange: '#FBEBDD',
   tintPurple: '#EFE3FB',
@@ -84,6 +83,6 @@ export const colors = {
   // Estados de cita
   statusPending: '#995018',
   statusConfirmed: '#24764C',
-  statusCancelled: '#CD3A2A',
-  statusDone: '#6B7280',
+  statusCancelled: '#C02F24',
+  statusDone: '#555D6B',
 } as const;

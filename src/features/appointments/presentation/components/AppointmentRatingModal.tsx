@@ -98,7 +98,9 @@ export function AppointmentRatingModal({
       onClose();
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : 'No se pudo enviar la calificación.',
+        submitError instanceof Error
+          ? submitError.message
+          : 'No se pudo enviar la calificación. Inténtalo nuevamente.',
       );
     } finally {
       submittingRef.current = false;
@@ -114,7 +116,7 @@ export function AppointmentRatingModal({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.overlay}
       >
-        <View style={styles.modal}>
+        <View style={styles.modal} accessibilityViewIsModal>
           <View style={styles.header}>
             <Text style={styles.title}>Calificar atención</Text>
 
@@ -123,13 +125,19 @@ export function AppointmentRatingModal({
               disabled={isSubmitting}
               accessibilityRole="button"
               accessibilityLabel="Cerrar formulario"
-              hitSlop={10}
+              accessibilityState={{ disabled: isSubmitting }}
+              style={styles.closeButton}
             >
               <Ionicons name="close" size={24} color={colors.appMuted} />
             </Pressable>
           </View>
 
-          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="none"
+            showsVerticalScrollIndicator
+          >
             <Text style={styles.question}>¿Cómo fue la atención de {petName}?</Text>
 
             <View style={styles.stars}>
@@ -139,7 +147,10 @@ export function AppointmentRatingModal({
                   disabled={isSubmitting}
                   accessibilityRole="button"
                   accessibilityLabel={`Calificar con ${star} de 5 estrellas`}
-                  accessibilityState={{ selected: stars === star }}
+                  accessibilityState={{
+                    selected: stars === star,
+                    disabled: isSubmitting,
+                  }}
                   onPress={() => {
                     setStars(star);
                     setError(null);
@@ -155,7 +166,9 @@ export function AppointmentRatingModal({
               ))}
             </View>
 
-            <Text style={styles.ratingLabel}>{RATING_LABELS[stars]}</Text>
+            <Text style={styles.ratingLabel} accessibilityLiveRegion="polite">
+              {RATING_LABELS[stars]}
+            </Text>
 
             <Text style={styles.commentLabel}>Comentario (opcional)</Text>
 
@@ -177,7 +190,7 @@ export function AppointmentRatingModal({
             </Text>
 
             {error ? (
-              <Text style={styles.error} accessibilityRole="alert">
+              <Text style={styles.error} accessibilityRole="alert" accessibilityLiveRegion="polite">
                 {error}
               </Text>
             ) : null}
@@ -188,13 +201,18 @@ export function AppointmentRatingModal({
               }}
               disabled={submitDisabled}
               accessibilityRole="button"
-              accessibilityState={{ disabled: submitDisabled }}
+              accessibilityState={{
+                disabled: submitDisabled,
+                busy: isSubmitting,
+              }}
               style={[styles.submitButton, submitDisabled && styles.submitDisabled]}
             >
               {isSubmitting ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color={colors.textLight} />
               ) : (
-                <Text style={styles.submitLabel}>Enviar calificación</Text>
+                <Text style={styles.submitLabel}>
+                  {error ? 'Reintentar' : 'Enviar calificación'}
+                </Text>
               )}
             </Pressable>
 
@@ -202,6 +220,7 @@ export function AppointmentRatingModal({
               onPress={handleClose}
               disabled={isSubmitting}
               accessibilityRole="button"
+              accessibilityState={{ disabled: isSubmitting }}
               style={styles.cancelButton}
             >
               <Text style={styles.cancelLabel}>Cancelar</Text>
@@ -226,19 +245,33 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     maxHeight: '90%',
+    flexShrink: 1,
     padding: 22,
     borderRadius: 24,
     backgroundColor: colors.appSurface,
+  },
+
+  scroll: {
+    flexShrink: 1,
   },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    gap: 8,
+    marginBottom: 16,
+  },
+
+  closeButton: {
+    minWidth: 48,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   title: {
+    flex: 1,
     fontFamily: fonts.bold,
     fontSize: 20,
     color: colors.appTitle,
@@ -253,6 +286,7 @@ const styles = StyleSheet.create({
 
   stars: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 18,
@@ -260,7 +294,10 @@ const styles = StyleSheet.create({
   },
 
   starButton: {
-    padding: 4,
+    minWidth: 48,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   ratingLabel: {
@@ -308,6 +345,8 @@ const styles = StyleSheet.create({
 
   submitButton: {
     minHeight: 48,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 14,
@@ -321,11 +360,12 @@ const styles = StyleSheet.create({
   submitLabel: {
     fontFamily: fonts.bold,
     fontSize: 15,
-    color: '#FFFFFF',
+    color: colors.textLight,
+    textAlign: 'center',
   },
 
   cancelButton: {
-    minHeight: 44,
+    minHeight: 48,
     marginTop: 8,
     alignItems: 'center',
     justifyContent: 'center',

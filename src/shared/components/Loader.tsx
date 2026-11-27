@@ -1,13 +1,28 @@
-// Responsabilidad: indicador de carga genérico reutilizable (capa SHARED / presentation).
+// Responsabilidad: indicador de carga genérico reutilizable
+// (capa SHARED / presentation).
 
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { ActivityIndicator, Text, View, StyleSheet } from 'react-native';
 
 import { colors } from '../../core/theme/colors';
+import { fonts } from '../../core/theme/typography';
 
-export function Loader() {
+interface LoaderProps {
+  message?: string;
+}
+
+export function Loader({ message = 'Cargando información...' }: LoaderProps) {
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={message}
+      accessibilityState={{ busy: true }}
+      accessibilityLiveRegion="polite"
+    >
       <ActivityIndicator size="large" color={colors.primary} />
+
+      <Text style={styles.message}>{message}</Text>
     </View>
   );
 }
@@ -17,5 +32,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 24,
+    gap: 12,
+  },
+  message: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.appMuted,
+    textAlign: 'center',
   },
 });

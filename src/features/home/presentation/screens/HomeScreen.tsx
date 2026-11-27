@@ -5,7 +5,16 @@
 // H3: permite calificar consultas veterinarias realizadas.
 
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  ToastAndroid,
+  View,
+} from 'react-native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -186,7 +195,14 @@ export default function HomeScreen({ navigation }: Props) {
 
       updateAppointment(updatedAppointment);
 
-      Alert.alert('Calificación enviada', 'Gracias por compartir tu experiencia.');
+      if (Platform.OS === 'android') {
+        ToastAndroid.show(
+          'Calificación enviada. Gracias por compartir tu experiencia.',
+          ToastAndroid.LONG,
+        );
+      } else {
+        Alert.alert('Calificación enviada', 'Gracias por compartir tu experiencia.');
+      }
     } catch (ratingError) {
       if (ratingError instanceof AppointmentAlreadyRatedError) {
         updateAppointment({
@@ -255,7 +271,7 @@ export default function HomeScreen({ navigation }: Props) {
         <ScrollView
           style={styles.container}
           contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator
         >
           {(petsFromCache || appointmentsOffline) && (
             <OfflineBanner
@@ -273,7 +289,7 @@ export default function HomeScreen({ navigation }: Props) {
             />
           ) : (
             <View style={styles.emptyHero}>
-              <Text style={styles.emptyTitle}>
+              <Text accessibilityRole="header" style={styles.emptyTitle}>
                 {activePet
                   ? `${activePet.name} no tiene horas agendadas`
                   : 'No tienes horas agendadas'}
@@ -297,7 +313,9 @@ export default function HomeScreen({ navigation }: Props) {
           {/* H3: invitaciones pendientes de calificación. */}
           {!appointmentsOffline && pendingRatings.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Califica tu atención</Text>
+              <Text accessibilityRole="header" style={styles.sectionTitle}>
+                Califica tu atención
+              </Text>
 
               {pendingRatings.map((appointment) => (
                 <AppointmentCard
@@ -312,7 +330,9 @@ export default function HomeScreen({ navigation }: Props) {
           {/* H3: última calificación registrada, en modo solo lectura. */}
           {latestRatedAppointment && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Última atención calificada</Text>
+              <Text accessibilityRole="header" style={styles.sectionTitle}>
+                Última atención calificada
+              </Text>
 
               <AppointmentCard appointment={latestRatedAppointment} />
             </View>
@@ -320,7 +340,9 @@ export default function HomeScreen({ navigation }: Props) {
 
           {reminder && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Para hoy</Text>
+              <Text accessibilityRole="header" style={styles.sectionTitle}>
+                Para hoy
+              </Text>
               <MedicationReminderCard reminder={reminder} />
             </View>
           )}
@@ -412,7 +434,7 @@ const styles = StyleSheet.create({
 
   emptyButton: {
     alignSelf: 'flex-start',
-    minHeight: 44,
+    minHeight: 48,
     justifyContent: 'center',
     marginTop: 16,
     paddingHorizontal: 22,

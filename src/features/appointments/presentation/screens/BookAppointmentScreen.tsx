@@ -5,6 +5,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Platform,
+  ToastAndroid,
+  useWindowDimensions,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -63,6 +66,8 @@ function monthTitle(date: Date): string {
 
 export default function BookAppointmentScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const compactCalendar = width < 376;
   const { pets, activePetId, setActivePetId } = useActivePet();
   const { reserve, isSubmitting } = useBookAppointment(bookingRepository);
   const submittingRef = useRef(false);
@@ -214,6 +219,11 @@ export default function BookAppointmentScreen({ navigation }: Props) {
       if (appointment) {
         // Mis citas filtra por la mascota activa: hacemos visible la recién reservada.
         if (activePetId !== petId) setActivePetId(petId);
+        if (Platform.OS === 'android') {
+          ToastAndroid.show('Tu reserva se registró correctamente.', ToastAndroid.LONG);
+          navigation.goBack();
+          return;
+        }
         Alert.alert(
           'Cita confirmada',
           'Tu reserva se registró correctamente. Puedes verla en Mis citas.',
@@ -334,7 +344,7 @@ export default function BookAppointmentScreen({ navigation }: Props) {
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator
       >
         <Text style={styles.title}>{titleByStep[step]}</Text>
 
@@ -388,7 +398,8 @@ export default function BookAppointmentScreen({ navigation }: Props) {
             )}
             {veterinarians.length === 0 && (
               <Text style={styles.description}>
-                No hay profesionales disponibles para esta especialidad.
+                No hay profesionales disponibles para esta especialidad. Vuelve atrás y elige otra
+                especialidad.
               </Text>
             )}
           </>
@@ -399,7 +410,7 @@ export default function BookAppointmentScreen({ navigation }: Props) {
             <Text style={styles.description}>
               Elige un día de atención y luego una hora disponible.
             </Text>
-            <View style={styles.calendarCard}>
+            <View style={[styles.calendarCard, compactCalendar && styles.calendarCompact]}>
               <View style={styles.monthHeader}>
                 <Pressable
                   onPress={() => changeMonth(-1)}
@@ -424,41 +435,48 @@ export default function BookAppointmentScreen({ navigation }: Props) {
                   <Ionicons name="chevron-forward" size={22} color={colors.appHeading} />
                 </Pressable>
               </View>
-              <View style={styles.calendarGrid}>
-                {WEEKDAYS.map((day) => (
-                  <View key={day} style={styles.dayCell}>
-                    <Text style={styles.weekdayText}>{day}</Text>
-                  </View>
-                ))}
-                {calendarDays.map((key, index) => {
-                  const disabled = !key || key < todayKey;
-                  const selected = !!key && date === key;
-                  return (
-                    <View key={key ?? `blank-${index}`} style={styles.dayCell}>
-                      {key && (
-                        <Pressable
-                          onPress={() => handleSelectDate(key)}
-                          disabled={disabled}
-                          style={[styles.dayButton, selected && styles.selectedDay]}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Seleccionar ${key}`}
-                          accessibilityState={{ disabled, selected }}
-                        >
-                          <Text
-                            style={[
-                              styles.dayText,
-                              disabled && styles.disabledDayText,
-                              selected && styles.selectedDayText,
-                            ]}
-                          >
-                            {fromLocalDateKey(key).getDate()}
-                          </Text>
-                        </Pressable>
-                      )}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View
+                  style={[
+                    styles.calendarGrid,
+                    { width: Math.max(308, width - (compactCalendar ? 48 : 68)) },
+                  ]}
+                >
+                  {WEEKDAYS.map((day) => (
+                    <View key={day} style={styles.dayCell}>
+                      <Text style={styles.weekdayText}>{day}</Text>
                     </View>
-                  );
-                })}
-              </View>
+                  ))}
+                  {calendarDays.map((key, index) => {
+                    const disabled = !key || key < todayKey;
+                    const selected = !!key && date === key;
+                    return (
+                      <View key={key ?? `blank-${index}`} style={styles.dayCell}>
+                        {key && (
+                          <Pressable
+                            onPress={() => handleSelectDate(key)}
+                            disabled={disabled}
+                            style={[styles.dayButton, selected && styles.selectedDay]}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Seleccionar ${key}`}
+                            accessibilityState={{ disabled, selected }}
+                          >
+                            <Text
+                              style={[
+                                styles.dayText,
+                                disabled && styles.disabledDayText,
+                                selected && styles.selectedDayText,
+                              ]}
+                            >
+                              {fromLocalDateKey(key).getDate()}
+                            </Text>
+                          </Pressable>
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
+              </ScrollView>
             </View>
 
             <Text style={styles.sectionTitle}>Horarios disponibles</Text>
@@ -581,8 +599,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   backButton: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: 14,
     backgroundColor: colors.appSurface,
     alignItems: 'center',
@@ -621,8 +639,9 @@ const styles = StyleSheet.create({
   optionTitle: { fontFamily: fonts.semibold, fontSize: 15, color: colors.appTitle },
   optionSubtitle: { fontFamily: fonts.regular, fontSize: 12, color: colors.appMuted },
   calendarCard: { padding: 14, borderRadius: 18, backgroundColor: colors.appSurface, gap: 12 },
+  calendarCompact: { paddingHorizontal: 4 },
   monthHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  monthButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  monthButton: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   monthTitle: {
     fontFamily: fonts.bold,
     fontSize: 16,
@@ -630,11 +649,11 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  dayCell: { width: '14.285714%', height: 46, alignItems: 'center', justifyContent: 'center' },
+  dayCell: { width: '14.285714%', minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   weekdayText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.appMuted },
   dayButton: {
-    width: 42,
-    height: 42,
+    width: '100%',
+    minHeight: 48,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -647,7 +666,7 @@ const styles = StyleSheet.create({
   feedbackRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   feedbackCard: { padding: 16, borderRadius: 16, backgroundColor: colors.appSurface, gap: 8 },
   retryButton: {
-    minHeight: 44,
+    minHeight: 48,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.tintPurple,
@@ -690,7 +709,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  secondaryText: { fontFamily: fonts.bold, fontSize: 14, color: colors.appHeading },
+  secondaryText: {
+    textAlign: 'center',
+    fontFamily: fonts.bold,
+    fontSize: 14,
+    color: colors.appHeading,
+  },
   primaryButton: {
     minHeight: 48,
     flex: 2,
@@ -702,5 +726,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.appHeading,
   },
   disabledButton: { opacity: 0.45 },
-  primaryText: { fontFamily: fonts.bold, fontSize: 14, color: colors.textLight },
+  primaryText: {
+    flexShrink: 1,
+    textAlign: 'center',
+    fontFamily: fonts.bold,
+    fontSize: 14,
+    color: colors.textLight,
+  },
 });

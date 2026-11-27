@@ -1,9 +1,10 @@
 // Responsabilidad: campo de texto del flujo de auth (capa PRESENTATION).
-// Marca el foco con el color del botón principal, muestra el error debajo del
-// campo (no en un Alert) y, si es una contraseña, permite verla u ocultarla.
+// Marca el foco, muestra errores y permite mostrar u ocultar contraseñas.
 
 import { useState, type ComponentProps } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
+
+import { Pressable, StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
 
 import { colors } from '../../../../core/theme/colors';
@@ -26,6 +27,7 @@ export function AuthInput({
 }: AuthInputProps) {
   const [focused, setFocused] = useState(false);
   const [revealed, setRevealed] = useState(false);
+
   const isPassword = Boolean(secureTextEntry);
 
   return (
@@ -60,7 +62,7 @@ export function AuthInput({
         {isPassword && (
           <Pressable
             onPress={() => setRevealed((value) => !value)}
-            hitSlop={12}
+            style={styles.passwordButton}
             accessibilityRole="button"
             accessibilityLabel={revealed ? 'Ocultar contraseña' : 'Mostrar contraseña'}
           >
@@ -98,13 +100,13 @@ const styles = StyleSheet.create({
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
     minHeight: 56,
     borderRadius: 14,
     borderWidth: 1.5,
     borderColor: colors.appDivider,
     backgroundColor: colors.authInput,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
 
   fieldFocused: {
@@ -118,11 +120,19 @@ const styles = StyleSheet.create({
 
   input: {
     flex: 1,
+    minWidth: 0,
     minHeight: 54,
     paddingVertical: 12,
     fontFamily: fonts.medium,
     fontSize: 15,
     color: colors.authTitle,
+  },
+
+  passwordButton: {
+    minWidth: 48,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   error: {

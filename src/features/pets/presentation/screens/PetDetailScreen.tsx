@@ -1,9 +1,9 @@
 // Responsabilidad: pantalla de detalle de una mascota (capa PRESENTATION de pets).
 // Consume el caso de uso usePets y busca la mascota por id; la edad exacta se
-// calcula en el dominio con `calculateAge` a partir de la fecha de nacimiento.
+// calcula en el dominio con calculateAge a partir de la fecha de nacimiento.
 // No conoce Axios.
 
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -38,6 +38,7 @@ export default function PetDetailScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets();
 
   const { pets, isLoading, error, refetch } = usePets(petsRepository);
+
   const pet = pets.find((item) => item.id === petId);
 
   return (
@@ -45,16 +46,19 @@ export default function PetDetailScreen({ route, navigation }: Props) {
       <View style={styles.header}>
         <Pressable
           onPress={() => navigation.goBack()}
-          hitSlop={12}
           accessibilityRole="button"
           accessibilityLabel="Volver"
-          android_ripple={{ color: colors.appDivider, borderless: true }}
+          accessibilityHint="Regresa a la pantalla anterior"
+          android_ripple={{
+            color: colors.appDivider,
+            borderless: true,
+          }}
           style={styles.back}
         >
           <Ionicons name="chevron-back" size={24} color={colors.appHeading} />
         </Pressable>
 
-        <Text style={styles.title} numberOfLines={1}>
+        <Text accessibilityRole="header" style={styles.title}>
           {pet ? `Ficha de ${pet.name}` : 'Ficha de mascota'}
         </Text>
       </View>
@@ -64,29 +68,44 @@ export default function PetDetailScreen({ route, navigation }: Props) {
         error={error}
         isEmpty={!pet}
         emptyMessage="No encontramos esta mascota. Puede que ya no esté asociada a tu cuenta."
+        emptySuggestion="Regresa a la pantalla anterior para consultar tus mascotas registradas."
+        emptyActionLabel="Volver"
+        onEmptyAction={() => navigation.goBack()}
         onRetry={refetch}
       >
         {pet && (
           <ScrollView
+            style={styles.scroll}
             contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
-            showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator
           >
             <PetSummaryCard pet={pet} />
 
             <View style={styles.card}>
-              <Text style={styles.sectionLabel}>Edad</Text>
+              <Text accessibilityRole="header" style={styles.sectionLabel}>
+                Edad
+              </Text>
+
               <Text style={styles.age}>{calculateAge(pet.birthDate)}</Text>
+
               <Text style={styles.muted}>Nació el {formatDate(pet.birthDate)}</Text>
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.sectionLabel}>Datos generales</Text>
+              <Text accessibilityRole="header" style={styles.sectionLabel}>
+                Datos generales
+              </Text>
 
               <DetailRow label="Especie" value={SPECIES_LABEL[pet.species]} />
+
               <DetailRow label="Raza" value={pet.breed} />
+
               <DetailRow label="Sexo" value={formatSexAndSterilization(pet)} />
+
               <DetailRow label="Microchip" value={pet.microchip ?? 'Sin registrar'} />
+
               <DetailRow label="Último peso" value={formatWeight(pet.weightKg)} />
+
               <DetailRow
                 label="Próximo control"
                 value={formatShortDate(pet.nextControlDate)}
@@ -96,7 +115,11 @@ export default function PetDetailScreen({ route, navigation }: Props) {
 
             <Button
               label="Ver carnet digital"
-              onPress={() => navigation.navigate('HealthCard', { petId: pet.id })}
+              onPress={() =>
+                navigation.navigate('HealthCard', {
+                  petId: pet.id,
+                })
+              }
             />
           </ScrollView>
         )}
@@ -112,12 +135,19 @@ interface DetailRowProps {
 }
 
 function DetailRow({ label, value, isLast = false }: DetailRowProps) {
+  const { width, fontScale } = useWindowDimensions();
+
+  const useVerticalLayout = fontScale >= 1.3 || width < 340;
+
   return (
-    <View style={[styles.row, !isLast && styles.rowDivider]}>
-      <Text style={styles.muted}>{label}</Text>
-      <Text style={styles.value} numberOfLines={1}>
-        {value}
-      </Text>
+    <View
+      accessible
+      accessibilityLabel={`${label}: ${value}`}
+      style={[styles.row, useVerticalLayout && styles.rowVertical, !isLast && styles.rowDivider]}
+    >
+      <Text style={[styles.muted, styles.rowLabel]}>{label}</Text>
+
+      <Text style={[styles.value, useVerticalLayout && styles.valueVertical]}>{value}</Text>
     </View>
   );
 }
@@ -139,15 +169,21 @@ const styles = StyleSheet.create({
   back: {
     width: 48,
     height: 48,
+    flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   title: {
     flex: 1,
+    minWidth: 0,
     fontFamily: fonts.extrabold,
     fontSize: 22,
     color: colors.appHeading,
+  },
+
+  scroll: {
+    flex: 1,
   },
 
   content: {
@@ -189,6 +225,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
 
+  rowVertical: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: 4,
+  },
+
+  rowLabel: {
+    flexShrink: 1,
+  },
+
   rowDivider: {
     borderBottomWidth: 1,
     borderBottomColor: colors.appDivider,
@@ -199,5 +245,10 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     fontSize: 14,
     color: colors.appTitle,
+    textAlign: 'right',
+  },
+
+  valueVertical: {
+    textAlign: 'left',
   },
 });

@@ -18,7 +18,7 @@ import { useActivePet } from '../context/ActivePetContext';
 import { PetAvatar } from './PetAvatar';
 
 interface ActivePetSwitcherProps {
-  // Para pantallas que además deben reaccionar al cambio (ej. actualizar params).
+  // Para pantallas que además deben reaccionar al cambio.
   onChange?: (petId: string) => void;
   style?: StyleProp<ViewStyle>;
 }
@@ -32,7 +32,7 @@ export function ActivePetSwitcher({ onChange, style }: ActivePetSwitcherProps) {
     <ScrollView
       horizontal
       style={style}
-      showsHorizontalScrollIndicator={false}
+      showsHorizontalScrollIndicator
       contentContainerStyle={styles.list}
       accessibilityRole="tablist"
     >
@@ -48,12 +48,16 @@ export function ActivePetSwitcher({ onChange, style }: ActivePetSwitcherProps) {
             }}
             accessibilityRole="tab"
             accessibilityLabel={`Ver a ${pet.name}`}
+            accessibilityHint="Cambia la mascota activa"
             accessibilityState={{ selected }}
-            android_ripple={{ color: colors.appDivider }}
+            android_ripple={{
+              color: colors.appDivider,
+            }}
             style={[styles.chip, selected && styles.chipSelected]}
           >
             <PetAvatar name={pet.name} photoUrl={pet.photoUrl} size={30} />
-            <Text style={[styles.name, selected && styles.nameSelected]} numberOfLines={1}>
+
+            <Text allowFontScaling style={[styles.name, selected && styles.nameSelected]}>
               {pet.name}
             </Text>
           </Pressable>
@@ -66,20 +70,23 @@ export function ActivePetSwitcher({ onChange, style }: ActivePetSwitcherProps) {
 const styles = StyleSheet.create({
   list: {
     gap: 8,
-    paddingVertical: 2,
+    paddingVertical: 6,
+    alignItems: 'center',
   },
 
-  // Alto mínimo de 44 px para que sea fácil de tocar.
+  // Área táctil mínima de 48 dp.
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    minHeight: 44,
+    minHeight: 48,
+    minWidth: 48,
     paddingLeft: 7,
     paddingRight: 14,
-    borderRadius: 22,
+    paddingVertical: 8,
+    borderRadius: 24,
     borderWidth: 1.5,
-    borderColor: colors.appDivider,
+    borderColor: colors.appMuted,
     backgroundColor: colors.appSurface,
     overflow: 'hidden',
   },
@@ -90,7 +97,8 @@ const styles = StyleSheet.create({
   },
 
   name: {
-    maxWidth: 110,
+    maxWidth: 160,
+    flexShrink: 1,
     fontFamily: fonts.medium,
     fontSize: 14,
     color: colors.appMuted,

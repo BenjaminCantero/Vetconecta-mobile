@@ -2,7 +2,7 @@
 // Es el elemento principal del inicio: la fecha se dibuja como hoja de
 // calendario para que se lea de un vistazo cuándo es la cita.
 
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -12,7 +12,7 @@ import { colors } from '../../../../core/theme/colors';
 import { fonts } from '../../../../core/theme/typography';
 
 interface HeroAppointmentCardProps {
-  date: string; // ISO 8601
+  date: string;
   petName: string;
   reason: string;
   veterinarian: string;
@@ -27,6 +27,9 @@ export function HeroAppointmentCard({
   onPress,
 }: HeroAppointmentCardProps) {
   const { time } = dateLeafParts(date);
+  const { width, fontScale } = useWindowDimensions();
+
+  const useVerticalLayout = fontScale >= 1.3 || width < 340;
 
   return (
     <LinearGradient
@@ -44,20 +47,19 @@ export function HeroAppointmentCard({
         importantForAccessibility="no"
       />
 
-      <View style={styles.body}>
+      <View style={[styles.body, useVerticalLayout && styles.bodyVertical]}>
         <DateLeaf isoDate={date} accent={colors.cardPinkEnd} size="large" />
 
-        <View style={styles.texts}>
-          <Text style={styles.reason} numberOfLines={2}>
-            {reason}
-          </Text>
+        <View style={[styles.texts, useVerticalLayout && styles.textsVertical]}>
+          <Text style={styles.reason}>{reason}</Text>
+
           <Text style={styles.petName}>Próxima cita de {petName}</Text>
-          <Text style={styles.detail} numberOfLines={1}>
-            {veterinarian}
-          </Text>
+
+          <Text style={styles.detail}>{veterinarian}</Text>
 
           <View style={styles.timeRow}>
             <Ionicons name="time-outline" size={15} color={colors.textLight} />
+
             <Text style={styles.time}>
               {time} h, {formatDaysUntil(date)}
             </Text>
@@ -68,6 +70,7 @@ export function HeroAppointmentCard({
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
+        accessibilityLabel={`Ver cita de ${petName}`}
         android_ripple={{ color: 'rgba(238,135,174,0.2)' }}
         style={styles.button}
       >
@@ -109,9 +112,20 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
 
+  bodyVertical: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+
   texts: {
     flex: 1,
+    minWidth: 0,
     gap: 2,
+  },
+
+  textsVertical: {
+    flex: 0,
+    width: '100%',
   },
 
   reason: {
@@ -144,7 +158,7 @@ const styles = StyleSheet.create({
   button: {
     alignSelf: 'flex-start',
     marginTop: 18,
-    minHeight: 44,
+    minHeight: 48,
     justifyContent: 'center',
     paddingHorizontal: 22,
     borderRadius: 999,
