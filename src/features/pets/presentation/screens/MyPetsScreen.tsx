@@ -1,17 +1,12 @@
 // Responsabilidad: pantalla "Mis mascotas" (capa PRESENTATION de pets).
 //
-// Llama al caso de uso usePets del dominio y, para los conteos del carnet, al
-// repositorio a través de useFetch. No conoce Axios: eso vive en la capa data.
+// Llama al caso de uso usePets del dominio y, para los conteos del carnet,
+// al repositorio a través de useFetch.
 //
-// Actúa como composition root: inyecta la implementación concreta.
-//
-// La mascota seleccionada se comparte mediante ActivePetContext para que otras
-// partes de la aplicación puedan conocer qué mascota está activa.
-//
-// Las tarjetas de medicamentos y citas son solo accesos: sus datos viven en
-// otros dominios, que pets no puede importar (regla de A2).
+// La mascota seleccionada se comparte mediante ActivePetContext.
 
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -42,45 +37,47 @@ type Props = CompositeScreenProps<
 
 export default function MyPetsScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const { width, fontScale } = useWindowDimensions();
 
-  // ---------------------------------------------------------------------------
+  const useSingleColumn = fontScale >= 1.3 || width < 340;
+
   // MASCOTAS
-  // ---------------------------------------------------------------------------
 
   const { pets, fromCache, updatedAt, isLoading, error, refetch } = usePets(petsRepository);
 
-  // ---------------------------------------------------------------------------
   // MASCOTA ACTIVA
-  // ---------------------------------------------------------------------------
 
-  // ActivePetContext decide cuál queda activa (restaurada o la primera) y la
-  // valida contra las mascotas del dueño.
   const { activePetId, setActivePetId } = useActivePet();
 
-  // Mientras el contexto termina de restaurar la selección, se muestra la
-  // primera mascota para evitar un render vacío innecesario.
   const selectedPet = pets.find((pet) => pet.id === activePetId) ?? pets[0];
 
-  // ---------------------------------------------------------------------------
   // CARNET / EVENTOS DE LA MASCOTA SELECCIONADA
-  // ---------------------------------------------------------------------------
 
-  const { data: events } = useFetch(
+  const {
+    data: events,
+    isLoading: eventsLoading,
+    error: eventsError,
+    refetch: refetchEvents,
+  } = useFetch(
     () => (selectedPet ? petsRepository.getHealthCard(selectedPet.id) : Promise.resolve([])),
     [selectedPet?.id],
   );
 
   const summary = summarizeHealthCard(events ?? []);
 
-  // ---------------------------------------------------------------------------
-  // RENDER
-  // ---------------------------------------------------------------------------
+  // NAVEGACIÓN
 
   const openHealthCard = () => {
-    if (selectedPet) navigation.navigate('HealthCard', { petId: selectedPet.id });
+    if (selectedPet) {
+      navigation.navigate('HealthCard', {
+        petId: selectedPet.id,
+      });
+    }
   };
 
-  // La API solo expone lectura: registrar mascotas queda para otro sprint.
+  // La API solo expone lectura.
+  // Registrar mascotas queda para otro sprint.
+
   const handleAddPet = () => {
     Alert.alert('Próximamente', 'Pronto podrás registrar una nueva mascota desde la app.');
   };
@@ -89,7 +86,7 @@ export default function MyPetsScreen({ navigation }: Props) {
     <View style={styles.screen}>
       <View style={[styles.headerArea, { paddingTop: insets.top + 12 }]}>
         <ScreenHeader
-          title="Mis Mascotas"
+          title="Mis mascotas"
           hasUnread
           onBellPress={() => navigation.navigate('Notificaciones')}
         />
@@ -99,13 +96,16 @@ export default function MyPetsScreen({ navigation }: Props) {
         isLoading={isLoading}
         error={error}
         isEmpty={pets.length === 0}
-        emptyMessage="Todavía no tienes mascotas registradas. Cuando registres una, aquí verás su ficha, su carnet y sus controles."
+        emptyMessage="Todavía no tienes mascotas registradas."
+        emptySuggestion="Contacta a tu clínica veterinaria para consultar el registro de tus mascotas."
+        emptyActionLabel="Actualizar mascotas"
+        onEmptyAction={refetch}
         onRetry={refetch}
       >
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator
         >
           {fromCache && <OfflineBanner updatedAt={updatedAt} />}
 
@@ -118,7 +118,6 @@ export default function MyPetsScreen({ navigation }: Props) {
             />
           </View>
 
-          {/* Hoja inferior con la ficha de la mascota seleccionada */}
           <View style={[styles.sheet, { paddingBottom: insets.bottom + 24 }]}>
             <View style={styles.handle} />
 
@@ -126,35 +125,47 @@ export default function MyPetsScreen({ navigation }: Props) {
               <>
                 <PetProfileCard
                   pet={selectedPet}
-                  onPress={() => navigation.navigate('PetDetail', { petId: selectedPet.id })}
+                  onPress={() =>
+                    navigation.navigate('PetDetail', {
+                      petId: selectedPet.id,
+                    })
+                  }
                 />
 
                 <View style={styles.grid}>
-                  <View style={styles.row}>
-                    <ActionCard
-                      title="Consultas"
-                      value={String(summary.visits)}
-                      subtitle={summary.visits === 1 ? 'atención previa' : 'atenciones previas'}
-                      actionLabel="Abre el historial clínico"
-                      color={colors.cardSky}
-                      icon="medkit-outline"
-                      onPress={openHealthCard}
-                      tone="soft"
-                    />
+                  <View style={styles.eventsState}>
+                    <QueryState
+                      isLoading={eventsLoading}
+                      error={eventsError}
+                      onRetry={refetchEvents}
+                    >
+                      <View style={[styles.row, useSingleColumn && styles.column]}>
+                        <ActionCard
+                          title="Consultas"
+                          value={String(summary.visits)}
+                          subtitle={summary.visits === 1 ? 'atención previa' : 'atenciones previas'}
+                          actionLabel="Abre el historial clínico"
+                          color={colors.cardSky}
+                          icon="medkit-outline"
+                          onPress={openHealthCard}
+                          tone="soft"
+                        />
 
-                    <ActionCard
-                      title="Vacunas"
-                      value={String(summary.vaccines)}
-                      subtitle={summary.vaccines === 1 ? 'registrada' : 'registradas'}
-                      actionLabel="Abre el carnet de vacunas"
-                      color={colors.cardViolet}
-                      icon="shield-checkmark-outline"
-                      onPress={openHealthCard}
-                      tone="soft"
-                    />
+                        <ActionCard
+                          title="Vacunas"
+                          value={String(summary.vaccines)}
+                          subtitle={summary.vaccines === 1 ? 'registrada' : 'registradas'}
+                          actionLabel="Abre el carnet de vacunas"
+                          color={colors.cardViolet}
+                          icon="shield-checkmark-outline"
+                          onPress={openHealthCard}
+                          tone="soft"
+                        />
+                      </View>
+                    </QueryState>
                   </View>
 
-                  <View style={styles.row}>
+                  <View style={[styles.row, useSingleColumn && styles.column]}>
                     <ActionCard
                       title="Medicamentos"
                       subtitle="Pauta y dosis del día"
@@ -237,8 +248,16 @@ const styles = StyleSheet.create({
     gap: 10,
   },
 
+  eventsState: {
+    minHeight: 128,
+  },
+
   row: {
     flexDirection: 'row',
     gap: 10,
+  },
+
+  column: {
+    flexDirection: 'column',
   },
 });

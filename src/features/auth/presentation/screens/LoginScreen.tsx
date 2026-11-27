@@ -77,9 +77,10 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.screen}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={[
           styles.scroll,
           {
@@ -87,6 +88,8 @@ export default function LoginScreen() {
           },
         ]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="none"
+        showsVerticalScrollIndicator
         bounces={false}
       >
         <AuthHeader height={190} showBrand onBack={() => navigation.navigate('Welcome' as never)} />
@@ -136,6 +139,7 @@ export default function LoginScreen() {
               onPress={() => setRemember(!remember)}
               style={styles.rememberContainer}
               accessibilityRole="checkbox"
+              accessibilityLabel="Recordarme"
               accessibilityState={{
                 checked: remember,
               }}
@@ -149,8 +153,9 @@ export default function LoginScreen() {
 
             <Pressable
               onPress={() => navigation.navigate('ForgotPassword' as never)}
-              hitSlop={10}
+              style={styles.linkButton}
               accessibilityRole="link"
+              accessibilityLabel="Recuperar contraseña"
             >
               <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
             </Pressable>
@@ -172,10 +177,12 @@ export default function LoginScreen() {
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>¿Aún no tienes cuenta?</Text>
+
             <Pressable
               onPress={() => navigation.navigate('Register' as never)}
-              hitSlop={10}
+              style={styles.linkButton}
               accessibilityRole="link"
+              accessibilityLabel="Crear cuenta"
             >
               <Text style={styles.footerLink}>Crear cuenta</Text>
             </Pressable>
@@ -192,19 +199,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.authBackground,
   },
 
+  scrollView: {
+    flex: 1,
+  },
+
   scroll: {
     flexGrow: 1,
   },
 
   card: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 0,
     marginTop: -44,
     paddingTop: 36,
     paddingHorizontal: 26,
-
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
-
     backgroundColor: colors.authBackground,
   },
 
@@ -217,53 +227,58 @@ const styles = StyleSheet.create({
   subtitle: {
     marginTop: 6,
     marginBottom: 26,
-
     fontFamily: fonts.regular,
     fontSize: 15,
     lineHeight: 21,
-
     color: colors.authMuted,
   },
 
   optionsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
-
+    columnGap: 12,
     marginBottom: 20,
   },
 
   rememberContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 44,
+    minHeight: 48,
+    minWidth: 48,
+    maxWidth: '100%',
   },
 
   checkbox: {
     width: 24,
     height: 24,
-
     borderWidth: 1.5,
     borderColor: colors.authCheckboxBorder,
-
     borderRadius: 6,
-
     alignItems: 'center',
     justifyContent: 'center',
-
     marginRight: 10,
   },
 
   checkboxSelected: {
     backgroundColor: colors.authButton,
-
     borderColor: colors.authButton,
   },
 
   rememberText: {
+    flexShrink: 1,
     fontFamily: fonts.semibold,
     fontSize: 14,
     color: colors.authTitle,
+  },
+
+  linkButton: {
+    minHeight: 48,
+    minWidth: 48,
+    maxWidth: '100%',
+    justifyContent: 'center',
+    paddingVertical: 8,
   },
 
   forgotText: {
@@ -292,12 +307,15 @@ const styles = StyleSheet.create({
 
   footer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 6,
+    alignItems: 'center',
+    columnGap: 6,
     marginTop: 24,
   },
 
   footerText: {
+    flexShrink: 1,
     fontFamily: fonts.regular,
     fontSize: 14,
     color: colors.authMuted,

@@ -1,18 +1,12 @@
 // Responsabilidad: tarjeta de acción con ícono, título y detalle (capa SHARED).
 //
 // Tres tonos:
-//  - solid: fondo con el color de la maqueta.
-//  - soft:  fondo teñido con el color y el ícono en sólido (panel de Mis
-//           Mascotas): conserva el color de cada sección sin saturar.
-//  - quiet: superficie blanca con el color solo en el ícono, para accesos que
-//           no deben competir con el elemento principal de la pantalla.
-// `value` muestra un dato grande (ej. cantidad de vacunas) sobre el título.
-// La acción se anuncia como hint de accesibilidad; visualmente la tarjeta
-// entera es el botón y el chevron indica que navega.
-
-// Nota: el estilo de Pressable se pasa como arreglo, nunca como función. Con
-// el jsxImportSource de NativeWind, un `style` en forma de función se pierde y
-// el componente queda sin fondo. El realce al tocar usa android_ripple.
+// - solid: fondo con el color de la maqueta.
+// - soft: fondo teñido con el color e ícono en sólido.
+// - quiet: superficie blanca con el color en el ícono.
+//
+// La tarjeta completa funciona como botón.
+// El realce al tocar utiliza android_ripple.
 
 import type { ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
@@ -24,7 +18,6 @@ import { fonts } from '../../core/theme/typography';
 interface ActionCardProps {
   title: string;
   subtitle: string;
-  // Qué pasa al tocar, para lectores de pantalla (ej. "Abre el carnet").
   actionLabel: string;
   color: string;
   icon: ComponentProps<typeof Ionicons>['name'];
@@ -48,13 +41,17 @@ export function ActionCard({
   const solid = tone === 'solid';
   const palette = TONES[tone](color);
 
+  const accessibleLabel = [title, value, subtitle].filter(Boolean).join('. ');
+
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={title}
+      accessibilityLabel={accessibleLabel}
       accessibilityHint={actionLabel}
-      android_ripple={{ color: solid ? 'rgba(255,255,255,0.18)' : `${color}33` }}
+      android_ripple={{
+        color: solid ? 'rgba(255,255,255,0.18)' : `${color}33`,
+      }}
       style={[
         styles.card,
         { backgroundColor: palette.background },
@@ -74,7 +71,9 @@ export function ActionCard({
         {value !== undefined && (
           <Text style={[styles.value, { color: palette.primary }]}>{value}</Text>
         )}
+
         <Text style={[styles.title, { color: palette.primary }]}>{title}</Text>
+
         <Text style={[styles.subtitle, { color: palette.secondary }]}>{subtitle}</Text>
       </View>
     </Pressable>
@@ -89,16 +88,15 @@ interface TonePalette {
   secondary: string;
 }
 
-// El texto sobre fondos claros va en tinta: los colores de la maqueta no
-// alcanzan contraste suficiente para texto chico sobre su propio tinte.
 const TONES: Record<NonNullable<ActionCardProps['tone']>, (color: string) => TonePalette> = {
   solid: (color) => ({
     background: color,
     iconBackground: 'rgba(255,255,255,0.24)',
     icon: colors.textLight,
     primary: colors.textLight,
-    secondary: 'rgba(255,255,255,0.9)',
+    secondary: colors.textLight,
   }),
+
   soft: (color) => ({
     background: `${color}24`,
     iconBackground: color,
@@ -106,6 +104,7 @@ const TONES: Record<NonNullable<ActionCardProps['tone']>, (color: string) => Ton
     primary: colors.appTitle,
     secondary: colors.appMuted,
   }),
+
   quiet: (color) => ({
     background: colors.appSurface,
     iconBackground: `${color}1F`,
@@ -118,6 +117,7 @@ const TONES: Record<NonNullable<ActionCardProps['tone']>, (color: string) => Ton
 const styles = StyleSheet.create({
   card: {
     flex: 1,
+    minWidth: 48,
     minHeight: 128,
     borderRadius: 18,
     borderWidth: 1,

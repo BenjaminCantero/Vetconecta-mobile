@@ -4,7 +4,7 @@
 // muestra un resumen, un filtro por tipo y los eventos como línea de tiempo
 // agrupada por año.
 
-import { Fragment, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActivePetSwitcher } from '../../../../shared/components/ActivePetSwitcher';
 import { OfflineBanner } from '../../../../shared/components/OfflineBanner';
 import { QueryState } from '../../../../shared/components/QueryState';
+import { StatRow } from '../../../../shared/components/StatRow';
 import { useFetch } from '../../../../shared/hooks/useFetch';
 import { colors } from '../../../../core/theme/colors';
 import { fonts } from '../../../../core/theme/typography';
@@ -35,6 +36,53 @@ export default function HealthCardScreen({ route, navigation }: Props) {
   const { pets } = usePets(petsRepository);
   const pet = pets.find((item) => item.id === petId);
 
+  return (
+    <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+      <View style={styles.header}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Volver"
+          accessibilityHint="Regresa a la pantalla anterior"
+          android_ripple={{
+            color: colors.appDivider,
+            borderless: true,
+          }}
+          style={styles.back}
+        >
+          <Ionicons name="chevron-back" size={24} color={colors.appHeading} />
+        </Pressable>
+
+        <View style={styles.titles}>
+          <Text accessibilityRole="header" style={styles.title}>
+            Carnet de {pet?.name ?? 'tu mascota'}
+          </Text>
+        </View>
+      </View>
+
+      {/* Cambiar de mascota recarga el carnet sin volver atrás. */}
+      <ActivePetSwitcher
+        style={styles.switcher}
+        onChange={(id) => navigation.setParams({ petId: id })}
+      />
+
+      <HealthCardContent
+        key={petId}
+        petId={petId}
+        petName={pet?.name ?? 'tu mascota'}
+        bottomInset={insets.bottom}
+      />
+    </View>
+  );
+}
+
+interface HealthCardContentProps {
+  petId: string;
+  petName: string;
+  bottomInset: number;
+}
+
+function HealthCardContent({ petId, petName, bottomInset }: HealthCardContentProps) {
   const {
     data: snapshot,
     isLoading,
@@ -55,11 +103,18 @@ export default function HealthCardScreen({ route, navigation }: Props) {
     const ordered = [...(events ?? [])].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
+
     const next = ordered.find((event) => new Date(event.date).getTime() >= now);
 
     return next
-      ? { label: 'Próximo', date: next.date }
-      : { label: 'Último registro', date: ordered[ordered.length - 1]?.date ?? null };
+      ? {
+          label: 'Próximo evento',
+          date: next.date,
+        }
+      : {
+          label: 'Último registro',
+          date: ordered[ordered.length - 1]?.date ?? null,
+        };
   }, [events, now]);
 
   // Solo se ofrecen los tipos que la mascota tiene registrados.
@@ -71,52 +126,41 @@ export default function HealthCardScreen({ route, navigation }: Props) {
     [events],
   );
 
-  // Al cambiar de mascota, un tipo que ya no existe vuelve a "Todo".
   const activeFilter = filter !== 'todos' && types.includes(filter) ? filter : 'todos';
 
-  // Los más recientes (o los próximos) primero, agrupados por año.
+  // Eventos agrupados por año.
   const timeline = buildTimeline(
     (events ?? []).filter((event) => activeFilter === 'todos' || event.type === activeFilter),
   );
 
   const stats = [
-    { label: 'Vacunas', value: String(summary.vaccines) },
-    { label: 'Atenciones', value: String(summary.visits) },
-    { label: nextOrLast.label, value: formatShortDate(nextOrLast.date) },
+    {
+      label: 'Vacunas',
+      value: String(summary.vaccines),
+    },
+    {
+      label: 'Atenciones',
+      value: String(summary.visits),
+    },
+    {
+      label: nextOrLast.label,
+      value: formatShortDate(nextOrLast.date),
+    },
   ];
 
-  const filters: { value: ClinicalEventType | 'todos'; label: string }[] = [
-    { value: 'todos', label: 'Todo' },
-    ...types.map((type) => ({ value: type, label: CLINICAL_EVENT_STYLE[type].label })),
+  const filters: {
+    value: ClinicalEventType | 'todos';
+    label: string;
+  }[] = [
+    { value: 'todos', label: 'Todos' },
+    ...types.map((type) => ({
+      value: type,
+      label: CLINICAL_EVENT_STYLE[type].label,
+    })),
   ];
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Volver"
-          android_ripple={{ color: colors.appDivider, borderless: true }}
-          style={styles.back}
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.appHeading} />
-        </Pressable>
-
-        <View style={styles.titles}>
-          <Text style={styles.title} numberOfLines={1}>
-            Carnet de {pet?.name ?? 'tu mascota'}
-          </Text>
-        </View>
-      </View>
-
-      {/* Cambiar de mascota aquí recarga el carnet sin volver atrás (F1). */}
-      <ActivePetSwitcher
-        style={styles.switcher}
-        onChange={(id) => navigation.setParams({ petId: id })}
-      />
-
+    <View style={styles.body}>
       {snapshot?.fromCache && !isLoading && (
         <OfflineBanner updatedAt={snapshot.updatedAt} style={styles.offlineBanner} />
       )}
@@ -125,33 +169,23 @@ export default function HealthCardScreen({ route, navigation }: Props) {
         isLoading={isLoading}
         error={error}
         isEmpty={(events ?? []).length === 0}
-        emptyMessage={`Todavía no hay vacunas, controles ni tratamientos registrados para ${pet?.name ?? 'tu mascota'}.`}
+        emptyMessage={`Todavía no hay vacunas, controles ni tratamientos registrados para ${petName}.`}
+        emptySuggestion="Si tu mascota recibió una atención recientemente, consulta con tu clínica veterinaria o actualiza el carnet."
+        emptyActionLabel="Actualizar carnet"
+        onEmptyAction={refetch}
         onRetry={refetch}
       >
         <ScrollView
-          contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 24 }]}
-          showsVerticalScrollIndicator={false}
+          style={styles.scroll}
+          contentContainerStyle={[styles.list, { paddingBottom: bottomInset + 24 }]}
+          showsVerticalScrollIndicator
         >
-          <View style={styles.stats}>
-            {stats.map((stat, index) => (
-              <Fragment key={stat.label}>
-                {index > 0 && <View style={styles.divider} />}
-                <View style={styles.stat}>
-                  <Text style={styles.statLabel} numberOfLines={1}>
-                    {stat.label}
-                  </Text>
-                  <Text style={styles.statValue} numberOfLines={1}>
-                    {stat.value}
-                  </Text>
-                </View>
-              </Fragment>
-            ))}
-          </View>
+          <StatRow items={stats} />
 
           {types.length > 1 && (
             <ScrollView
               horizontal
-              showsHorizontalScrollIndicator={false}
+              showsHorizontalScrollIndicator
               contentContainerStyle={styles.filters}
               style={styles.filtersScroll}
             >
@@ -163,8 +197,11 @@ export default function HealthCardScreen({ route, navigation }: Props) {
                     key={option.value}
                     onPress={() => setFilter(option.value)}
                     accessibilityRole="button"
+                    accessibilityLabel={`Filtrar por ${option.label.toLowerCase()}`}
                     accessibilityState={{ selected }}
-                    android_ripple={{ color: colors.appDivider }}
+                    android_ripple={{
+                      color: colors.appDivider,
+                    }}
                     style={[styles.filter, selected && styles.filterSelected]}
                   >
                     <Text style={[styles.filterLabel, selected && styles.filterLabelSelected]}>
@@ -184,14 +221,18 @@ export default function HealthCardScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  offlineBanner: {
-    marginHorizontal: 20,
-    marginBottom: 12,
-  },
-
   container: {
     flex: 1,
     backgroundColor: colors.appBackground,
+  },
+
+  body: {
+    flex: 1,
+  },
+
+  offlineBanner: {
+    marginHorizontal: 20,
+    marginBottom: 12,
   },
 
   header: {
@@ -211,12 +252,14 @@ const styles = StyleSheet.create({
   back: {
     width: 48,
     height: 48,
+    flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   titles: {
     flex: 1,
+    minWidth: 0,
   },
 
   title: {
@@ -225,42 +268,13 @@ const styles = StyleSheet.create({
     color: colors.appHeading,
   },
 
+  scroll: {
+    flex: 1,
+  },
+
   list: {
     paddingHorizontal: 20,
     gap: 20,
-  },
-
-  stats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderRadius: 20,
-    backgroundColor: colors.appSurface,
-  },
-
-  divider: {
-    width: 1,
-    alignSelf: 'stretch',
-    backgroundColor: colors.appDivider,
-  },
-
-  stat: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 2,
-    paddingHorizontal: 6,
-  },
-
-  statLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: colors.appMuted,
-  },
-
-  statValue: {
-    fontFamily: fonts.bold,
-    fontSize: 17,
-    color: colors.appTitle,
   },
 
   filtersScroll: {
@@ -271,15 +285,20 @@ const styles = StyleSheet.create({
   filters: {
     gap: 8,
     paddingHorizontal: 20,
+    paddingBottom: 6,
+    alignItems: 'center',
   },
 
   filter: {
-    minHeight: 40,
+    minHeight: 48,
+    minWidth: 48,
     justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 16,
+    paddingVertical: 10,
     borderRadius: 999,
     borderWidth: 1.5,
-    borderColor: colors.appDivider,
+    borderColor: colors.appMuted,
     backgroundColor: colors.appSurface,
     overflow: 'hidden',
   },
@@ -293,6 +312,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     fontSize: 14,
     color: colors.appMuted,
+    textAlign: 'center',
   },
 
   filterLabelSelected: {

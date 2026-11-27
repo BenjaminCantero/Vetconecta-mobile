@@ -1,8 +1,5 @@
-// Responsabilidad: manejo unificado de los estados de una lectura GET
-// (capa SHARED / presentation). Centraliza los tres estados que toda pantalla
-// que consume datos debe cubrir: cargando, error y vacío. Si hay datos, muestra
-// su contenido (children). Así ninguna pantalla reimplementa estos estados a
-// mano y todas muestran el MISMO mensaje de error (el que arma core/api/httpError).
+// Responsabilidad: manejo unificado de los estados de una lectura GET.
+// Centraliza los estados de carga, error y vacío.
 
 import type { ReactNode } from 'react';
 import { Text, View, StyleSheet } from 'react-native';
@@ -15,10 +12,11 @@ import { Loader } from './Loader';
 interface QueryStateProps {
   isLoading: boolean;
   error: Error | null;
-  // La pantalla decide qué significa "vacío" (lista sin elementos, dato nulo…).
   isEmpty?: boolean;
   emptyMessage?: string;
-  // Si se pasa, el estado de error muestra un botón "Reintentar".
+  emptySuggestion?: string;
+  emptyActionLabel?: string;
+  onEmptyAction?: () => void;
   onRetry?: () => void;
   children: ReactNode;
 }
@@ -27,11 +25,13 @@ export function QueryState({
   isLoading,
   error,
   isEmpty = false,
-  emptyMessage = 'No hay nada que mostrar.',
+  emptyMessage = 'No hay información disponible.',
+  emptySuggestion,
+  emptyActionLabel,
+  onEmptyAction,
   onRetry,
   children,
 }: QueryStateProps) {
-  // Orden de prioridad: primero cargando, luego error, luego vacío, luego datos.
   if (isLoading) {
     return <Loader />;
   }
@@ -39,8 +39,11 @@ export function QueryState({
   if (error) {
     return (
       <View style={styles.center}>
-        <Text style={styles.error}>{error.message}</Text>
-        {onRetry ? <Button label="Reintentar" onPress={onRetry} style={styles.retry} /> : null}
+        <Text style={styles.error} accessibilityLiveRegion="polite" accessibilityRole="alert">
+          {error.message || 'No pudimos cargar la información. Inténtalo nuevamente.'}
+        </Text>
+
+        {onRetry ? <Button label="Reintentar" onPress={onRetry} style={styles.action} /> : null}
       </View>
     );
   }
@@ -48,7 +51,15 @@ export function QueryState({
   if (isEmpty) {
     return (
       <View style={styles.center}>
-        <Text style={styles.empty}>{emptyMessage}</Text>
+        <Text style={styles.empty} accessibilityLiveRegion="polite">
+          {emptyMessage}
+        </Text>
+
+        {emptySuggestion ? <Text style={styles.suggestion}>{emptySuggestion}</Text> : null}
+
+        {emptyActionLabel && onEmptyAction ? (
+          <Button label={emptyActionLabel} onPress={onEmptyAction} style={styles.action} />
+        ) : null}
       </View>
     );
   }
@@ -73,11 +84,22 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   empty: {
-    fontFamily: fonts.medium,
+    fontFamily: fonts.semibold,
     fontSize: 15,
     lineHeight: 21,
-    color: colors.appMuted,
+    color: colors.appTitle,
     textAlign: 'center',
   },
-  retry: { marginTop: 8 },
+  suggestion: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.appMuted,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  action: {
+    marginTop: 16,
+    minHeight: 48,
+  },
 });

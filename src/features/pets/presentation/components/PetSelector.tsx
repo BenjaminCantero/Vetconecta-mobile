@@ -22,11 +22,7 @@ interface PetSelectorProps {
 
 export function PetSelector({ pets, selectedPetId, onSelect, onAdd }: PetSelectorProps) {
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.list}
-    >
+    <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.list}>
       {pets.map((pet) => {
         const selected = pet.id === selectedPetId;
 
@@ -36,10 +32,12 @@ export function PetSelector({ pets, selectedPetId, onSelect, onAdd }: PetSelecto
             onPress={() => onSelect(pet.id)}
             accessibilityRole="button"
             accessibilityLabel={`Seleccionar a ${pet.name}`}
-            accessibilityState={{
-              selected,
+            accessibilityHint="Cambia la mascota activa"
+            accessibilityState={{ selected }}
+            android_ripple={{
+              color: colors.appDivider,
+              borderless: true,
             }}
-            android_ripple={{ color: colors.appDivider, borderless: true }}
             style={styles.item}
           >
             <PetAvatar
@@ -49,7 +47,7 @@ export function PetSelector({ pets, selectedPetId, onSelect, onAdd }: PetSelecto
               style={selected ? styles.ring : undefined}
             />
 
-            <Text style={[styles.name, selected && styles.nameSelected]} numberOfLines={1}>
+            <Text allowFontScaling style={[styles.name, selected && styles.nameSelected]}>
               {pet.name}
             </Text>
           </Pressable>
@@ -61,14 +59,19 @@ export function PetSelector({ pets, selectedPetId, onSelect, onAdd }: PetSelecto
           onPress={onAdd}
           accessibilityRole="button"
           accessibilityLabel="Agregar mascota"
-          android_ripple={{ color: colors.appDivider, borderless: true }}
+          android_ripple={{
+            color: colors.appDivider,
+            borderless: true,
+          }}
           style={styles.item}
         >
           <View style={styles.addCircle}>
             <Ionicons name="add" size={30} color={colors.appTitle} />
           </View>
 
-          <Text style={styles.name}>Agregar</Text>
+          <Text allowFontScaling style={styles.name}>
+            Agregar
+          </Text>
         </Pressable>
       )}
     </ScrollView>
@@ -81,15 +84,19 @@ const SELECTED_SIZE = 94;
 const styles = StyleSheet.create({
   list: {
     gap: 18,
-    paddingVertical: 4,
+    paddingVertical: 8,
     paddingRight: 8,
     alignItems: 'center',
   },
 
   item: {
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
     minWidth: AVATAR_SIZE,
+    minHeight: 48,
+    maxWidth: 160,
+    paddingVertical: 4,
   },
 
   ring: {
@@ -113,6 +120,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 14,
     color: colors.appMuted,
+    textAlign: 'center',
   },
 
   nameSelected: {

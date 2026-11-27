@@ -30,16 +30,20 @@ export function ScreenHeader({
   return (
     <View style={styles.container}>
       <View style={styles.titles}>
-        <Text style={styles.title}>{eyebrow ? `${eyebrow} ${title}` : title}</Text>
+        <Text style={styles.title} accessibilityRole="header" allowFontScaling>
+          {eyebrow ? `${eyebrow} ${title}` : title}
+        </Text>
       </View>
 
       {extraAction && (
         <Pressable
           onPress={extraAction.onPress}
-          hitSlop={10}
           accessibilityRole="button"
           accessibilityLabel={extraAction.label}
-          android_ripple={{ color: colors.appDivider, borderless: true }}
+          android_ripple={{
+            color: colors.appDivider,
+            borderless: true,
+          }}
           style={styles.bell}
         >
           <Ionicons name={extraAction.icon} size={20} color={colors.appHeading} />
@@ -49,13 +53,19 @@ export function ScreenHeader({
       {onBellPress && (
         <Pressable
           onPress={onBellPress}
-          hitSlop={10}
           accessibilityRole="button"
-          accessibilityLabel="Notificaciones"
-          android_ripple={{ color: colors.appDivider, borderless: true }}
+          accessibilityLabel={
+            hasUnread ? 'Notificaciones, tienes notificaciones sin leer' : 'Notificaciones'
+          }
+          accessibilityHint="Abre la pantalla de notificaciones"
+          android_ripple={{
+            color: colors.appDivider,
+            borderless: true,
+          }}
           style={styles.bell}
         >
           <Ionicons name="notifications-outline" size={20} color={colors.appHeading} />
+
           {hasUnread && <View style={styles.dot} />}
         </Pressable>
       )}
@@ -73,13 +83,7 @@ const styles = StyleSheet.create({
 
   titles: {
     flex: 1,
-  },
-
-  eyebrow: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.appMuted,
-    marginBottom: 2,
+    minWidth: 0,
   },
 
   title: {
@@ -90,9 +94,10 @@ const styles = StyleSheet.create({
   },
 
   bell: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    flexShrink: 0,
+    borderRadius: 24,
     backgroundColor: colors.appSurface,
     alignItems: 'center',
     justifyContent: 'center',

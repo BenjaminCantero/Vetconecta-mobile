@@ -8,7 +8,8 @@ import { fonts } from '../../core/theme/typography';
 interface ChipProps {
   label: string;
   color?: string;
-  // Relleno sólido (sobre fondo claro) o suave (mismo color al 14%).
+
+  // Relleno sólido o suave.
   variant?: 'solid' | 'soft';
 }
 
@@ -16,8 +17,25 @@ export function Chip({ label, color = colors.appHeading, variant = 'solid' }: Ch
   const isSolid = variant === 'solid';
 
   return (
-    <View style={[styles.chip, { backgroundColor: isSolid ? color : `${color}22` }]}>
-      <Text style={[styles.label, { color: isSolid ? colors.textLight : color }]}>{label}</Text>
+    <View
+      style={[
+        styles.chip,
+        {
+          backgroundColor: isSolid ? color : `${color}22`,
+        },
+      ]}
+    >
+      <Text
+        allowFontScaling
+        style={[
+          styles.label,
+          {
+            color: isSolid ? colors.textLight : colors.appTitle,
+          },
+        ]}
+      >
+        {label}
+      </Text>
     </View>
   );
 }
@@ -25,6 +43,8 @@ export function Chip({ label, color = colors.appHeading, variant = 'solid' }: Ch
 const styles = StyleSheet.create({
   chip: {
     alignSelf: 'flex-start',
+    maxWidth: '100%',
+    flexShrink: 1,
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 999,
@@ -33,6 +53,6 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: fonts.bold,
     fontSize: 12,
-    textTransform: 'capitalize',
+    textAlign: 'center',
   },
 });

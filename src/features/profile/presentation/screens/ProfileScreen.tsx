@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  ToastAndroid,
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -39,16 +40,41 @@ function Field({
   editable = true,
   ...props
 }: ComponentProps<typeof TextInput> & { label: string; error?: string; editable?: boolean }) {
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const isPassword = props.secureTextEntry === true;
+
   return (
     <View style={styles.fieldGroup}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput
-        {...props}
-        editable={editable}
-        accessibilityLabel={label}
-        placeholderTextColor={colors.appMuted}
-        style={[styles.input, !editable && styles.readonlyInput, error && styles.inputError]}
-      />
+      <View style={styles.inputRow}>
+        <TextInput
+          {...props}
+          editable={editable}
+          secureTextEntry={isPassword && !passwordVisible}
+          accessibilityLabel={label}
+          placeholderTextColor={colors.appMuted}
+          style={[
+            styles.input,
+            styles.flexInput,
+            !editable && styles.readonlyInput,
+            error && styles.inputError,
+          ]}
+        />
+        {isPassword ? (
+          <Pressable
+            style={styles.visibilityButton}
+            onPress={() => setPasswordVisible((visible) => !visible)}
+            accessibilityRole="button"
+            accessibilityLabel={`${passwordVisible ? 'Ocultar' : 'Mostrar'} ${label.toLowerCase()}`}
+          >
+            <Ionicons
+              name={passwordVisible ? 'eye-off-outline' : 'eye-outline'}
+              size={22}
+              color={colors.appHeading}
+            />
+          </Pressable>
+        ) : null}
+      </View>
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );
@@ -133,10 +159,31 @@ export default function ProfileScreen({ navigation }: Props) {
     }
   };
 
+  const confirmLogout = () => {
+    Alert.alert('Cerrar sesión', '¿Estás seguro de que deseas cerrar sesión?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Cerrar sesión',
+        style: 'destructive',
+        onPress: () => {
+          void logout()
+            .then(() => {
+              if (Platform.OS === 'android') {
+                ToastAndroid.show('Sesión cerrada correctamente.', ToastAndroid.SHORT);
+              }
+            })
+            .catch(() => {
+              Alert.alert('No pudimos cerrar sesión', 'Inténtalo nuevamente.');
+            });
+        },
+      },
+    ]);
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.screen}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Pressable
@@ -153,9 +200,11 @@ export default function ProfileScreen({ navigation }: Props) {
 
       <QueryState isLoading={isLoading} error={error} onRetry={reload}>
         <ScrollView
+          style={styles.scroll}
           contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator
+          keyboardDismissMode="none"
         >
           <View style={styles.identity}>
             <View style={styles.avatar}>
@@ -265,6 +314,19 @@ export default function ProfileScreen({ navigation }: Props) {
           </View>
         </ScrollView>
       </QueryState>
+      <View style={[styles.logoutContainer, { paddingBottom: insets.bottom + 12 }]}>
+        <Pressable
+          onPress={confirmLogout}
+          style={styles.logoutButton}
+          accessibilityRole="button"
+          accessibilityLabel="Cerrar sesión"
+          disabled={contactSaving || passwordSaving}
+          accessibilityState={{ disabled: contactSaving || passwordSaving }}
+        >
+          <Ionicons name="log-out-outline" size={22} color={colors.danger} />
+          <Text style={styles.logoutLabel}>Cerrar sesión</Text>
+        </Pressable>
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -306,6 +368,15 @@ const styles = StyleSheet.create({
   section: { gap: 12, padding: 18, borderRadius: 20, backgroundColor: colors.appSurface },
   sectionTitle: { fontFamily: fonts.bold, fontSize: 17, color: colors.appTitle },
   fieldGroup: { gap: 6 },
+  scroll: { flex: 1 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  flexInput: { flex: 1, minWidth: 0 },
+  visibilityButton: {
+    minWidth: 48,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   label: { fontFamily: fonts.semibold, fontSize: 13, color: colors.appMuted },
   input: {
     minHeight: 50,
@@ -323,7 +394,27 @@ const styles = StyleSheet.create({
   error: { fontFamily: fonts.medium, fontSize: 12, color: colors.danger },
   readonlyNote: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 17, color: colors.appMuted },
   status: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 19, color: colors.success },
-  passwordToggle: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  passwordToggle: {
+    minHeight: 48,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   passwordForm: { gap: 12 },
+  logoutContainer: { paddingHorizontal: 20, paddingTop: 12 },
+  logoutButton: {
+    minHeight: 48,
+    minWidth: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.danger,
+    backgroundColor: colors.appSurface,
+  },
+  logoutLabel: { fontFamily: fonts.semibold, fontSize: 15, color: colors.danger },
   passwordHint: { fontFamily: fonts.regular, fontSize: 12, color: colors.appMuted },
 });

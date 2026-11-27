@@ -6,7 +6,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Platform,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  ToastAndroid,
+  View,
+} from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -201,7 +211,11 @@ export default function AppointmentsScreen({ navigation, route }: Props) {
             if (result) {
               refetch();
 
-              Alert.alert('Cita cancelada', 'Tu reserva fue cancelada correctamente.');
+              if (Platform.OS === 'android') {
+                ToastAndroid.show('Tu reserva fue cancelada correctamente.', ToastAndroid.LONG);
+              } else {
+                Alert.alert('Cita cancelada', 'Tu reserva fue cancelada correctamente.');
+              }
             }
           } catch (cancelError) {
             Alert.alert(
@@ -226,7 +240,14 @@ export default function AppointmentsScreen({ navigation, route }: Props) {
       const updated = await appointmentsRepository.createRating(ratingAppointment, rating);
       updateAppointment(updated);
       refetch();
-      Alert.alert('Calificación enviada', 'Gracias por compartir tu experiencia.');
+      if (Platform.OS === 'android') {
+        ToastAndroid.show(
+          'Calificación enviada. Gracias por compartir tu experiencia.',
+          ToastAndroid.LONG,
+        );
+      } else {
+        Alert.alert('Calificación enviada', 'Gracias por compartir tu experiencia.');
+      }
     } catch (ratingError) {
       if (ratingError instanceof AppointmentAlreadyRatedError) {
         updateAppointment({ ...ratingAppointment, calificada: true });
@@ -273,7 +294,7 @@ export default function AppointmentsScreen({ navigation, route }: Props) {
         <ScrollView
           style={styles.container}
           contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -303,6 +324,12 @@ export default function AppointmentsScreen({ navigation, route }: Props) {
                     ? `${activePet.name} no tiene citas anteriores.`
                     : 'Aquí aparecerá el historial de tus citas.'}
               </Text>
+
+              {section === 'past' && (
+                <Text style={styles.emptyText}>
+                  Desliza hacia abajo para actualizar tu historial.
+                </Text>
+              )}
 
               {section === 'upcoming' && !isOffline && (
                 <Pressable
